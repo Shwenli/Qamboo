@@ -1,0 +1,198 @@
+[package]
+name = "experiments"
+version = "0.1.0"
+publish.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["tcp"]
+dangerous = []
+tcp = ["dep:crossbeam-channel", "dep:socket2"]
+
+[dependencies]
+byteorder.workspace = true
+eyre.workspace = true
+futures = { version = "0.3.30", optional = true }
+intmap.workspace = true
+serde = { workspace = true }
+protocols = { version = "0.9.0", path = "../protocols" }
+net = { version = "0.4.0", path = "../net", default-features = true }
+operator = { path = "../operator" }
+table = { path = "../table" }
+primitives = { path = "../primitives" }
+rand = { workspace = true }
+indexmap = {workspace = true}
+itertools = {workspace = true}
+toml.workspace = true
+tokio = { version = "1.34.0", features = [
+    "rt",
+    "rt-multi-thread",
+    "net",
+    "sync",
+    "time",
+    "io-util",
+    "macros",
+], optional = true }
+tokio-util = { version = "0.7.10", features = ["codec"], optional = true }
+tracing = { workspace = true }
+crossbeam-channel = { version = "0.5.15", optional = true }
+humantime-serde = "1.1.1"
+socket2 = { version = "0.6.0", optional = true }
+clap = { workspace = true }
+color-eyre = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+#polars = { version = "0.52.0", features = ["lazy", "semi_anti_join"] }
+polars = { workspace = true, features = ["lazy", "timezones", "semi_anti_join"] }
+chrono = "0.4.43"
+
+
+
+
+[dev-dependencies]
+rcgen = { workspace = true }
+
+
+[lib]
+name = "experiments"
+
+[[bin]]
+name = "q1"
+path = "query/tpch/q1.rs"
+
+
+[[bin]]
+name = "q2"
+path = "query/tpch/q2.rs"
+
+
+[[bin]]
+name = "q3"
+path = "query/tpch/q3.rs"
+
+
+# Add for q4 to q22
+[[bin]]
+name = "q4"
+path = "query/tpch/q4.rs"
+
+
+[[bin]]
+name = "q5"
+path = "query/tpch/q5.rs"
+
+
+[[bin]]
+name = "q6"
+path = "query/tpch/q6.rs"
+
+
+[[bin]]
+name = "q7"
+path = "query/tpch/q7.rs"
+
+
+[[bin]]
+name = "q8"
+path = "query/tpch/q8.rs"
+
+
+[[bin]]
+name = "q9"
+path = "query/tpch/q9.rs"
+
+
+[[bin]]
+name = "q10"
+path = "query/tpch/q10.rs"
+
+
+[[bin]]
+name = "q11"
+path = "query/tpch/q11.rs"
+
+
+[[bin]]
+name = "q12"
+path = "query/tpch/q12.rs"
+
+
+[[bin]]
+name = "q13"
+path = "query/tpch/q13.rs"
+
+
+[[bin]]
+name = "q14"
+path = "query/tpch/q14.rs"
+
+
+[[bin]]
+name = "q15"
+path = "query/tpch/q15.rs"
+
+
+[[bin]]
+name = "q16"
+path = "query/tpch/q16.rs"
+
+
+[[bin]]
+name = "q17"
+path = "query/tpch/q17.rs"
+
+
+[[bin]]
+name = "q18"
+path = "query/tpch/q18.rs"
+
+
+[[bin]]
+name = "q19"
+path = "query/tpch/q19.rs"
+
+
+[[bin]]
+name = "q20"
+path = "query/tpch/q20.rs"
+
+
+[[bin]]
+name = "q21"
+path = "query/tpch/q21.rs"
+
+
+[[bin]]
+name = "q22"
+path = "query/tpch/q22.rs"
+
+
+[[bin]]
+name = "q3_no_safe_cut"
+path = "query/tpch/q3_no_safe_cut.rs"
+
+[[bin]]
+name = "q4_no_semi"
+path = "query/tpch/q4_no_semi.rs"
+
+[[bin]]
+name = "q18_no_safe_cut"
+path = "query/tpch/q18_no_safe_cut.rs"
+
+[[bin]]
+name = "polars_start"
+path = "query/polars_test/polars_start.rs"
+
+[[bin]]
+name = "tpch_q5_polars"
+path = "query/polars_test/tpch_q5.rs"
+
+[[bin]]
+name = "multi_keys_join"
+path = "operator/multi_keys_join.rs"

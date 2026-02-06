@@ -1,0 +1,11 @@
+my_id = 1
+bind_addr = "0.0.0.0:16001"
+[[parties]]
+id = 0
+dns_name = "127.0.0.1:16000"
+[[parties]]
+id = 1
+dns_name = "127.0.0.1:16001"
+[[parties]]
+id = 2
+dns_name = "127.0.0.1:16002"

@@ -18,10 +18,10 @@ scp target/release/radix_sort $HOST1:$PROJECT_PATH/target/release/
 scp target/release/radix_sort $HOST2:$PROJECT_PATH/target/release/
 
 # Run party 0 locally
-$BIN_PATH -c experiments/net/ -p 0 -t $NUM_THREADS -s $SHIFT &
+$BIN_PATH -c experiments/net/multinode/ -p 0 -t $NUM_THREADS -s $SHIFT &
 # SSH to HOST1 to run party 1
-ssh $HOST1 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/ -p 1 -t $NUM_THREADS -s $SHIFT" &
+ssh $HOST1 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/multinode/ -p 1 -t $NUM_THREADS -s $SHIFT" &
 # SSH to HOST2 to run party 2
-ssh $HOST2 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/ -p 2 -t $NUM_THREADS -s $SHIFT" &
+ssh $HOST2 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/multinode/ -p 2 -t $NUM_THREADS -s $SHIFT" &
 
 wait

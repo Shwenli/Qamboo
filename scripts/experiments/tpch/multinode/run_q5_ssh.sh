@@ -16,10 +16,10 @@ scp target/release/q5 $HOST1:$PROJECT_PATH/target/release/
 scp target/release/q5 $HOST2:$PROJECT_PATH/target/release/
 
 # Run party 0 locally
-$BIN_PATH -c experiments/net/ -p 0 -t $NUM_THREADS -s $SF &
+$BIN_PATH -c experiments/net/multinode/ -p 0 -t $NUM_THREADS -s $SF &
 # SSH to HOST1 to run party 1
-ssh $HOST1 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/ -p 1 -t $NUM_THREADS -s $SF" &
+ssh $HOST1 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/multinode/ -p 1 -t $NUM_THREADS -s $SF" &
 # SSH to HOST2 to run party 2
-ssh $HOST2 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/ -p 2 -t $NUM_THREADS -s $SF" &
+ssh $HOST2 "cd $PROJECT_PATH && $BIN_PATH -c experiments/net/multinode/ -p 2 -t $NUM_THREADS -s $SF" &
 
 wait

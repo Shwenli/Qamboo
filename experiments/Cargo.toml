@@ -177,22 +177,21 @@ path = "query/tpch/q22.rs"
 name = "q3_no_safe_cut"
 path = "query/tpch/q3_no_safe_cut.rs"
 
+
 [[bin]]
 name = "q4_no_semi"
 path = "query/tpch/q4_no_semi.rs"
+
 
 [[bin]]
 name = "q18_no_safe_cut"
 path = "query/tpch/q18_no_safe_cut.rs"
 
-[[bin]]
-name = "polars_start"
-path = "query/polars_test/polars_start.rs"
-
-[[bin]]
-name = "tpch_q5_polars"
-path = "query/polars_test/tpch_q5.rs"
 
 [[bin]]
 name = "multi_keys_join"
 path = "operator/multi_keys_join.rs"
+
+[[bin]]
+name = "radix_sort"
+path = "operator/radix_sort.rs"

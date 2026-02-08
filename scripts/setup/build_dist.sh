@@ -30,7 +30,7 @@ if [ -z "$HOST_LIST" ]; then
     usage
 fi
 
-echo "Run setup_ssh.sh"
+echo "Run build_dist.sh"
 echo ""
 
 # 0. requirements check

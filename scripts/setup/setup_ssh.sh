@@ -3,14 +3,14 @@
 # ==============================================================================
 # Script Name: setup_ssh.sh
 # Description:
-#   1. Generates SSH keys on the host machine0.
+#   1. Generates SSH keys on the host node0.
 #   2. Distributes SSH public keys to specified remote hosts to enable passwordless login.
 #
 # Usage:
 #   ./setup_ssh.sh -h <host0>,<host1>,...
 #
 # Example:
-#   ./setup_ssh.sh -h machine0,machine1
+#   ./setup_ssh.sh -h node0,node1
 #   ./setup_ssh.sh -h 192.168.1.11,192.168.1.12
 # ==============================================================================
 

@@ -4,18 +4,18 @@
 # Script Name: deploy.sh
 # Description: Orchestrates the full setup pipeline: SSH -> Hosts -> RDMA -> Build/Dist
 # Usage: ./deploy.sh -i <ip0>,<ip1>... [-x <prefix>]
-# Example: ./deploy.sh -i 192.168.1.10,192.168.1.11 -x machine
+# Example: ./deploy.sh -i 192.168.1.10,192.168.1.11 -x node
 # ==============================================================================
 
 set -e
 
 IP_LIST=""
-PREFIX="machine"
+PREFIX="node"
 
 usage() {
     echo "Usage: $0 -i <ip0>,<ip1>... [-x <prefix>]"
     echo "  -i  Comma-separated list of IPs"
-    echo "  -x  Hostname prefix (default: machine)"
+    echo "  -x  Hostname prefix (default: node)"
     exit 1
 }
 
@@ -56,7 +56,7 @@ sudo "$SCRIPT_DIR/setup_host.sh" -x "$PREFIX" -i "$IP_LIST"
 # ------------------------------------------------------------------------------
 # 3. Derive Hostname List
 # ------------------------------------------------------------------------------
-# We need to construct the list "machine0,machine1,..." from the IP list count
+# We need to construct the list "node0,node1,..." from the IP list count
 IFS=',' read -r -a IPS <<< "$IP_LIST"
 HOST_LIST=""
 count=0
@@ -83,12 +83,6 @@ echo "### Step 3: Setting up RDMA on: $HOST_LIST ###"
 # ------------------------------------------------------------------------------
 echo ""
 echo "### Step 4: Build and Distribute ###"
-# We exclude machine0 (localhost) from remote distribution loop inside build_dist if we want?
-# But build_dist.sh copies to input hosts.
-# Usually we don't need to scp to ourselves (machine0), but build_dist logic handles remote scp.
-# Let's filter the HOST_LIST passed to build_dist to exclude the local machine if possible, 
-# or just let scp overwrite (wasteful but safe).
-# For now, passing full list.
 
 "$SCRIPT_DIR/build_dist.sh" -h "$HOST_LIST"
 

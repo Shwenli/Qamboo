@@ -28,9 +28,8 @@ pub fn inject_bit<T: IntRing2k, N: Network>(
         let b = inp.b.get_bit_for_perm(bit) as PermRing;
         bits.push(Rep3RingShare::new_ring(a.into(), b.into()));
     }
-    //conversion::bit_inject_many(&bits, net, state)
+    
     conversion::bit_inject_many(&bits, net, state)
-    //Ok(bits)
 }
 
 pub fn inject_bit_multithreads<T: IntRing2k, N: Network>(

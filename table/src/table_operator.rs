@@ -228,7 +228,7 @@ pub trait Join<T>{
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<ShareTable<T>>;
 
-    fn inner_join_multi_keys<N: Network>(
+    fn inner_join_with_multi_keys<N: Network>(
         &self,
         k_l_name: Vec<&str>,
         k_r_name: Vec<&str>,

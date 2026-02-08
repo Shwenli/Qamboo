@@ -1,4 +1,5 @@
 #!/bin/bash
+#!run with: ./run_q1_ssh_rdma.sh 6 0.1
 
 # Define remote host IPs and users (Modify according to actual situation)
 HOST1="node1"         

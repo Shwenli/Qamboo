@@ -28,6 +28,28 @@ pub fn print_communication_stats<N: Network>(args: &NetStateArgs<N>, query: &str
     
 }
 
+
+pub fn print_communication_stats_operator<N: Network>(nets:&[&N], id:PartyID, operator_name:&str) {
+    let mut total_sent = 0;
+    let mut total_recv = 0;
+
+    let mut collect_stats = |net: &N| {
+        let stats = net.get_connection_stats();
+        for (_, (sent, recv)) in stats.iter() {
+            total_sent += sent;
+            total_recv += recv;
+        }
+    };
+
+    for net in nets {
+        collect_stats(*net);
+    }
+    if id == PartyID::ID0{
+        tracing::info!("Total {operator_name} Communication Sent {:.4} MB, Recv {:.4} MB", total_sent as f64 / 1024.0 / 1024.0, total_recv as f64 / 1024.0 / 1024.0);
+    }
+    
+}
+
 pub fn install_tracing() {
     
     let fmt_layer = fmt::layer()

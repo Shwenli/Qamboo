@@ -254,7 +254,7 @@ fn main() -> Result<()> {
 
     tracing::info!("l_partkey = ps_partkey and l_suppkey = ps_suppkey");
 
-    let mut part_partsupp_lineitem_table = part_partsupp_table.inner_join_multi_keys(
+    let mut part_partsupp_lineitem_table = part_partsupp_table.inner_join_with_multi_keys(
         vec!["ps_partkey", "ps_suppkey"],
         vec!["l_partkey", "l_suppkey"],
         &lineitem_table,

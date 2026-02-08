@@ -124,7 +124,7 @@ fn gen_valid_column_u64_ring<N: Network>(
     }
 }
 
-fn gen_rand_column_u64_ring<N: Network>(
+pub fn gen_rand_column_u64_ring<N: Network>(
     num_rows: usize,
     name: String,
     max_val: u64,
@@ -397,48 +397,6 @@ pub fn gen_lineitem_table<N: Network>(
         columns.push(Column::new("l_comment".into(), data));
     }
 
-    /*
-    auto returnFlag = randomColumn(S, 0, 3);
-        auto lineStatus = randomColumn(S, 0, 2);
-        auto quantity = randomColumn(S, 1, 51);
-
-        // extendedPrice is defined as quantity * retailPrice
-        // retailPrice (in parts table) is approximately random with range 90k
-        // to 111k. Here, just make it actually random, and to prevent overflow,
-        // represent as thousands of dollars. Then multiply by quantity.
-        auto extendedPrice = randomColumn(S, 90, 111);
-        extendedPrice *= quantity;
-
-        // This should be a decimal (0% to 10%; repr. 0 to 0.1) but until we add
-        // fixed point numbers, use integers. Queries will divide by 100 where
-        // necessary.
-        auto discount = randomColumn(S, 0, 10);
-
-        // same thing here
-        auto tax = randomColumn(S, 0, 8);
-
-        // just make this random; ignore order date
-        // for now, pretend orderdate => t=0
-        // TODO: o_orderdate + [1..121]
-        // (this would have to be a FK lookup)
-        auto shipDate = randomColumn(S, 1, 121);
-
-        // same thing here
-        // order date + [30, 90]
-        auto commitDate = randomColumn(S, 30, 90);
-        // ship date + [30, 90]
-        auto receiptDate = shipDate + randomColumn(S, 1, 30);
-
-        // Enum of 7 modes
-        auto shipMode = randomColumn(S, 0, 7);
-
-        // Foreign key to Part
-        auto partKey = randomColumn(S, 0, partSize());
-
-        // Enum of 4 instructions
-        auto shipInstruct = randomColumn(S, 0, 4);
-     */
-
     let valid = gen_valid_column_u64_ring(num_rows, "valid".to_string(), ShareType::Arithmetic, net0, net1, partyid);
     lineitem_table.insert_column("valid".to_string(), valid);
     // Note: 'valid' column is usually metadata not necessary for Polars unless needed for query logic.
@@ -473,27 +431,6 @@ pub fn gen_orders_table<N: Network>(
         ("o_shippriority".to_string(), ShareType::Arithmetic),
         ("o_comment".to_string(), ShareType::Arithmetic),
     ];
-    */
-    /*
-    int max_key = int(std::round(customersSize() * CUSTOMER_ORDER_FRACTION));
-        auto custKey = randomColumn(S, 0, max_key);
-
-        // 4-bit comment
-        auto comment = randomColumn(S, 0, (1 << COMMENT_BITS));
-
-        // 1..5
-        auto orderPriority = randomColumn(S, 1, 5 + 1);
-
-        // 1..121
-        auto orderDate = randomColumn(S, 1, 121);
-
-        // Total Price is defined as sum(L_EXTENDEDPRICE * (1+L_TAX) * (1-L_DISCOUNT)) for all
-        // lineitems of an order. Tax and Discount approximately cancel each other out. Estimating
-        // based on the l_extendedprice range of 90 to 111
-        auto totalPrice = randomColumn(S, 90, 111);
-
-        // Technically based on LineItem; for now just randomize 0-1-2
-        auto orderStatus = randomColumn(S, 0, 2 + 1);
     */
 
     let (nets, state0,_,_) = netstate_args.split();
@@ -592,39 +529,6 @@ pub fn gen_customer_table<N: Network>(
         ("c_comment".to_string(), ShareType::Arithmetic),
     ];
     */
-
-    /*
-    auto custkey = counterColumn(S);
-
-        // Integer representation for name
-        auto name = custkey;
-
-        // Foreign key to Nation
-        auto nationKey = randomColumn(S, 0, nationSize());
-
-        // C_ADDRESS random v-string [10,40]
-        // We'll represent this as a random integer for simplicity
-        auto address = randomColumn(S, 0, S);
-
-        // C_PHONE generated according to Clause 4.2.2.9
-        // We'll represent this as a random integer for simplicity
-        auto phone = randomColumn(S, 1000000, 9999999);
-
-        // C_CNTRYCODE, based on C_PHONE.
-        // This is a preprocessing step to get the country code from the phone number.
-        auto cntrycode = phone / 100000;
-
-        // C_ACCTBAL random value [-999.99 .. 9,999.99]
-        // We'll multiply by 100 to store as integer
-        auto acctbal = randomColumn(S, -99999, 999999 + 1);
-
-        // C_MKTSEGMENT random string [Segments]
-        // We'll represent this as an integer 1-5
-        auto mktsegment = randomColumn(S, 1, 6);
-
-        // C_COMMENT text string [29,116]
-        auto comment = randomColumn(S, 0, (1 << COMMENT_BITS));
-     */
 
     let (nets, state0,_,_) = netstate_args.split();
     let (net0, net1) = (nets[0], nets[1]);
@@ -731,25 +635,6 @@ pub fn gen_part_table<N: Network>(
     ];
     */
 
-    /*
-    auto partkey = counterColumn(S);
-
-        // 1..25
-        auto brand = randomColumn(S, 1, 25 + 1);
-
-        // 1..40
-        auto container = randomColumn(S, 1, 40 + 1);
-
-        // 1..10
-        auto type = randomColumn(S, 1, 10 + 1);
-
-        // 1..50
-        auto size = randomColumn(S, 1, 50 + 1);
-
-        // Spec defines this as a concatenation of 5 words from a list of ~100, using a range of 20
-        // to get a similar representation for any one word
-        auto name = randomColumn(S, 0, 20 + 1);
-    */
 
     let (nets, state0, _, _) = netstate_args.split();
     let (net0, net1) = (nets[0], nets[1]);

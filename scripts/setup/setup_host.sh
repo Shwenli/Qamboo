@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 
 # We need this script on Aliyun to make sure the machines know each other's IP addresses.
-# ./_update_hostfile.sh -x machine -i 
+# ./_update_hostfile.sh -x node -i 
 
 usage () {
     echo "Usage: ${0} [options]"
-    echo "Example: ${0} -x machine -i 1.0.0.1,1.0.0.2"
+    echo "Example: ${0} -x node -i 1.0.0.1,1.0.0.2"
     echo "OPTIONS:"
     echo "  [-h]                                    Show this help"
     echo "  [-i]                                    List of IP addresses of the remote nodes."
-    echo "  [-x machine prefix]                        Prefix for remote nodes. Default is 'node'."
+    echo "  [-x node prefix]                        Prefix for remote nodes. Default is 'node'."
     exit 1
 }
 
 (( $# < 1 )) && usage
 
 # Defaults
-node_prefix="machine"
+node_prefix="node"
 
 while getopts "hi:x:" opt; do
     case ${opt} in

@@ -9,7 +9,8 @@ use primitives::permute;
 use primitives::transform::{bit_decompose_many_multithreads, bit_decompose_many};
 
 
-pub fn radix_sort_by_key_multithreads<T: IntRing2k, N: Network>(
+// Table sort by key using radix sort, with multiple threads
+pub fn radix_sort_multithreads<T: IntRing2k, N: Network>(
     inputs: Vec<Rep3RingShare<T>>,
     order: bool,
     bitsize: usize,
@@ -38,7 +39,7 @@ where
     Ok(result)
 }
 
-///In place version Table sort 
+/// Table sort by key using radix sort, with multiple threads, in place. 
 pub fn radix_sort_by_key_in_place_multithreads<T: IntRing2k, N: Network>(
     key: &[Rep3RingShare<T>],
     order: bool,
@@ -70,31 +71,31 @@ where
 
 //************ one thread version *************/
 
-pub fn radix_sort_by_key<T: IntRing2k, N: Network>(
-    key: &[Rep3RingShare<T>],
+pub fn radix_sort<T: IntRing2k, N: Network>(
+    inputs: Vec<Rep3RingShare<T>>,
     order: bool,
-    inputs: Vec<&[Rep3RingShare<T>]>,
     bitsize: usize,
     net: &N,
     state: &mut Rep3State,
-) -> eyre::Result<Vec<Vec<Rep3RingShare<T>>>> 
+) -> eyre::Result<Vec<Rep3RingShare<T>>> 
 where
     Standard: Distribution<T>,{
     
-    let mut results = Vec::with_capacity(inputs.len());
-
-    let key_bits = bit_decompose_many(&key, bitsize, net, state)?;
+    let key_bits = bit_decompose_many(&inputs, bitsize, net, state)?;
 
     let perm = permute::gen_perm(
-        &key_bits, order, bitsize, net, state,
+        &key_bits,
+        order,
+        bitsize,
+        net,
+        state,
     )?;
 
-    for inp in inputs {
-        results.push(permute::apply_inv(&perm, inp, net, state)?)
-    }
+    let result = permute::apply_inv(&perm, &inputs, net, state)?;
 
-    Ok(results)
+    Ok(result)
 }
+
 
 ///In place version Table sort 
 pub fn radix_sort_by_key_in_place<T: IntRing2k, N: Network>(

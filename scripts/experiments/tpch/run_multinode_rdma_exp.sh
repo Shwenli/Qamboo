@@ -37,8 +37,8 @@ MULTINODE_SCRIPT_DIR="./multinode"
 
 # Calculate absolute path for LOG_FILE
 # Current dir: .../scripts/experiments/tpch
-# Goal: .../experiments/result/tpch_query/multinode_rdma/stat_output.log
-LOG_FILE="$CURRENT_DIR/../../../experiments/result/tpch_query/multinode_rdma/stat_output.log"
+# Goal: .../experiments/result/tpch_query/multinode_rdma/stat_output_rdma.log
+LOG_FILE="$CURRENT_DIR/../../../experiments/result/tpch_query/multinode/stat_output_rdma.log"
 
 # Create the directory if it doesn't exist
 mkdir -p "$(dirname "$LOG_FILE")"

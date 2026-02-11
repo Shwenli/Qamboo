@@ -71,7 +71,7 @@ echo ">>> [Build] Moving to project root: $PROJECT_ROOT"
 cd "$PROJECT_ROOT"
 
 echo ">>> [Build] Compiling workspace (Release)..."
-RUSTFLAGS="-C target-cpu=native" cargo build --workspace --release
+RUSTFLAGS="-C target-cpu=native" cargo build --workspace --exclude experiments --release
 
 
 # 2. Distribute

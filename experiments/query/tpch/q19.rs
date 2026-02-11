@@ -186,9 +186,9 @@ fn main() -> Result<()> {
     lineitem_table.delete_column("[l_shipmode]");
     lineitem_table.delete_column("[l_shipinstruct]");
 
-    tracing::info!("p_size > 1");
+    tracing::info!("p_size > 0");
 
-    let _ = part_table.filter_public("p_size", Predicate::GreaterThan, &1u64, &mut mpc_exec_args)?;
+    let _ = part_table.filter_public("p_size", Predicate::GreaterThan, &0u64, &mut mpc_exec_args)?;
 
 
     tracing::info!("p_partkey = l_partkey");
@@ -335,7 +335,7 @@ fn main() -> Result<()> {
             ])
             .collect()?;
 
-        tracing::info!("Polars result revenue: {:?}", q_final.column("revenue")?.u64()?.get(0));
+        tracing::info!("Polars result revenue: {:?}", q_final.column("revenue")?.u64()?.get(0).unwrap());
         
         // mpc_revenue_vec is inferred to be Vec<RingElement>
         let mpc_revenue = open_sum_revenue.0;

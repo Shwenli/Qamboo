@@ -200,7 +200,7 @@ fn main() -> Result<()> {
 
 
     tracing::info!("The sub-query: ");
-
+    
     tracing::info!("r_name = '[REGION]");
 
     let r_filter_name = "r_name";
@@ -405,7 +405,7 @@ fn main() -> Result<()> {
         assert_eq!(mpc_s_name, polars_s_name);
         assert_eq!(mpc_p_partkey, polars_p_partkey);
         
-        tracing::info!("Q1 Passed: Qamboo result MATCHES Polars result !");
+        tracing::info!("Q2 Passed: Qamboo result MATCHES Polars result !");
     }
     
     Ok(())

@@ -48,7 +48,7 @@ use clap::Parser;
 use color_eyre::{Result, eyre::Context};
 use protocols::protocols::rep3_ring::Rep3State;
 use net::tcp::{TcpNetwork, NetworkConfig};
-use experiments::tpch_database_gen::{self, get_orders_table_size};
+use experiments::tpch_database_gen::{self, get_orders_table_size, get_supplier_table_size};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
@@ -290,6 +290,9 @@ fn main() -> Result<()> {
     tracing::info!("Group by s_name  and count(*) as numwait");
     let (e, perm, _) = final_table.group_by(vec!["s_name"], &mut mpc_exec_args)?;
     let _ = final_table.agg_count( "numwait", &e, &perm, &mut mpc_exec_args)?;
+
+    tracing::info!("secure cut rows to supplier table size");
+    final_table.head(get_supplier_table_size(sf) as usize);
 
 
     tracing::info!("Order by numwait desc, s_name");

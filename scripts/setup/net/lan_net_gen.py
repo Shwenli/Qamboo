@@ -10,8 +10,7 @@ def generate_config(group_id, party_ips, num_parties=3):
     
     parties_config = ""
     for i in range(num_parties):
-        port = base_port
-        # 获取对应 ID 的 IP
+        port = base_port + i
         ip = party_ips[i]
 
         parties_config += "[[parties]]\n"

@@ -44,20 +44,40 @@ pub fn get_task_chunks<T>(
     net_num: usize,
 ) -> eyre::Result<Vec<&[T]>> {
 
-    let chunk_size = std::cmp::max(1, (data_len + net_num - 1) / net_num);
-    let chunks: Vec<_> = data.chunks(chunk_size).map(|c| c).collect();
+    let mut chunks = Vec::with_capacity(net_num);
+    let base_chunk_size = data_len / net_num;
+    let remainder = data_len % net_num;
+    let mut start = 0;
+
+    for i in 0..net_num {
+        let length = base_chunk_size + if i < remainder { 1 } else { 0 };
+        let end = start + length;
+        chunks.push(&data[start..end]);
+        start = end;
+    }
 
     Ok(chunks)
 }
 
 pub fn get_mut_task_chunks<T>(
     task: &mut [T],
-    priv_len: usize,
+    data_len: usize,
     net_num: usize,
 ) -> eyre::Result<Vec<&mut [T]>> {
 
-    let chunk_size = std::cmp::max(1, (priv_len + net_num - 1) / net_num);
-    let chunks: Vec<_> = task.chunks_mut(chunk_size).map(|c| c).collect();
+    let mut chunks = Vec::with_capacity(net_num);
+    let base_chunk_size = data_len / net_num;
+    let remainder = data_len % net_num;
+    
+    let mut remaining_slice = task;
+
+    for i in 0..net_num {
+        let length = base_chunk_size + if i < remainder { 1 } else { 0 };
+        let (chunk, rest) = remaining_slice.split_at_mut(length);
+        chunks.push(chunk);
+        remaining_slice = rest;
+    }
+
     Ok(chunks)
 }
 
@@ -127,7 +147,6 @@ pub fn reshare_vec_multithreads<T: IntRing2k, N: Network>(
         .collect())
 }
 
-///顺序计算前缀和, 之后改为用rayon算
 pub fn prefix_sum_sequential<T: IntRing2k>(
     inputs: &[Rep3RingShare<T>],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>> {

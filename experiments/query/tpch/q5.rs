@@ -254,7 +254,6 @@ fn main() -> Result<()> {
     tracing::info!("Computing revenue");
 
     let const_element = RingElement(100u64);
-    //创造一个bigint类型的100
     
     let mut revenue: ShareColumn<Rep3RingShare<u64>> = final_table["l_extendedprice"].clone() * 
                                                 (&(-final_table["l_discount"].clone() + (const_element, &party_id)), &mut mpc_exec_args) 
@@ -453,6 +452,8 @@ fn main() -> Result<()> {
         tracing::info!("rows of polars_n_name: {:?}", polars_n_name.len());
         assert_eq!(mpc_n_name, &polars_n_name);
         assert_eq!(mpc_revenue, &polars_revenue);
+
+        tracing::info!("Q5 Passed: Qamboo result MATCHES Polars result !");
     }
     
     Ok(())

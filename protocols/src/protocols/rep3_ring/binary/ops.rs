@@ -1,7 +1,5 @@
-use crate::protocols::rep3_ring::{
-    arithmetic::types::Rep3RingShare,
-    ring::{int_ring::IntRing2k, ring_impl::RingElement},
-};
+use crate::protocols::rep3_ring::{arithmetic::types::Rep3RingShare};
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 
 impl<T: IntRing2k> std::ops::BitXor for Rep3RingShare<T> {
     type Output = Rep3RingShare<T>;

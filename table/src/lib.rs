@@ -14,27 +14,21 @@ pub mod column_operator_impl;
 
 
 
-use protocols::protocols::rep3_ring::Rep3State;
+use random::rep3::Rep3State;
 use net::Network;
 
 pub struct NetStateArgs<'a, N: Network> {
     pub nets: &'a [&'a N],
-    pub state0: &'a mut Rep3State,
-    pub state1: &'a mut Rep3State,
     pub states: &'a mut [&'a mut Rep3State],
 }
 
 impl<'a, N: Network> NetStateArgs<'a, N> {
     pub fn new(
         nets: &'a [&'a N],
-        state0: &'a mut Rep3State,
-        state1: &'a mut Rep3State,
         states: &'a mut [&'a mut Rep3State],
     ) -> Self {
         Self {
             nets,
-            state0,
-            state1,
             states,
         }
     }
@@ -43,21 +37,17 @@ impl<'a, N: Network> NetStateArgs<'a, N> {
         &mut self,
     ) -> (
         &'a [&'a N],
-        &mut Rep3State,
-        &mut Rep3State,
         &mut [&'a mut Rep3State],
     ) {
-        (self.nets, self.state0, self.state1, self.states)
+        (self.nets, self.states)
     }
 
     pub fn unpack(
         self,
     ) -> (
         &'a [&'a N],
-        &'a mut Rep3State,
-        &'a mut Rep3State,
         &'a mut [&'a mut Rep3State],
     ) {
-        (self.nets, self.state0, self.state1, self.states)
+        (self.nets, self.states)
     }
 }

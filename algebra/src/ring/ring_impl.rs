@@ -70,6 +70,59 @@ impl<T: IntRing2k> RingElement<T> {
     pub fn get_bit(&self, index: usize) -> Self {
         RingElement((self.0 >> index) & T::one())
     }
+
+    /// View a slice of `RingElement<T>` as raw bytes, **zero-copy**.
+    ///
+    /// # Safety rationale
+    /// - `RingElement<T>` is `#[repr(transparent)]` over `T`.
+    /// - `T: IntRing2k` is a primitive integer stored in native byte order.
+    /// - On little-endian platforms the in-memory layout matches the
+    ///   little-endian wire format used by `IntRing2k::write`.
+    /// - We assert at compile time that the target is little-endian.
+    #[inline]
+    pub fn slice_as_bytes(slice: &[Self]) -> &[u8] {
+        #[cfg(not(target_endian = "little"))]
+        compile_error!("zero-copy ring ↔ byte conversion requires a little-endian target");
+
+        // SAFETY: RingElement is repr(transparent) over T which is Copy + Sized.
+        // On LE platforms the byte representation is identical to IntRing2k::write.
+        unsafe {
+            std::slice::from_raw_parts(
+                slice.as_ptr() as *const u8,
+                std::mem::size_of_val(slice),
+            )
+        }
+    }
+
+    /// Convert a `Vec<u8>` received from the network into a
+    /// `Vec<RingElement<T>>`, **zero-copy** (no per-element deserialization).
+    ///
+    /// Returns `Err` if the byte length is not a multiple of `size_of::<T>()`.
+    #[inline]
+    pub fn vec_from_bytes(mut bytes: Vec<u8>) -> eyre::Result<Vec<Self>> {
+        #[cfg(not(target_endian = "little"))]
+        compile_error!("zero-copy ring ↔ byte conversion requires a little-endian target");
+
+        let elem_size = std::mem::size_of::<T>();
+        if bytes.len() % elem_size != 0 {
+            eyre::bail!(
+                "byte length {} is not a multiple of element size {}",
+                bytes.len(),
+                elem_size
+            );
+        }
+        let new_len = bytes.len() / elem_size;
+        let new_cap = bytes.capacity() / elem_size;
+        let ptr = bytes.as_mut_ptr() as *mut Self;
+        std::mem::forget(bytes);
+        // SAFETY: same layout guarantees as slice_as_bytes, in reverse.
+        // Vec alignment: T is a primitive ≤ 16 bytes, and Vec<u8> is
+        // allocated with the global allocator which returns pointers
+        // aligned to at least `align_of::<usize>()` (8 on 64-bit).
+        // For T = u128 (align 16), most allocators also return 16-byte
+        // aligned pointers for allocations ≥ 16 bytes.
+        Ok(unsafe { Vec::from_raw_parts(ptr, new_len, new_cap) })
+    }
 }
 
 impl<T: IntRing2k + std::fmt::Display> std::fmt::Display for RingElement<T> {
@@ -515,8 +568,8 @@ impl<T: IntRing2k> From<T> for RingElement<T> {
 #[cfg(test)]
 mod unsafe_test {
     use super::*;
-    use crate::protocols::rep3_ring::ring::bit::Bit;
-    use crate::protocols::rep3_ring::ring::int_ring::U512;
+    use crate::ring::bit::Bit;
+    use crate::ring::int_ring::U512;
     use rand::{Rng, SeedableRng};
     use rand_chacha::ChaCha12Rng;
 

@@ -1,21 +1,20 @@
 
 
-use protocols::protocols::{rep3_ring::{Rep3State, network::Rep3NetworkExt}, 
-rep3_ring::{arithmetic::{add_public, mul_assign_public, mul_public, open, open_vec}, conversion}};
+use protocols::protocols::{rep3_ring::{arithmetic::{add_public, mul_assign_public, mul_public, open, open_vec}, conversion}};
 use itertools::izip;
 use net::{Network};
 use rand::{distributions::Standard, prelude::Distribution, random};
-use protocols::protocols::rep3_ring::{
-    ring::{int_ring::IntRing2k}, Rep3RingShare
-};
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
+use protocols::protocols::rep3_ring::Rep3RingShare;
 use protocols::protocols::rep3_ring::arithmetic::{open_bit};
 use protocols::protocols::rep3_ring::binary;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
 use protocols::protocols::rep3_ring::detail;
 use protocols::protocols::rep3_ring::conversion::b2a;
+use communication::rep3::id::PartyID;
+use communication::rep3::net_impl::Rep3NetworkImpl;
+use random::rep3::Rep3State;
 use num_traits::{One, Zero};
 use crate::{kogge_stone_adder::{low_depth_binary_add_const_many, low_depth_binary_add_many}, transform, utils::get_task_chunks};
-use protocols::protocols::rep3_ring::id::PartyID;
 
 
 /// Computes a CMUX: If `c` is `1`, returns `x_t`, otherwise returns `x_f`.

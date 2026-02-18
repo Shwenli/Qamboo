@@ -1,8 +1,7 @@
 use itertools::izip;
 use num_traits::{One};
-use protocols::protocols::rep3_ring::{Rep3State};
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use random::rep3::Rep3State;
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::{arithmetic};
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::{Network};
@@ -60,7 +59,6 @@ pub fn mux_if_then_share_vec_multithreads<T: IntRing2k, N: Network>(
     b: &[Rep3RingShare<T>],
     net: &[&N],
     state0: &mut Rep3State,
-    state1: &mut Rep3State,
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{
@@ -69,8 +67,8 @@ Standard: Distribution<T>,{
     let cond_true = reshare_vec_q_multithreads(&cond_true_tmp, net)?;
 
     let one = RingElement::one();
-    let cond_false_1= izip!(cond.iter()).map(|cond_i| arithmetic::sub_public_by_shared(one, *cond_i, state1.id)).collect::<Vec<_>>();
-    let cond_false_tmp = arithmetic::local_mul_vec(&cond_false_1, b, state1);
+    let cond_false_1= izip!(cond.iter()).map(|cond_i| arithmetic::sub_public_by_shared(one, *cond_i, state0.id)).collect::<Vec<_>>();
+    let cond_false_tmp = arithmetic::local_mul_vec(&cond_false_1, b, state0);
     let cond_false = reshare_vec_q_multithreads(&cond_false_tmp, net)?;
 
     let res = izip!(cond_true.iter(), cond_false.iter()).map(|(a,b)| arithmetic::add(*a,*b)).collect::<Vec<_>>();
@@ -107,7 +105,6 @@ pub fn mux_if_share_then_public_vec_multithreads<T: IntRing2k, N: Network>(
     a: &[Rep3RingShare<T>],
     b: &RingElement<T>,
     net: &[&N],
-    state0: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
@@ -130,7 +127,7 @@ Standard: Distribution<T>,{
     let cond_true = cond_true_chunks.concat();
 
     // compute if cond[i]==0 then b
-    let c_false = izip!(cond.iter()).map(|cond_i| arithmetic::sub_public_by_shared(RingElement::one(), *cond_i, state0.id)).collect::<Vec<_>>();
+    let c_false = izip!(cond.iter()).map(|cond_i| arithmetic::sub_public_by_shared(RingElement::one(), *cond_i, states[0].id)).collect::<Vec<_>>();
     let cond_false = c_false.iter().map(|cond_i| arithmetic::mul_public(*cond_i, *b)).collect::<Vec<_>>();
 
     // res = cond_true + cond_false to obliviously obtain the final result

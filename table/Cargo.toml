@@ -19,8 +19,11 @@ dangerous = []
 ark-ff = {workspace = true}
 operator = { path = "../operator" }
 primitives = { path = "../primitives" }
-protocols = { version = "0.9.0", path = "../protocols" }
-net = { version = "0.4.0", path = "../net", default-features = false }
+protocols = { path = "../protocols" }
+communication = { path = "../communication" }
+random = { path = "../random" }
+algebra = { path = "../algebra" }
+net = { path = "../net", default-features = false }
 rand = { workspace = true }
 eyre = { workspace = true }
 indexmap = {workspace = true}

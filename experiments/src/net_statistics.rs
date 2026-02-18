@@ -1,4 +1,4 @@
-use protocols::protocols::rep3_ring::id::PartyID;
+use communication::rep3::id::PartyID;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{
     EnvFilter,
@@ -22,7 +22,7 @@ pub fn print_communication_stats<N: Network>(args: &NetStateArgs<N>, query: &str
     for net in args.nets {
         collect_stats(*net);
     }
-    if args.state0.id == PartyID::ID0{
+    if args.states[0].id == PartyID::ID0{
         tracing::info!("Total {query} Communication Sent {:.4} MB, Recv {:.4} MB", total_sent as f64 / 1024.0 / 1024.0, total_recv as f64 / 1024.0 / 1024.0);
     }
     

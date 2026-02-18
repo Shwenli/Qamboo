@@ -50,11 +50,12 @@ use std::path::PathBuf;
 use std::vec;
 use clap::Parser;
 use color_eyre::{Result, eyre::Context};
-use net::tcp::{TcpNetwork, NetworkConfig};
+use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
 use std::time::Instant;
 use experiments::tpch_database_gen::{self, get_part_table_size};
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::id::PartyID;
+use random::rep3::Rep3State;
+use random::MpcState;
+use communication::rep3::id::PartyID;
 use protocols::protocols::rep3_ring::arithmetic::open;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
@@ -95,45 +96,45 @@ fn main() -> Result<()> {
     let args = Args::parse();
     install_tracing();
 
-    let sf = args.sf; // scale factor for testing
-
-    tracing::info!("setting up network");
+    let sf = args.sf;// scale factor for testing
     let partyid=args.party_id.clone();
+    let default_threads = rayon::current_num_threads();
 
-    let mut nets: Vec<TcpNetwork> = Vec::new();
+    tracing::info!("Q2 with SF: {}", sf);
+    
+    tracing::info!("setting up network");
+    let mut nets: Vec<FastTcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
-    let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
-    let net0 = TcpNetwork::new(config)?;
-    let mut state0 = Rep3State::new(&net0)?;
-
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = TcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
-
-    for i in 2..(2+args.threads){
+    for i in 0..args.threads {
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = TcpNetwork::new(config)?;
+        let net = FastTcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
     }
-    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
+
+    if states.len() <= default_threads {
+        let diff = default_threads - states.len();
+        for _i in 0..diff{
+            let state = states[0].fork(0)?;
+            states.push(state);
+        }
+    }
+    
+    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
-        &mut state0,
-        &mut state1,
         &mut states,
     );
 
     tracing::info!("Network setup completed");
 
-
+    
     let (part_table, part_table_polars) = tpch_database_gen::gen_part_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Part table generated with {} rows", part_table.num_rows());
     
@@ -320,7 +321,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q2 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q2 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q2");
@@ -335,13 +336,13 @@ fn main() -> Result<()> {
     let _ = result_table.order_by("valid", false, &mut mpc_exec_args)?;
     
     let sum_valid = result_table["valid"].prefix_sum();
-    let open_valid = open(sum_valid, &net0)?.0;
+    let open_valid = open(sum_valid, mpc_exec_args.nets[0])?.0;
     tracing::info!("open valid: {}", open_valid);
     result_table.head(open_valid as usize);
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q2 polars:");
         let part = part_table_polars.unwrap();
         let supplier = supplier_table_polars.unwrap();

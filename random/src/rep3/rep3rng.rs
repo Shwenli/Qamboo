@@ -2,23 +2,20 @@
 //!
 //! This module contains implementations of rep3 rngs
 
-use super::{id::PartyID};
-use crate::RngType;
-use ark_ec::CurveGroup;
-use ark_ff::{One, PrimeField};
-use num_bigint::BigUint;
+use communication::rep3::id::PartyID;
+use crate::rep3::{RngType, SEED_SIZE};
+use std::mem::MaybeUninit;
 use rand::{
-    Rng, RngCore, SeedableRng, distributions::Standard, prelude::Distribution, seq::SliceRandom,
+    Rng, SeedableRng, distributions::Standard, prelude::Distribution, seq::SliceRandom,
 };
-use rayon::prelude::*;
 
 #[derive(Debug)]
 /// A correlated rng for rep3
 pub struct Rep3CorrelatedRng {
     /// Rep3 rng with this party's rng and the prev party's rng
     pub rand: Rep3Rand,
-    pub(crate) bitcomp1: Rep3RandBitComp,
-    pub(crate) bitcomp2: Rep3RandBitComp,
+    pub bitcomp1: Rep3RandBitComp,
+    pub bitcomp2: Rep3RandBitComp,
 }
 
 impl Rep3CorrelatedRng {
@@ -68,7 +65,7 @@ pub struct Rep3Rand {
 
 impl Rep3Rand {
     /// Construct a new [`Rep3Rand`]
-    pub fn new(seed1: [u8; crate::SEED_SIZE], seed2: [u8; crate::SEED_SIZE]) -> Self {
+    pub fn new(seed1: [u8; SEED_SIZE], seed2: [u8; SEED_SIZE]) -> Self {
         let rng1 = RngType::from_seed(seed1);
         let rng2 = RngType::from_seed(seed2);
         Self { rng1, rng2 }
@@ -80,19 +77,6 @@ impl Rep3Rand {
         Self::new(seed1, seed2)
     }
 
-    /// Generate a masking field element
-    pub fn masking_field_element<F: PrimeField>(&mut self) -> F {
-        let (a, b) = self.random_fes::<F>();
-        a - b
-    }
-
-    /// Generate two random field elements
-    pub fn random_fes<F: PrimeField>(&mut self) -> (F, F) {
-        let a = F::rand(&mut self.rng1);
-        let b = F::rand(&mut self.rng2);
-        (a, b)
-    }
-
     /// Generate a masking element
     pub fn masking_element<T>(&mut self) -> T
     where
@@ -101,6 +85,23 @@ impl Rep3Rand {
     {
         let (a, b) = self.random_elements::<T>();
         a - b
+    }
+
+    // TODO do not collect the values
+    /// Generate a vector of masking elements
+    pub fn masking_elements_vec<T>(&mut self, len: usize) -> Vec<T>
+    where
+        Standard: Distribution<T>,
+        T: Send + Sync + std::ops::Sub<Output = T>,
+    {
+        let (a, b) = rayon::join(
+            || (0..len).map(|_| self.rng1.r#gen()).collect::<Vec<_>>(),
+            || (0..len).map(|_| self.rng2.r#gen()).collect::<Vec<_>>(),
+        );
+        a.into_iter()
+            .zip(b.into_iter())
+            .map(|(a, b)| a - b)
+            .collect()
     }
 
     /// Generate two random elements
@@ -125,94 +126,23 @@ impl Rep3Rand {
         (a, b)
     }
 
-    // TODO do not collect the values
-    /// Generate a vector of masking field elements
-    pub fn masking_field_elements_vec<F: PrimeField>(&mut self, len: usize) -> Vec<F> {
-        let field_size = usize::try_from(F::MODULUS_BIT_SIZE)
-            .expect("u32 fits into usize")
-            .div_ceil(8);
-        let mut a = vec![0_u8; field_size * len];
-        let mut b = vec![0_u8; field_size * len];
-        rayon::join(
-            || {
-                self.rng1.fill_bytes(&mut a);
-            },
-            || {
-                self.rng2.fill_bytes(&mut b);
-            },
-        );
-        a.par_chunks(field_size)
-            .zip_eq(b.par_chunks(field_size))
-            .with_min_len(512)
-            .map(|(a, b)| F::from_be_bytes_mod_order(a) - F::from_be_bytes_mod_order(b))
-            .collect()
-    }
-
-    // TODO do not collect the values
-    /// Generate a vector of masking elements
-    pub fn masking_elements_vec<T>(&mut self, len: usize) -> Vec<T>
-    where
+    pub fn random_elements_into_uninit<T>(
+        &mut self,
+        a: &mut [MaybeUninit<T>],
+        b: &mut [MaybeUninit<T>],
+    ) where
         Standard: Distribution<T>,
-        T: Send + Sync + std::ops::Sub<Output = T>,
     {
-        let (a, b) = rayon::join(
-            || (0..len).map(|_| self.rng1.r#gen()).collect::<Vec<_>>(),
-            || (0..len).map(|_| self.rng2.r#gen()).collect::<Vec<_>>(),
-        );
-        a.into_par_iter()
-            .zip_eq(b.into_par_iter())
-            .with_min_len(512)
-            .map(|(a, b)| a - b)
-            .collect()
+        assert_eq!(a.len(), b.len());
+        for slot in a.iter_mut() {
+            slot.write(self.rng1.r#gen());
+        }
+        for slot in b.iter_mut() {
+            slot.write(self.rng2.r#gen());
+        }
     }
 
-    /// Create a masking elliptic curve element
-    pub fn masking_ec_element<C: CurveGroup>(&mut self) -> C {
-        let (a, b) = self.random_ecs::<C>();
-        a - b
-    }
-
-    /// Generate two random elliptic curve elements
-    pub fn random_ecs<C: CurveGroup>(&mut self) -> (C, C) {
-        let a = C::rand(&mut self.rng1);
-        let b = C::rand(&mut self.rng2);
-        (a, b)
-    }
-
-    /// Generate two random [`BigUint`]s with given `bitlen`
-    pub fn random_biguint(&mut self, bitlen: usize) -> (BigUint, BigUint) {
-        let limbsize = bitlen.div_ceil(32);
-        let a = BigUint::new((0..limbsize).map(|_| self.rng1.r#gen()).collect());
-        let b = BigUint::new((0..limbsize).map(|_| self.rng2.r#gen()).collect());
-        let mask = (BigUint::from(1u32) << bitlen) - BigUint::one();
-        (a & &mask, b & mask)
-    }
-
-    /// Generate a random [`BigUint`] with given `bitlen` from rng1
-    pub fn random_biguint_rng1(&mut self, bitlen: usize) -> BigUint {
-        let limbsize = bitlen.div_ceil(32);
-        let val = BigUint::new((0..limbsize).map(|_| self.rng1.r#gen()).collect());
-        let mask = (BigUint::from(1u32) << bitlen) - BigUint::one();
-        val & &mask
-    }
-
-    /// Generate a random [`BigUint`] with given `bitlen` from rng2
-    pub fn random_biguint_rng2(&mut self, bitlen: usize) -> BigUint {
-        let limbsize = bitlen.div_ceil(32);
-        let val = BigUint::new((0..limbsize).map(|_| self.rng2.r#gen()).collect());
-        let mask = (BigUint::from(1u32) << bitlen) - BigUint::one();
-        val & &mask
-    }
-
-    /// Generate a random field_element from rng1
-    pub fn random_field_element_rng1<F: PrimeField>(&mut self) -> F {
-        F::rand(&mut self.rng1)
-    }
-
-    /// Generate a random field_element from rng2
-    pub fn random_field_element_rng2<F: PrimeField>(&mut self) -> F {
-        F::rand(&mut self.rng2)
-    }
+    
 
     /// Generate a random `T` from rng1
     pub fn random_element_rng1<T>(&mut self) -> T
@@ -220,6 +150,14 @@ impl Rep3Rand {
         Standard: Distribution<T>,
     {
         self.rng1.r#gen()
+    }
+
+    /// Generate a vector of random `T` from rng1
+    pub fn random_elements_rng1<T>(&mut self, len: usize) -> Vec<T>
+    where
+        Standard: Distribution<T>,
+    {
+        (0..len).map(|_| self.rng1.r#gen()).collect()
     }
 
     /// Generate a random `T` from rng1
@@ -230,8 +168,16 @@ impl Rep3Rand {
         self.rng2.r#gen()
     }
 
+    /// Generate a vector of random `T` from rng2
+    pub fn random_elements_rng2<T>(&mut self, len: usize) -> Vec<T>
+    where
+        Standard: Distribution<T>,
+    {
+        (0..len).map(|_| self.rng2.r#gen()).collect()
+    }
+
     /// Generate a seed from each rng
-    pub fn random_seeds(&mut self) -> ([u8; crate::SEED_SIZE], [u8; crate::SEED_SIZE]) {
+    pub fn random_seeds(&mut self) -> ([u8; SEED_SIZE], [u8; SEED_SIZE]) {
         let seed1 = self.rng1.r#gen();
         let seed2 = self.rng2.r#gen();
         (seed1, seed2)
@@ -257,7 +203,7 @@ pub struct Rep3RandBitComp {
 
 impl Rep3RandBitComp {
     /// Contruct a new [`Rep3RandBitComp`] w rngs
-    pub fn new_2keys(rng1: [u8; crate::SEED_SIZE], rng2: [u8; crate::SEED_SIZE]) -> Self {
+    pub fn new_2keys(rng1: [u8; SEED_SIZE], rng2: [u8; SEED_SIZE]) -> Self {
         Self {
             rng1: RngType::from_seed(rng1),
             rng2: RngType::from_seed(rng2),
@@ -267,39 +213,15 @@ impl Rep3RandBitComp {
 
     /// Contruct a new [`Rep3RandBitComp`] with 3 rngs
     pub fn new_3keys(
-        rng1: [u8; crate::SEED_SIZE],
-        rng2: [u8; crate::SEED_SIZE],
-        rng3: [u8; crate::SEED_SIZE],
+        rng1: [u8; SEED_SIZE],
+        rng2: [u8; SEED_SIZE],
+        rng3: [u8; SEED_SIZE],
     ) -> Self {
         Self {
             rng1: RngType::from_seed(rng1),
             rng2: RngType::from_seed(rng2),
             rng3: Some(RngType::from_seed(rng3)),
         }
-    }
-
-    /// Generate three random field elements
-    pub fn random_fes_3keys<F: PrimeField>(&mut self) -> (F, F, F) {
-        let a = F::rand(&mut self.rng1);
-        let b = F::rand(&mut self.rng2);
-        let c = if let Some(rng3) = &mut self.rng3 {
-            F::rand(rng3)
-        } else {
-            unreachable!()
-        };
-        (a, b, c)
-    }
-
-    /// Generate three random curve elements
-    pub fn random_curves_3keys<C: CurveGroup>(&mut self) -> (C, C, C) {
-        let a = C::rand(&mut self.rng1);
-        let b = C::rand(&mut self.rng2);
-        let c = if let Some(rng3) = &mut self.rng3 {
-            C::rand(rng3)
-        } else {
-            unreachable!()
-        };
-        (a, b, c)
     }
 
     /// Generate three random field elements
@@ -316,6 +238,25 @@ impl Rep3RandBitComp {
         };
         (a, b, c)
     }
+
+    pub fn random_elements_3keys_vec<T>(&mut self, len: usize) -> (Vec<T>, Vec<T>, Vec<T>)
+    where
+        Standard: Distribution<T>,
+        T: Send + Sync,
+    {
+        let (a, b) = rayon::join(
+            || (0..len).map(|_| self.rng1.r#gen()).collect::<Vec<_>>(),
+            || (0..len).map(|_| self.rng2.r#gen()).collect::<Vec<_>>(),
+        );
+        let c = if let Some(rng3) = &mut self.rng3 {
+            (0..len).map(|_| rng3.r#gen()).collect::<Vec<_>>()
+        } else {
+            unreachable!()
+        };
+        (a, b, c)
+    }
+
+
 
     /// Create a fork of this rng
     pub fn fork(&mut self) -> Self {

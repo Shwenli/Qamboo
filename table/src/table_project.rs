@@ -2,7 +2,7 @@
 
 use crate::share_table::ShareTable;
 use crate::table_operator::Project;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
+use algebra::ring::int_ring::IntRing2k;
 use protocols::protocols::rep3_ring::{Rep3RingShare};
 
 impl<T: IntRing2k> Project<Rep3RingShare<T>> for ShareTable<Rep3RingShare<T>>{

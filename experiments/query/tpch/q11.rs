@@ -37,11 +37,12 @@ use std::vec;
 use std::time::Instant;
 use clap::Parser;
 use color_eyre::{Result, eyre::Context};
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use random::rep3::Rep3State;
+use random::MpcState;
+use communication::rep3::id::PartyID;
+use algebra::ring::ring_impl::RingElement;
+use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
 use protocols::protocols::rep3_ring::arithmetic::{open};
-use protocols::protocols::rep3_ring::id::PartyID;
-use net::tcp::{TcpNetwork, NetworkConfig};
 use primitives::utils::prefix_sum_sequential;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
@@ -86,38 +87,34 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid=args.party_id.clone();
+    let default_threads = rayon::current_num_threads();
 
     tracing::info!("setting up network");
-    
-    let mut nets: Vec<TcpNetwork> = Vec::new();
+    let mut nets: Vec<FastTcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
-    let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
-    let net0 = TcpNetwork::new(config)?;
-    let mut state0 = Rep3State::new(&net0)?;
-
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = TcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
-
-    for i in 2..(2+args.threads){
+    for i in 0..args.threads {
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = TcpNetwork::new(config)?;
+        let net = FastTcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
     }
+
+    if states.len() <= default_threads {
+        let diff = default_threads - states.len();
+        for _i in 0..diff{
+            let state = states[0].fork(0)?;
+            states.push(state);
+        }
+    }
     
-    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
+    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
-        &mut state0,
-        &mut state1,
         &mut states,
     );
 
@@ -270,7 +267,7 @@ fn main() -> Result<()> {
     let _ = result_table.order_by("valid", false, &mut mpc_exec_args)?;
     
     let sum_valid = result_table["valid"].prefix_sum();
-    let open_valid = open(sum_valid, &net0)?.0;
+    let open_valid = open(sum_valid, mpc_exec_args.nets[0])?.0;
     tracing::info!("open valid: {}", open_valid);
     result_table.head(open_valid as usize);
 

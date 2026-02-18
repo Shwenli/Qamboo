@@ -1,6 +1,6 @@
 
-use protocols::protocols::rep3_ring::{Rep3State};
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
+use random::rep3::Rep3State;
+use algebra::ring::int_ring::IntRing2k;
 use protocols::protocols::{rep3_ring::Rep3RingShare};
 use net::Network;
 use rand::distributions::Standard;
@@ -15,8 +15,6 @@ pub fn radix_sort_multithreads<T: IntRing2k, N: Network>(
     order: bool,
     bitsize: usize,
     net: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>> 
 where
@@ -29,12 +27,10 @@ where
         order,
         bitsize,
         net,
-        state0,
-        state1,
         states,
     )?;
 
-    let result = permute::apply_inv_multithreads(&perm, &inputs, net, state0, state1)?;
+    let result = permute::apply_inv_multithreads(&perm, &inputs, net,  states)?;
 
     Ok(result)
 }
@@ -46,8 +42,6 @@ pub fn radix_sort_by_key_in_place_multithreads<T: IntRing2k, N: Network>(
     inputs: &mut [&mut [Rep3RingShare<T>]],
     bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<()>
 where
@@ -56,11 +50,11 @@ where
     let key_bits = bit_decompose_many_multithreads(&key, bitsize, nets, states)?;
 
     let perm = permute::gen_perm_multithreads(
-        &key_bits, order, bitsize, nets, state0, state1, states,
+        &key_bits, order, bitsize, nets, states,
     )?;
 
     for inp in inputs {
-        permute::apply_inv_in_place_multithreads(&perm, inp, nets, state0, state1)?;
+        permute::apply_inv_in_place_multithreads(&perm, inp, nets, states)?;
     }
 
     Ok(())

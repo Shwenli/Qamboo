@@ -1,4 +1,4 @@
-cargo build --release --package experiments --bin q1 --features tcp
+RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin q1 --features tcp
 
 BIN_PATH=../../../../target/release/q1
 

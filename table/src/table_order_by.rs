@@ -1,8 +1,8 @@
 
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
+use random::rep3::Rep3State;
+use algebra::ring::int_ring::IntRing2k;
 use protocols::protocols::rep3_ring::{Rep3RingShare};
 use net::Network;
 use operator::sort;
@@ -64,7 +64,7 @@ where
         
         let bitsize = T::K;
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
         
         //copy the key column data
         let key_column_data = self[key_name].get_data().to_vec();
@@ -82,8 +82,6 @@ where
             &mut column_slices,
             bitsize,
             nets,
-            state0,
-            state1,
             states,
         )?;
 

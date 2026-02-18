@@ -1,6 +1,6 @@
-use protocols::protocols::rep3_ring::arithmetic::{open_vec};
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
+use primitives::utils::open_vec_multinet;
 use protocols::protocols::rep3_ring::Rep3RingShare;
+use algebra::ring::{int_ring::IntRing2k};
 use net::Network;
 use rand::distributions::Standard;
 use rand::distributions::Distribution;
@@ -23,7 +23,7 @@ where
         let mut opened_table = ShareTable::<T>::new();
 
         for (col_name, share_col) in self.schema.iter_mut() {
-            let opened_col_data = open_vec(share_col.get_data(), nets[0])?;
+            let opened_col_data = open_vec_multinet(share_col.get_data(), nets)?;
             let opened_col_data = opened_col_data.into_iter().map(|x| x.0).collect::<Vec<_>>();
             let opened_col = ShareColumn::new(opened_col_data, ShareType::PlainText, col_name.clone());
             opened_table.insert_column(opened_col.get_name().to_string(), opened_col);

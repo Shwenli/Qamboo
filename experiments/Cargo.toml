@@ -12,9 +12,10 @@ rust-version.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["tcp"]
+default = ["fast_tcp"]
 dangerous = []
 tcp = ["dep:crossbeam-channel", "dep:socket2"]
+fast_tcp = ["dep:crossbeam-channel", "dep:socket2"]
 
 [dependencies]
 byteorder.workspace = true
@@ -22,11 +23,15 @@ eyre.workspace = true
 futures = { version = "0.3.30", optional = true }
 intmap.workspace = true
 serde = { workspace = true }
-protocols = { version = "0.9.0", path = "../protocols" }
-net = { version = "0.4.0", path = "../net", default-features = true }
+protocols = {  path = "../protocols" }
+net = {  path = "../net", default-features = true }
 operator = { path = "../operator" }
 table = { path = "../table" }
+communication = { path = "../communication" }
+random = { path = "../random" }
+algebra = { path = "../algebra" }
 primitives = { path = "../primitives" }
+rayon = {workspace = true}
 rand = { workspace = true }
 indexmap = {workspace = true}
 itertools = {workspace = true}

@@ -33,11 +33,12 @@ use std::vec;
 use std::time::Instant;
 use clap::Parser;
 use color_eyre::{Result, eyre::Context};
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use random::rep3::Rep3State;
+use random::MpcState;
+use communication::rep3::id::PartyID;
+use algebra::ring::ring_impl::RingElement;
 use protocols::protocols::rep3_ring::Rep3RingShare;
-use protocols::protocols::rep3_ring::id::PartyID;
-use net::tcp::{TcpNetwork, NetworkConfig};
+use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use experiments::tpch_database_gen;
@@ -74,38 +75,35 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid= args.party_id.clone();
+    let default_threads = rayon::current_num_threads();
 
     tracing::info!("setting up network");
-
-    let mut nets: Vec<TcpNetwork> = Vec::new();
+    let mut nets: Vec<FastTcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
-    let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
-    let net0 = TcpNetwork::new(config)?;
-    let mut state0 = Rep3State::new(&net0)?;
-
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = TcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
-
-    for i in 2..(2+args.threads){
+    for i in 0..args.threads {
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = TcpNetwork::new(config)?;
+        let net = FastTcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
     }
-    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
+
+    if states.len() <= default_threads {
+        let diff = default_threads - states.len();
+        for _i in 0..diff{
+            let state = states[0].fork(0)?;
+            states.push(state);
+        }
+    }
+    
+    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let party_id = state0.id;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
-        &mut state0,
-        &mut state1,
         &mut states,
     );
 
@@ -180,7 +178,6 @@ fn main() -> Result<()> {
     tracing::info!("Computing revenue");
 
     let const_element = RingElement(100u64);
-    //创造一个bigint类型的100
     
     let mut revenue: ShareColumn<Rep3RingShare<u64>> = lineitem_table["l_extendedprice"].clone() * 
                                                 (&(-lineitem_table["l_discount"].clone() + (const_element, &party_id)), &mut mpc_exec_args) 
@@ -209,13 +206,6 @@ fn main() -> Result<()> {
     )?;
 
     tracing::info!("First join time: {:?}", start.elapsed());
-    tracing::info!("now columns: {}", custorder_table.schema.len());
-    //检查一下新表的每一列是否有值
-    /* 
-    for i in 0..custorder_table.schema.len() {
-        println!("Column {}: name: {} {}", i, custorder_table.schema[i].get_name(), custorder_table.schema[i].get_data().len());
-    }
-    */
 
     let start = Instant::now();
 
@@ -236,10 +226,7 @@ fn main() -> Result<()> {
     tracing::info!("table group by");
     let start = Instant::now();
 
-    // 可以只按照l_orderkey分组，因为o_orderdate和l_orderkey是一一对应的
     let group_by_col_names = vec!["l_orderkey"];
-    
-
     let (e,perm,_) = lineorder_table.group_by(
         group_by_col_names,
         &mut mpc_exec_args,
@@ -293,7 +280,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q3 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q3_no_safe_cut execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q3_no_safe_cut");

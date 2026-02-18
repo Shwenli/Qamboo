@@ -1,13 +1,12 @@
 use crate::share_table::ShareTable;
 use crate::table_operator::{Filter};
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
+use primitives::compare::{self,and_vec_multithreads};
 use protocols::protocols::rep3_ring::arithmetic::local_mul_vec;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
-use protocols::protocols::rep3_ring::{Rep3RingShare, binary};
+use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
-use primitives::{transform,compare};
-use primitives::transform::{b2a_many_multithreads,a2b_many_multithreads};
-use primitives::utils::{get_task_chunks,reshare_vec_multithreads};
+use primitives::transform::*;
+use primitives::utils::{reshare_vec_multithreads};
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use crate::predicate::Predicate;
@@ -31,42 +30,27 @@ where
             return Ok(());
         }
 
-        let (nets, _state0, _state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
      
         let filter_column_data = self[filter_column].get_data();
-        let filter_len = filter_column_data.len();
 
-        // 将 filter_value 转换为 RingElement<T>
+        // Transform filter_value to RingElement<T>
         let filter_value_elem = RingElement::from(*filter_value);
 
-        // 确保 nets 和 states 长度相同
         let valid_data = self["valid"].get_data();
         let valid_data = a2b_many_multithreads(valid_data, nets, states)?;
-        //let valid_data_binary = a2b_many_multithreads(valid_data, nets, states)?;
 
-        let mask_chunks = get_task_chunks(filter_column_data, filter_len, nets.len())?;
-        let valid_chunks = get_task_chunks(&valid_data, filter_len, nets.len())?;
+        let mask_bits = predicate.apply_public(
+            filter_column_data,
+            &filter_value_elem,
+            nets,
+            states,
+        )?;
 
-        let result_valid = net::join_all(
-            //这里加上了 valid_chunks
-        mask_chunks.into_iter().zip(valid_chunks.into_iter()).zip(nets.iter()).zip(states.iter_mut()).map(|(((mask_chunk, valid_chunk), &n), state)| {
-                move || {
-                    let mask_bits = predicate.apply_public(
-                        &mask_chunk,
-                        &filter_value_elem,
-                        n,
-                        state,
-                    ).unwrap_or_else(|e|panic!("filter public: apply public error: {}",e));
+        let mask_t:Vec<Rep3RingShare<T>> = from_bit_to_t(&mask_bits)?;
+        let updated_valid = and_vec_multithreads(&valid_data, &mask_t, nets, states)?;
 
-                    let mask_t:Vec<Rep3RingShare<T>> = transform::from_bit_to_t(&mask_bits).unwrap_or_else(|e|panic!("filter public: trans bit to t error: {}",e));
-                    let updated_valid = binary::and_vec(&valid_chunk, &mask_t, n, state).unwrap_or_else(|e|panic!("filter public: and vec error: {}",e));
-                    updated_valid
-                }
-            }),
-        );
-
-        let result_valid = result_valid.concat();
-        let result_valid = b2a_many_multithreads(&result_valid, nets, states)?;
+        let result_valid = b2a_many_multithreads(&updated_valid, nets, states)?;
 
         self["valid"].update_data(result_valid);
 
@@ -85,47 +69,32 @@ where
             return Ok(());
         }
 
-        let (nets, _state0, _state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let lhs_data =  self[lhs_column].get_data();
         let rhs_data =  self[rhs_column].get_data();
         let lhs_len = lhs_data.len();
         let rhs_len = rhs_data.len();
         
-        // 确保两列长度相同
         if lhs_len != rhs_len {
             eyre::bail!("LHS and RHS columns must have the same length");
         }
 
         let valid_data = self["valid"].get_data();
         let valid_data = a2b_many_multithreads(&valid_data, nets, states)?;
-        //let valid_column = self["valid"].get_data_mut();
+        
+        let mask_bits = predicate.apply_shared(
+            &lhs_data,
+            &rhs_data,
+            nets,
+            states,
+        )?;
 
-        let lhs_chunks = get_task_chunks(lhs_data, lhs_len, nets.len())?;
-        let rhs_chunks = get_task_chunks(rhs_data, rhs_len, nets.len())?;
-        let valid_chunks = get_task_chunks(&valid_data, valid_data.len(), nets.len())?;
+        let mask_t:Vec<Rep3RingShare<T>> = from_bit_to_t(&mask_bits)?;
 
-        let result_valid = net::join_all(
-        lhs_chunks.into_iter().zip(rhs_chunks.into_iter()).zip(valid_chunks.into_iter()).zip(nets.iter()).zip(states.iter_mut())
-        .map(|((((lhs_chunk, rhs_chunk), valid_chunk), &n), state)| {
-                move || {
-                    let mask_bits = predicate.apply_shared(
-                        &lhs_chunk,
-                        &rhs_chunk,
-                        n,
-                        state,
-                    ).unwrap_or_else(|e|panic!("filter shared: apply shared error: {}",e));
+        let updated_valid = and_vec_multithreads(&valid_data, &mask_t, nets, states)?;
 
-                    let mask_t:Vec<Rep3RingShare<T>> = transform::from_bit_to_t(&mask_bits).unwrap_or_else(|e|panic!("filter shared: trans bit to t error: {}",e));
-                    let updated_valid = binary::and_vec(&valid_chunk, &mask_t, n, state).unwrap_or_else(|e|panic!("filter shared: and vec error: {}",e));
-
-                    updated_valid
-                }
-            }),
-        );
-
-        let result_valid = result_valid.concat();
-        let result_valid = b2a_many_multithreads(&result_valid, nets, states)?;
+        let result_valid = b2a_many_multithreads(&updated_valid, nets, states)?;
 
         self["valid"].update_data(result_valid);
 
@@ -142,7 +111,7 @@ where
 
         assert!(predicate == Predicate::Equal || predicate == Predicate::EqualBinary);
 
-        let (nets, _state0, _state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let filter_column_data = self[filter_column_name].get_data();
         let mut eq_vec = Vec::new();
@@ -150,14 +119,14 @@ where
         if predicate == Predicate::EqualBinary {
                 for f_v in filter_values {
                 let eq_bit = compare::eq_public_many_binary_multithreads(filter_column_data, &RingElement(*f_v), nets, states)?;
-                let eq = transform::from_bit_to_t_drop(eq_bit)?;
+                let eq = from_bit_to_t_drop(eq_bit)?;
                 eq_vec.push(eq);
             }
         }
         else if predicate == Predicate::Equal{
             for f_v in filter_values {
                 let eq_bit = compare::eq_public_many_multithreads(filter_column_data, &RingElement(*f_v), nets, states)?;
-                let eq = transform::from_bit_to_t_drop(eq_bit)?;
+                let eq = from_bit_to_t_drop(eq_bit)?;
                 eq_vec.push(eq);
             }
 
@@ -189,36 +158,22 @@ where
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()> {
 
+        let (nets, states) = netstate_args.split();
+
         let filter_column_data = self[filter_column_name].get_data();
         let valid_data = self["valid"].get_data();
 
-        let (nets, _state0, _state1, states) = netstate_args.split();
+        let mask_bits = predicate.apply_shared(
+            &filter_column_data,
+            filter_values,
+            nets,
+            states,
+        )?;
 
-        let lhs_chunks = get_task_chunks(filter_column_data, filter_column_data.len(), nets.len())?;
-        let rhs_chunks = get_task_chunks(filter_values, filter_values.len(), nets.len())?;
-        let valid_chunks = get_task_chunks(valid_data, valid_data.len(), nets.len())?;
+        let mask_t:Vec<Rep3RingShare<T>> = from_bit_to_t(&mask_bits)?;
+        let updated_valid = and_vec_multithreads(&valid_data, &mask_t, nets, states)?;
 
-        let result_valid = net::join_all(
-        lhs_chunks.into_iter().zip(rhs_chunks.into_iter()).zip(valid_chunks.into_iter()).zip(nets.iter()).zip(states.iter_mut())
-            .map(|((((lhs_chunk, rhs_chunk), valid_chunk), &n), state)| {
-                move || {
-                    let mask_bits = predicate.apply_shared(
-                        &lhs_chunk, 
-                        &rhs_chunk,
-                        n, 
-                        state,
-                    ).unwrap_or_else(|e|panic!("filter shared with any column: apply shared error: {}",e));
-
-                    let mask_t:Vec<Rep3RingShare<T>> = transform::from_bit_to_t(&mask_bits).unwrap_or_else(|e|panic!("filter shared: trans bit to t error: {}",e));
-                    let updated_valid = binary::and_vec(&valid_chunk, &mask_t, n, state).unwrap_or_else(|e|panic!("filter shared: and vec error: {}",e));
-
-                    updated_valid
-                }
-            })
-        );
-        
-        let mut result_valid = result_valid.concat();
-        result_valid = b2a_many_multithreads(&result_valid, nets, states)?;
+        let result_valid = b2a_many_multithreads(&updated_valid, nets, states)?;
 
         self["valid"].update_data(result_valid);
 
@@ -231,12 +186,12 @@ where
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()> {
 
-        let (nets, _state0, _state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let valid_data = self["valid"].get_data();
         let valid_data = a2b_many_multithreads(&valid_data, nets, states)?;
 
-        let mut result_valid = compare::and_vec_multithreads(&valid_data, composed_bool_values, nets, states)?;
+        let mut result_valid = and_vec_multithreads(&valid_data, composed_bool_values, nets, states)?;
 
         result_valid = b2a_many_multithreads(&result_valid, nets, states)?;
 

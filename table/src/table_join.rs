@@ -2,7 +2,7 @@
 use crate::share_table::ShareTable;
 use crate::share_column::{ShareColumn, ShareType};
 use crate::table_operator::Join;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
+use algebra::ring::int_ring::IntRing2k;
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
 use operator::join::{anti_join_table_multithreads, inner_join_table_multi_keys_multithreads, inner_join_table_multithreads,semi_join_table_multithreads};
@@ -33,7 +33,7 @@ where
         
         let valid_name = "valid";
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets,  states) = netstate_args.split();
 
         //Include three parts, right table join key, left table value columns, 
         //right table value columns, and finally the valid column
@@ -98,8 +98,6 @@ where
             valid_r,
             sort_bitsize,
             nets,
-            state0,
-            state1,
             states,
         )?;
 
@@ -137,7 +135,7 @@ where
         let valid_l = self["valid"].get_data().to_vec();
         let valid_r = table_r["valid"].get_data().to_vec();
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
 
         let mut result_table = ShareTable::<Rep3RingShare<T>>::new();
@@ -205,8 +203,6 @@ where
             valid_r,
             sort_bitsize,
             nets,
-            state0,
-            state1,
             states,
         )?;
 
@@ -236,7 +232,7 @@ where
         let valid_l = self["valid"].get_data().to_vec();
         let valid_r = table_r["valid"].get_data().to_vec();
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
         
         let new_valid = semi_join_table_multithreads(
             k_l,
@@ -245,8 +241,6 @@ where
             valid_r,
             sort_bitsize,
             nets,
-            state0,
-            state1,
             states,
         )?;
 
@@ -272,7 +266,7 @@ where
         let valid_l = self["valid"].get_data().to_vec();
         let valid_r = table_r["valid"].get_data().to_vec();
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
         
         let new_valid = anti_join_table_multithreads(
             k_l,
@@ -281,8 +275,6 @@ where
             valid_r,
             sort_bitsize,
             nets,
-            state0,
-            state1,
             states,
         )?;
 

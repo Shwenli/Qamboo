@@ -2,8 +2,9 @@ use crate::share_column::ShareColumn;
 use std::ops::Index;
 use std::ops::IndexMut;
 use indexmap::IndexMap;
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::id::PartyID;
+use communication::rep3::id::PartyID;
+use random::rep3::Rep3State;
+
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]

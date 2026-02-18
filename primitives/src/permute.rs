@@ -2,18 +2,21 @@
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use num_traits::{Zero, One};
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::ParallelIterator;
+use communication::rep3::id::PartyID;
+use communication::rep3::net_impl::Rep3NetworkImpl;
+use communication::task::get_task_chunks;
+use random::rep3::Rep3State;
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::arithmetic;
-use protocols::protocols::{rep3_ring::Rep3RingShare,};
-use protocols::protocols::rep3_ring::id::PartyID;
-use protocols::protocols::rep3_ring::network::Rep3NetworkExt;
+use protocols::protocols::{rep3_ring::Rep3RingShare};
 use net::Network;
-
-use crate::shuffle::{shuffle_multithreads, shuffle_reveal_multithreads,  unshuffle_multithreads};
+use crate::shuffle::*;
+use crate::mul::*;
 use crate::transform::{inject_bit_multithreads, inject_bit};
-use crate::utils::{get_task_chunks,reshare_vec_q};
+
 
 // u32 allows to sort 4*10^9 elements. Inputs of this size require 32*4*10^9*2 bytes, i.e., 256 GB of RAM
 type PermRing = u32;
@@ -25,26 +28,24 @@ pub fn gen_perm_multithreads<T: IntRing2k, N: Network>(
     order: bool,
     bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<PermRing>>> {
 
     match order {
         true => {
-            // ASC
+            //ASC
             let bit_0 = inject_bit_multithreads(&bits, 0, nets, states)?;
            
-            let mut perm = gen_bit_perm_multithreads(bit_0, nets, state0, state1)?; // This first permutation could be optimized by not promoting the public bits
+            let mut perm = gen_bit_perm_multithreads(bit_0, nets, states)?; // This first permutation could be optimized by not promoting the public bits
 
             for i in 1..bitsize {
                 let bit_i = inject_bit_multithreads(&bits, i, nets, states)?;
                 
-                let bit_i_aperm = apply_inv_multithreads(&perm, &bit_i, nets, state0, state1)?;
+                let bit_i_aperm = apply_inv_multithreads(&perm, &bit_i, nets, states)?;
                 
-                let perm_i = gen_bit_perm_multithreads(bit_i_aperm, nets, state0, state1)?;
+                let perm_i = gen_bit_perm_multithreads(bit_i_aperm, nets, states)?;
                 
-                perm = compose_perm_multithreads(perm, perm_i, nets, state0)?;
+                perm = compose_perm_multithreads(perm, perm_i, nets, states)?;
             }
 
             Ok(perm)
@@ -53,28 +54,26 @@ pub fn gen_perm_multithreads<T: IntRing2k, N: Network>(
             // DESC
             let mut bit_0 = inject_bit_multithreads(&bits, 0, nets, states)?;
            
-            let party_id = state0.id;
+            let party_id = states[0].id;
 
             for p in bit_0.iter_mut() {
                 *p = arithmetic::add_public(-(*p), RingElement::one(), party_id);
             }
 
-            let mut perm = gen_bit_perm_multithreads(bit_0, nets, state0, state1)?; // This first permutation could be optimized by not promoting the public bits
+            let mut perm = gen_bit_perm_multithreads(bit_0, nets, states)?; // This first permutation could be optimized by not promoting the public bits
 
             for i in 1..bitsize {
                 let bit_i = inject_bit_multithreads(&bits, i, nets, states)?;
                 
-                let mut bit_i_aperm = apply_inv_multithreads(&perm, &bit_i, nets, state0, state1)?;
-                
-                let party_id = state0.id;
+                let mut bit_i_aperm = apply_inv_multithreads(&perm, &bit_i, nets, states)?;
 
                 for p in bit_i_aperm.iter_mut() {
                     *p = arithmetic::add_public(-(*p), RingElement::one(), party_id);
                 }
                 
-                let perm_i = gen_bit_perm_multithreads(bit_i_aperm, nets, state0, state1)?;
+                let perm_i = gen_bit_perm_multithreads(bit_i_aperm, nets, states)?;
 
-                perm = compose_perm_multithreads(perm, perm_i, nets, state0)?;
+                perm = compose_perm_multithreads(perm, perm_i, nets, states)?;
             }
 
             Ok(perm)
@@ -87,14 +86,13 @@ pub fn gen_perm_multithreads<T: IntRing2k, N: Network>(
 pub fn gen_bit_perm_multithreads<N: Network>(
     bits: Vec<Rep3RingShare<PermRing>>,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<PermRing>>> {
 
     let len = bits.len();
 
     let net_num = nets.len();
-    let id = state0.id;
+    let id = states[0].id;
     
 
     let mut f0 = Vec::with_capacity(len);
@@ -108,7 +106,6 @@ pub fn gen_bit_perm_multithreads<N: Network>(
     let mut s = Rep3RingShare::zero_share();
     let mut s0 = Vec::with_capacity(len);
     let mut s1 = Vec::with_capacity(len);
-    
     for f in f0.iter() {
         s = arithmetic::add(s, *f);
         s0.push(s);
@@ -118,29 +115,19 @@ pub fn gen_bit_perm_multithreads<N: Network>(
         s1.push(s);
     }
 
+    let (state0, state1) = states.split_at_mut(net_num / 2);
     let(mul1,mul2) = rayon::join(
         move || {
-            arithmetic::local_mul_vec(&f0, &s0, state0)
+            local_mul_vec_multithreads(&f0, &s0, state0)
         },
         move || {
-            arithmetic::local_mul_vec(&f1, &s1, state1)
+            local_mul_vec_multithreads(&f1, &s1, state1)
         },
     );
 
     let perm_a:Vec<RingElement<u32>> = mul1.into_iter().zip(mul2).map(|(a, b)| a + b).collect();
 
-    let chunks = get_task_chunks(&perm_a, len, net_num)?;
-
-    let results = net::join_all(
-        chunks.into_iter().zip(nets.iter()).map(|(chunk, &n)| {
-            move || {
-                reshare_vec_q(chunk, n)
-                    .unwrap_or_else(|e| panic!("GenBitPerm: Reshare failed: {:?}", e))
-            }
-        })
-    );
-
-    let perm = results.concat();
+    let perm = reshare_vec_multinet(perm_a, nets)?;
 
     Ok(perm)
 }
@@ -150,8 +137,7 @@ pub fn apply_perm_multithreads<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &[Rep3RingShare<T>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,
@@ -160,7 +146,7 @@ where
     debug_assert_eq!(len, bits.len());
 
     let unshuffled = (0..len as PermRing).collect::<Vec<_>>();
-    let (perm_a, perm_b) = state0.rngs.rand.random_perm(unshuffled);
+    let (perm_a, perm_b) = states[0].rngs.rand.random_perm(unshuffled);
 
     let perm: Vec<_> = perm_a
         .into_iter()
@@ -168,7 +154,7 @@ where
         .map(|(a, b)| Rep3RingShare::new(a, b))
         .collect();
 
-    let opened = shuffle_reveal_multithreads::<PermRing, _>(&perm, rho, nets, state0);
+    let opened = shuffle_reveal_multithreads::<PermRing, _>(&perm, rho, nets, states);
     
     // apply_perm 标准实现：
     // 步骤2-3: shuffle_reveal 得到 ρ = π ∘ π_rand⁻¹ (opened)
@@ -182,7 +168,7 @@ where
     for i in 0..len {
         result_pre[i] = bits[opened[i].0 as usize - 1];
     }
-    let result = unshuffle_multithreads(&perm, &result_pre, nets,state1)?;
+    let result = unshuffle_multithreads(&perm, &result_pre, nets,states)?;
     
     Ok(result)
 }
@@ -192,8 +178,7 @@ pub fn apply_inv_multithreads<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &[Rep3RingShare<T>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,
@@ -203,7 +188,7 @@ where
 
     let unshuffled = (0..len as PermRing).collect::<Vec<_>>();
 
-    let (perm_a, perm_b) = state0.rngs.rand.random_perm(unshuffled);
+    let (perm_a, perm_b) = states[0].rngs.rand.random_perm(unshuffled);
     let perm: Vec<_> = perm_a
         .into_iter()
         .zip(perm_b)
@@ -213,6 +198,7 @@ where
     let net_len = nets.len();
     let net0 = &nets[..net_len / 2];
     let net1 = &nets[net_len / 2..];
+    let (state0, state1) = states.split_at_mut(net_len / 2);
      
     let (opened, bits_shuffled) = net::join(
         || shuffle_reveal_multithreads::<PermRing, _>(&perm, rho, net0, state0),
@@ -233,8 +219,7 @@ pub fn apply_inv_in_place_multithreads<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &mut [Rep3RingShare<T>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<()>
 where
     Standard: Distribution<T>,
@@ -243,13 +228,15 @@ where
     debug_assert_eq!(len, bits.len());
 
     let unshuffled = (0..len as PermRing).collect::<Vec<_>>();
-    let (perm_a, perm_b) = state0.rngs.rand.random_perm(unshuffled);
+    let (perm_a, perm_b) = states[0].rngs.rand.random_perm(unshuffled);
 
     let perm: Vec<_> = perm_a
         .into_iter()
         .zip(perm_b)
         .map(|(a, b)| Rep3RingShare::new(a, b))
         .collect();
+
+    let (state0, state1) = states.split_at_mut(nets.len() / 2);
 
     let (opened, bits_shuffled) = net::join(
         || shuffle_reveal_multithreads::<PermRing, _>(&perm, rho, nets[..nets.len()/2].as_ref(), state0),
@@ -274,14 +261,14 @@ pub fn compose_perm_multithreads<N: Network>(
     sigma: Vec<Rep3RingShare<PermRing>>,
     phi: Vec<Rep3RingShare<PermRing>>,
     nets: &[&N],
-    state: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<PermRing>>> {
     let len = sigma.len();
     debug_assert_eq!(len, phi.len());
 
     let unshuffled = (0..len as PermRing).collect::<Vec<_>>();
 
-    let (perm_a, perm_b) = state.rngs.rand.random_perm(unshuffled);
+    let (perm_a, perm_b) = states[0].rngs.rand.random_perm(unshuffled);
 
     let perm: Vec<_> = perm_a
         .into_iter()
@@ -289,14 +276,14 @@ pub fn compose_perm_multithreads<N: Network>(
         .map(|(a, b)| Rep3RingShare::new(a, b))
         .collect();
 
-    let opened = shuffle_reveal_multithreads(&perm, &sigma, nets, state)?;
+    let opened = shuffle_reveal_multithreads(&perm, &sigma, nets, states)?;
 
     let mut shuffled = Vec::with_capacity(len);
     for p in opened {
         shuffled.push(phi[p.0 as usize - 1]);
     }
 
-    unshuffle_multithreads(&perm, &shuffled, nets, state)
+    unshuffle_multithreads(&perm, &shuffled, nets, states)
 }
 
 
@@ -691,9 +678,9 @@ where
             // has p1, p3
             let mut alpha_1 = Vec::with_capacity(len);
             let mut beta_1 = Vec::with_capacity(len);
-            for a in input {
-                let alpha_1_ = state.rngs.rand.random_element_rng1::<RingElement<T>>();
-                alpha_1.push(alpha_1_);
+            let rngs = state.rngs.rand.random_elements_rng1::<RingElement<T>>(len);
+            for (a, r) in input.iter().zip(rngs) {
+                alpha_1.push(r);
                 beta_1.push(a.a + a.b);
             }
             
@@ -708,9 +695,9 @@ where
             // has p2, p1
             let mut alpha_1 = Vec::with_capacity(len);
             let mut beta_2 = Vec::with_capacity(len);
-            for a in input {
-                let alpha_1_ = state.rngs.rand.random_element_rng2::<RingElement<T>>();
-                alpha_1.push(alpha_1_);
+            let rngs = state.rngs.rand.random_elements_rng2::<RingElement<T>>(len);
+            for (a, r) in input.iter().zip(rngs) {
+                alpha_1.push(r);
                 beta_2.push(a.a);
             }
 
@@ -784,13 +771,15 @@ where
             }
 
             // Opt Reshare
-            let mut result = Vec::with_capacity(len);
-            let mut rand = Vec::with_capacity(len);
-            for beta in beta_1_prime {
-                let b = state.rngs.rand.random_element_rng2::<RingElement<T>>();
-                rand.push(beta - b);
-                result.push(Rep3RingShare::new_ring(RingElement::zero(), b));
-            }
+            let rngs = state.rngs.rand.random_elements_rng2(len);
+            let (rand, mut result): (Vec<_>, Vec<_>) = beta_1_prime
+            .into_par_iter()
+            .zip(rngs.into_par_iter())
+            .map(|(beta, b)| {
+                (beta - RingElement(b), Rep3RingShare::new_ring(RingElement::zero(), RingElement(b)))
+            })
+            .unzip();
+
             let rcv: Vec<RingElement<T>> = net.send_and_recv_many(PartyID::ID1, &rand, PartyID::ID1)?;
 
             for (res, (r1, r2)) in result.iter_mut().zip(rcv.into_iter().zip(rand)) {
@@ -825,15 +814,18 @@ where
             }
 
             // Opt Reshare
-            let mut result = Vec::with_capacity(len);
-            let mut rand = Vec::with_capacity(len);
-            for beta in beta_2_prime {
-                let a = state.rngs.rand.random_element_rng1::<RingElement<T>>();
-                rand.push(beta - a);
-                result.push(Rep3RingShare::new_ring(a, RingElement::zero()));
-            }
+            let rngs = state.rngs.rand.random_elements_rng1(len);
+            let (rand, mut result): (Vec<_>, Vec<_>) = beta_2_prime
+            .into_par_iter()
+            .zip(rngs.into_par_iter())
+            .map(|(beta, b)| {
+                (beta - RingElement(b), Rep3RingShare::new_ring(RingElement::zero(), RingElement(b)))
+            })
+            .unzip();
+            
             let rcv: Vec<RingElement<T>> =
                 net.send_and_recv_many(PartyID::ID0, &rand, PartyID::ID0)?;
+
             for (res, (r1, r2)) in result.iter_mut().zip(rcv.into_iter().zip(rand)) {
                 res.b = r1 + r2;
             }
@@ -868,8 +860,8 @@ where
 
             // Opt Reshare
             let mut result = Vec::with_capacity(len);
-            for _ in 0..len {
-                let (a, b) = state.rngs.rand.random_elements::<RingElement<T>>();
+            let rngs = state.rngs.rand.random_elements_vec::<RingElement<T>>(len);
+            for (a,b) in rngs.0.into_iter().zip(rngs.1) {
                 result.push(Rep3RingShare::new_ring(a, b));
             }
             result

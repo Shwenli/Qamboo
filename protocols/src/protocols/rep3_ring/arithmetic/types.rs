@@ -1,9 +1,6 @@
-use crate::protocols::{
-    rep3_ring::{
-        id::PartyID,
-        ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement},
-    },
-};
+use std::mem::ManuallyDrop;
+use communication::rep3::id::PartyID;
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -22,6 +19,7 @@ use serde::{Deserialize, Serialize};
     CanonicalDeserialize,
 )]
 #[serde(bound = "")]
+//#[repr(C)]
 pub struct Rep3RingShare<T: IntRing2k> {
     /// Share of this party
     pub a: RingElement<T>,
@@ -84,5 +82,80 @@ impl<T: IntRing2k> Rep3RingShare<T> {
             a: RingElement(Bit::new(self.a.get_bit(index).0 == T::one())),
             b: RingElement(Bit::new(self.b.get_bit(index).0 == T::one())),
         }
+    }
+
+    /// View a slice of `Rep3RingShare<T>` as raw bytes, **zero-copy**.
+    ///
+    /// # Safety rationale
+    /// - `Rep3RingShare<T>` is `#[repr(C)]` with two `RingElement<T>` fields.
+    /// - `RingElement<T>` is `#[repr(transparent)]` over `T`.
+    /// - On little-endian platforms the in-memory layout matches the wire format.
+    #[inline]
+    pub fn slice_as_bytes(slice: &[Self]) -> &[u8] {
+        #[cfg(not(target_endian = "little"))]
+        compile_error!("zero-copy share ↔ byte conversion requires a little-endian target");
+
+        // SAFETY: Rep3RingShare is repr(C) with two repr(transparent) RingElement<T> fields.
+        // The entire slice is contiguous [a0, b0, a1, b1, ...] in memory.
+        unsafe {
+            std::slice::from_raw_parts(
+                slice.as_ptr() as *const u8,
+                std::mem::size_of_val(slice),
+            )
+        }
+    }
+
+    /// Convert a `Vec<u8>` received from the network into a
+    /// `Vec<Rep3RingShare<T>>`, **zero-copy** (no per-element deserialization).
+    ///
+    /// Returns `Err` if the byte length is not a multiple of `size_of::<Rep3RingShare<T>>()`.
+    #[inline]
+    pub fn vec_from_bytes(mut bytes: Vec<u8>) -> eyre::Result<Vec<Self>> {
+        #[cfg(not(target_endian = "little"))]
+        compile_error!("zero-copy share ↔ byte conversion requires a little-endian target");
+
+        let share_size = std::mem::size_of::<Self>();
+        if bytes.len() % share_size != 0 {
+            eyre::bail!(
+                "byte length {} is not a multiple of share size {}",
+                bytes.len(),
+                share_size
+            );
+        }
+        let new_len = bytes.len() / share_size;
+        let new_cap = bytes.capacity() / share_size;
+        let ptr = bytes.as_mut_ptr() as *mut Self;
+        std::mem::forget(bytes);
+        // SAFETY: same layout guarantees as slice_as_bytes, in reverse.
+        Ok(unsafe { Vec::from_raw_parts(ptr, new_len, new_cap) })
+    }
+
+    /// Convert a `Vec<Rep3RingShare<T>>` into a `Vec<RingElement<T>>`
+    /// containing `[a0, b0, a1, b1, ...]`, **zero-copy**.
+    #[inline]
+    pub fn vec_to_ring_elements(mut shares: Vec<Self>) -> Vec<RingElement<T>> {
+        let new_len = shares.len() * 2;
+        let new_cap = shares.capacity() * 2;
+        let ptr = shares.as_mut_ptr() as *mut RingElement<T>;
+        let _ = ManuallyDrop::new(shares);
+        // SAFETY: Rep3RingShare is repr(C) with two RingElement<T> fields.
+        unsafe { Vec::from_raw_parts(ptr, new_len, new_cap) }
+    }
+
+    /// Convert a `Vec<RingElement<T>>` with layout `[a0, b0, a1, b1, ...]`
+    /// into a `Vec<Rep3RingShare<T>>`, **zero-copy**.
+    ///
+    /// Returns `Err` if the length is not even.
+    #[inline]
+    pub fn vec_from_ring_elements(mut elems: Vec<RingElement<T>>) -> eyre::Result<Vec<Self>> {
+        if elems.len() % 2 != 0 {
+            eyre::bail!("element count {} is not even", elems.len());
+        }
+        let new_len = elems.len() / 2;
+        let new_cap = elems.capacity() / 2;
+        let ptr = elems.as_mut_ptr() as *mut Self;
+        let _ = ManuallyDrop::new(elems);
+        // SAFETY: Rep3RingShare is repr(C) with two RingElement<T> fields.
+        Ok(unsafe { Vec::from_raw_parts(ptr, new_len, new_cap) })
     }
 }

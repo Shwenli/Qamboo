@@ -1,5 +1,5 @@
-use crate::protocols::rep3_ring::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use super::types::Rep3RingShare;
 
 impl<T: IntRing2k> std::ops::Add for Rep3RingShare<T> {

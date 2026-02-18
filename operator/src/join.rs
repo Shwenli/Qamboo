@@ -1,9 +1,7 @@
 
-use protocols::protocols::rep3_ring::{Rep3State};
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
-use protocols::protocols::rep3_ring::arithmetic;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use random::rep3::Rep3State;
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
+use protocols::protocols::rep3_ring::{arithmetic,Rep3RingShare};
 use net::Network;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
@@ -20,8 +18,7 @@ fn compute_jlk_multithreads<T: IntRing2k, N: Network>(
     perm: &[Rep3RingShare<PermRing>],
     l:  &[Rep3RingShare<T>],
     net: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
     
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
@@ -33,8 +30,7 @@ where
         &perm,
         &l,
         net,
-        state0,
-        state1,
+        states,
     )?;
 
     Ok(jl_k)
@@ -45,14 +41,13 @@ fn compute_c_multithreads<T: IntRing2k, N: Network>(
     len_n: usize,
     perm: &[Rep3RingShare<PermRing>],
     net: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,
 {
     // F_one
-    let vec_one: Vec<Rep3RingShare<T>> = (0..len_m).map(|_| arithmetic::promote_to_trivial_share(state0.id, RingElement(T::one()))).collect();
+    let vec_one: Vec<Rep3RingShare<T>> = (0..len_m).map(|_| arithmetic::promote_to_trivial_share(states[0].id, RingElement(T::one()))).collect();
 
     let c= from_l_to_r::from_l_to_r_other_multithreads(
         len_m,
@@ -60,8 +55,7 @@ where
         &perm,
         &vec_one,
         net,
-        state0,
-        state1,
+        states,
     )?;
     
     Ok(c)
@@ -90,8 +84,7 @@ fn compute_vj_multithreads<T: IntRing2k, N: Network>(
     vl: &[Rep3RingShare<T>],
     vr:  &[Rep3RingShare<T>],
     net: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,
@@ -102,11 +95,10 @@ where
         &perm,
         &vl,
         net,
-        state0,
-        state1,
+        states,
     )?;
 
-    let vj_tmp = arithmetic::local_mul_vec(&v, vr, state0);
+    let vj_tmp = arithmetic::local_mul_vec(&v, vr, states[0]);
     
     //TODO: mutithreaded reshare
     let results = reshare_vec_q_multithreads(&vj_tmp, net)?;
@@ -119,43 +111,42 @@ pub fn only_in_l_multithreads<T: IntRing2k, N: Network>(
     k_l: Vec<Rep3RingShare<T>>,
     k_r: Vec<Rep3RingShare<T>>,
     bitsize: usize,
-    net: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
-    state: &mut [&mut Rep3State],
+    nets: &[&N],
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,{
     
     let m = k_l.len();
     let n = k_r.len();
+    let id = states[0].id;
 
-    let perm = from_l_to_r::from_l_to_r_gen_perm_multithreads(&k_l, &k_r, bitsize, net, state0, state1, state)?;
+    let perm = from_l_to_r::from_l_to_r_gen_perm_multithreads(&k_l, &k_r, bitsize, nets, states)?;
     
     // generate n zeros
-    let vec_zero: Vec<Rep3RingShare<T>> = (0..n).map(|_| arithmetic::promote_to_trivial_share(state0.id, RingElement(T::zero()))).collect();
+    let vec_zero: Vec<Rep3RingShare<T>> = (0..n).map(|_| arithmetic::promote_to_trivial_share(id, RingElement(T::zero()))).collect();
     
     // generate m ones and m neg ones
-    let vec_one_1: Vec<Rep3RingShare<T>> = (0..m).map(|_| arithmetic::promote_to_trivial_share(state0.id, RingElement(T::one()))).collect();
-    let vec_one_2: Vec<Rep3RingShare<T>> = (0..m).map(|_| arithmetic::promote_to_trivial_share(state0.id, -RingElement(T::one()))) .collect();
+    let vec_one_1: Vec<Rep3RingShare<T>> = (0..m).map(|_| arithmetic::promote_to_trivial_share(id, RingElement(T::one()))).collect();
+    let vec_one_2: Vec<Rep3RingShare<T>> = (0..m).map(|_| arithmetic::promote_to_trivial_share(id, -RingElement(T::one()))) .collect();
     
     // make f a vector of m ones, n zeros, m -ones
     let f = [vec_one_1, vec_zero, vec_one_2].concat();
 
     //set g to be a vector by applying perm to f
-    let g = apply_inv_multithreads(&perm, &f, net, state0, state1)?;
+    let g = apply_inv_multithreads(&perm, &f, nets, states)?;
 
     // compute prefix sum of g
     let h = prefix_sum_sequential(&g)?;
 
     // compute p 论文的算法有问题，应该是p[i] = 1-h[i+1].这里就直接对位置减1，然后序列前移，再补尾元素
     let one = RingElement(T::one());
-    let mut p = h.iter().map(|h_i| arithmetic::sub_public_by_shared(one, *h_i, state1.id)).collect::<Vec<_>>();
+    let mut p = h.iter().map(|h_i| arithmetic::sub_public_by_shared(one, *h_i, id)).collect::<Vec<_>>();
     p.remove(0); //移除p的第一个元素
     p.push(h[2*m+n-1].clone()); //添加最后一个元素
 
     // compute f_res
-    let f_res = apply_perm_multithreads(&perm, &p, net, state0, state1)?;
+    let f_res = apply_perm_multithreads(&perm, &p, nets, states)?;
     
     Ok(f_res[..m].to_vec())
 }
@@ -170,8 +161,6 @@ pub fn inner_join_table_multithreads<T: IntRing2k, N: Network>(
     valid_r: Vec<Rep3RingShare<T>>,
     bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Vec<Rep3RingShare<T>>>>
 where
@@ -181,7 +170,7 @@ where
     let e = val_r.len();
     let (len_m, len_n) = (k_l.len(), k_r.len());
 
-    let perm = from_l_to_r::from_l_to_r_gen_perm_multithreads(&k_l, &k_r, bitsize, nets, state0, state1, states)?;
+    let perm = from_l_to_r::from_l_to_r_gen_perm_multithreads(&k_l, &k_r, bitsize, nets, states)?;
     
     //* j is final tabla. d is the number of value columns in left table, e is the number of  value columns in right table
     //* 2: k_r and v_j
@@ -192,19 +181,19 @@ where
 
     //* compute jl_k, l_k is column form left table
     for l_k in val_l{
-        let jl_k = compute_jlk_multithreads(len_m, len_n, &perm, l_k, nets, state0, state1)?;
+        let jl_k = compute_jlk_multithreads(len_m, len_n, &perm, l_k, nets, states)?;
         j.push(jl_k);
         
     }
 
-    let c = compute_c_multithreads(len_m, len_n, &perm, nets, state0, state1)?;
+    let c = compute_c_multithreads(len_m, len_n, &perm, nets, states)?;
 
     for r_j in val_r{
-        let jr_j = compute_jrj_multithreads(&c, r_j, nets, state0)?;
+        let jr_j = compute_jrj_multithreads(&c, r_j, nets, states[0])?;
         j.push(jr_j);
     }
 
-    let valid_j = compute_vj_multithreads(len_m, len_n, &perm, &valid_l, &valid_r, nets, state0, state1)?;
+    let valid_j = compute_vj_multithreads(len_m, len_n, &perm, &valid_l, &valid_r, nets, states)?;
     j.push(valid_j);
 
     Ok(j)
@@ -220,8 +209,6 @@ pub fn inner_join_table_multi_keys_multithreads<T: IntRing2k, N: Network>(
     valid_r: Vec<Rep3RingShare<T>>,
     bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 )-> eyre::Result<Vec<Vec<Rep3RingShare<T>>>>
 where
@@ -233,7 +220,7 @@ where
     //let (len_m, len_n) = (k_l.len(), k_r.len());
     let (len_m, len_n) = (valid_l.len(), valid_r.len());
 
-    let perm = from_l_to_r::from_l_to_r_gen_multi_keys_perm_multithreads(&k_l, &k_r, bitsize, nets, state0, state1, states)?;
+    let perm = from_l_to_r::from_l_to_r_gen_multi_keys_perm_multithreads(&k_l, &k_r, bitsize, nets, states)?;
 
     /*
     let test_k = [k_l[0].clone(), k_r[0].clone(), k_l[0].clone()].concat();
@@ -257,19 +244,19 @@ where
 
     //* compute jl_k, l_k is column form left table
     for l_k in val_l{
-        let jl_k = compute_jlk_multithreads(len_m, len_n, &perm, l_k, nets, state0, state1)?;
+        let jl_k = compute_jlk_multithreads(len_m, len_n, &perm, l_k, nets, states)?;
         j.push(jl_k);
         
     }
 
-    let c = compute_c_multithreads(len_m, len_n, &perm, nets, state0, state1)?;
+    let c = compute_c_multithreads(len_m, len_n, &perm, nets, states)?;
 
     for r_j in val_r{
-        let jr_j = compute_jrj_multithreads(&c, r_j, nets, state0)?;
+        let jr_j = compute_jrj_multithreads(&c, r_j, nets, states[0])?;
         j.push(jr_j);
     }
 
-    let valid_j = compute_vj_multithreads(len_m, len_n, &perm, &valid_l, &valid_r, nets, state0, state1)?;
+    let valid_j = compute_vj_multithreads(len_m, len_n, &perm, &valid_l, &valid_r, nets, states)?;
     j.push(valid_j);
 
     Ok(j)
@@ -284,8 +271,6 @@ pub fn semi_join_table_multithreads<T: IntRing2k, N: Network>(
     valid_r: Vec<Rep3RingShare<T>>,
     bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
@@ -295,7 +280,7 @@ where
     let bigone= one<<63;
 
     // if v_r ==1, then keep k_r; else set to bigone. Filter table r to avoid matching with zero values.
-    let new_k_r = mux::mux_if_share_then_public_vec_multithreads(&valid_r, &k_r, &bigone, nets, state0, states)?;
+    let new_k_r = mux::mux_if_share_then_public_vec_multithreads(&valid_r, &k_r, &bigone, nets,  states)?;
 
     // get the flags: if k_l is not in k_r, then f_res == 1 else f_res ==0
     let f_inv = only_in_l_multithreads(
@@ -303,14 +288,12 @@ where
         new_k_r,
         bitsize,
         nets,
-        state0,
-        state1,
         states,
     )?;
 
     // invert f_res to get the final flags. If k_l is in k_r, then f_res == 1 else f_res ==0
-    let f_res = f_inv.iter().map(|f_i| arithmetic::sub_public_by_shared(one, *f_i, state1.id)).collect::<Vec<_>>();
-    let new_valid_tmp = arithmetic::local_mul_vec(&f_res, &valid_l, state0);
+    let f_res = f_inv.iter().map(|f_i| arithmetic::sub_public_by_shared(one, *f_i, states[0].id)).collect::<Vec<_>>();
+    let new_valid_tmp = arithmetic::local_mul_vec(&f_res, &valid_l, states[0]);
 
     //*  multiply f_res with v_l to get the final result
     let new_valid = reshare_vec_q_multithreads(&new_valid_tmp, nets)?;
@@ -327,8 +310,6 @@ pub fn anti_join_table_multithreads<T: IntRing2k, N: Network>(
     valid_r: Vec<Rep3RingShare<T>>,
     bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
@@ -338,7 +319,7 @@ where
     let bigone= one<<63;
 
     // if v_r ==1, then keep k_r; else set to bigone. Filter table r to avoid matching with zero values.
-    let new_k_r = mux::mux_if_share_then_public_vec_multithreads(&valid_r, &k_r, &bigone, nets, state0, states)?;
+    let new_k_r = mux::mux_if_share_then_public_vec_multithreads(&valid_r, &k_r, &bigone, nets, states)?;
 
     // get the flags: if k_l is not in k_r, then f_res == 1 else f_res ==0
     let f_inv = only_in_l_multithreads(
@@ -346,13 +327,11 @@ where
         new_k_r,
         bitsize,
         nets,
-        state0,
-        state1,
         states,
     )?;
 
     //*  update valid in table l by multiplying with f_inv
-    let new_valid_tmp = arithmetic::local_mul_vec(&f_inv, &valid_l, state0);
+    let new_valid_tmp = arithmetic::local_mul_vec(&f_inv, &valid_l, states[0]);
     let new_valid = reshare_vec_q_multithreads(&new_valid_tmp, nets)?;
 
     Ok(new_valid)

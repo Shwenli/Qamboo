@@ -1,6 +1,6 @@
-use protocols::protocols::rep3_ring::Rep3State;
+use random::rep3::Rep3State;
 use protocols::protocols::rep3_ring::Rep3RingShare;
-use protocols::protocols::rep3_ring::ring::bit::Bit;
+use algebra::ring::bit::Bit;
 use net::Network;
 use crate::predicate::Predicate;
 use crate::share_table::ShareTable;

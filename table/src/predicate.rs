@@ -1,9 +1,8 @@
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use random::rep3::Rep3State;
 use protocols::protocols::rep3_ring::{Rep3RingShare, arithmetic};
-use protocols::protocols::rep3_ring::ring::bit::Bit;
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use net::Network;
+use primitives::compare::*;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 
@@ -51,107 +50,107 @@ impl Predicate {
         &self,
         shared_values: &[Rep3RingShare<T>],
         public_value: &RingElement<T>,
-        net: &N,
-        state: &mut Rep3State,
+        nets: &[&N],
+        states: &mut[&mut Rep3State],
     ) -> eyre::Result<Vec<Rep3RingShare<Bit>>>
     where
         Standard: Distribution<T>,
     {
         match self {
             Predicate::Equal => {
-                primitives::compare::eq_public_many(
+                eq_public_many_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::NotEqual => {
-                primitives::compare::neq_public_many(
+                neq_public_many_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterThan => {
-                primitives::compare::gt_public_many(
+                gt_public_many_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterOrEqual => {
-                primitives::compare::ge_public_many(
+                ge_public_many_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessThan => {
-                primitives::compare::lt_public_many(
+                lt_public_many_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessOrEqual => {
-                primitives::compare::le_public_many(
+                le_public_many_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::EqualBinary => {
-                primitives::compare::eq_public_many_binary(
+                eq_public_many_binary_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::NotEqualBinary => {
-                primitives::compare::neq_public_many_binary(
+                neq_public_many_binary_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterThanBinary => {
-                primitives::compare::gt_public_many_binary(
+                gt_public_many_binary_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterOrEqualBinary => {
-                primitives::compare::ge_public_many_binary(
+                ge_public_many_binary_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessThanBinary => {
-                primitives::compare::lt_public_many_binary(
+                lt_public_many_binary_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessOrEqualBinary => {
-                primitives::compare::le_public_many_binary(
+                le_public_many_binary_multithreads(
                     shared_values,
                     public_value,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
         }
@@ -162,8 +161,8 @@ impl Predicate {
     /// # Arguments
     /// * `lhs` - 左侧共享值的切片
     /// * `rhs` - 右侧共享值的切片
-    /// * `net` - 网络连接
-    /// * `state` - Rep3 状态
+    /// * `nets` - 网络连接数组
+    /// * `states` - Rep3 状态数组
     /// 
     /// # Returns
     /// 返回布尔掩码的共享值，true 表示满足谓词条件
@@ -171,8 +170,8 @@ impl Predicate {
         &self,
         lhs: &[Rep3RingShare<T>],
         rhs: &[Rep3RingShare<T>],
-        net: &N,
-        state: &mut Rep3State,
+        nets: &[&N],
+        states: &mut [&mut Rep3State],
     ) -> eyre::Result<Vec<Rep3RingShare<Bit>>>
     where
         Standard: Distribution<T>,
@@ -180,99 +179,99 @@ impl Predicate {
         match self {
 
             Predicate::Equal => {
-                primitives::compare::eq_many(
+                eq_many_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::NotEqual => {
-                primitives::compare::neq_many(
+                neq_many_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterThan => {
-                primitives::compare::gt_many(
+                gt_many_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterOrEqual => {
-                primitives::compare::ge_many(
+                ge_many_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessThan => {
-                primitives::compare::lt_many(
+                lt_many_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessOrEqual => {
-                primitives::compare::le_many(
+                le_many_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::EqualBinary => {
-                primitives::compare::eq_many_binary(
+                eq_many_binary_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::NotEqualBinary => {
-                primitives::compare::neq_many_binary(
+                neq_many_binary_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterThanBinary => {
-                primitives::compare::gt_many_binary(
+                gt_many_binary_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::GreaterOrEqualBinary => {
-                primitives::compare::ge_many_binary(
+                ge_many_binary_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessThanBinary => {
-                primitives::compare::lt_many_binary(
+                lt_many_binary_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
             Predicate::LessOrEqualBinary => {
-                primitives::compare::le_many_binary(
+                le_many_binary_multithreads(
                     lhs,
                     rhs,
-                    net,
-                    state,
+                    nets,
+                    states,
                 )
             }
         }

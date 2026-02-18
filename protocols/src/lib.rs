@@ -9,12 +9,13 @@
 pub mod protocols;
 pub mod serde_compat;
 
-pub(crate) type RngType = rand_chacha::ChaCha12Rng;
-pub(crate) const SEED_SIZE: usize = std::mem::size_of::<<RngType as rand::SeedableRng>::Seed>();
+/// Re-exports
+pub type RngType = rand_chacha::ChaCha12Rng;
 
-fn downcast<A: 'static, B: 'static>(a: &A) -> Option<&B> {
-    (a as &dyn std::any::Any).downcast_ref::<B>()
-}
+/// The size of the seed for the random number generator used in the protocols.
+pub const SEED_SIZE: usize = std::mem::size_of::<<RngType as rand::SeedableRng>::Seed>();
+
+
 
 /// Trait for MPC protocol states
 pub trait MpcState: Sized {

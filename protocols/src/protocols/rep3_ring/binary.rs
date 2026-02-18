@@ -2,17 +2,15 @@
 //!
 //! This module contains operations with binary shares
 
-use super::{
-    arithmetic::RingShare,
-    ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement},
-};
-//use rayon::iter::{ParallelIterator,IndexedParallelIterator,IntoParallelRefIterator,IntoParallelRefMutIterator};
-use crate::protocols::rep3_ring::{Rep3State, id::PartyID, network::Rep3NetworkExt};
+use super::{arithmetic::RingShare};
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
+use communication::rep3::id::PartyID;
+use communication::rep3::net_impl::Rep3NetworkImpl;
+use random::rep3::Rep3State;
 use itertools::{Itertools, izip};
 use net::Network;
 use num_traits::{One, Zero};
 use rand::{distributions::Standard, prelude::Distribution};
-//use rayon::prelude::*;
 
 mod ops;
 

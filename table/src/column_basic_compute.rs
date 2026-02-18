@@ -1,11 +1,10 @@
 use core::panic;
 use crate::share_column::{ShareType, ShareColumn};
-use protocols::protocols::rep3_ring::id::PartyID;
+use communication::rep3::id::PartyID;
+use random::rep3::Rep3State;
 use protocols::protocols::rep3_ring::arithmetic;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::Rep3RingShare;
-use protocols::protocols::rep3_ring::Rep3State;
 use rand::distributions::{Distribution, Standard};
 use net::Network;
 use primitives::{div, utils};
@@ -117,9 +116,9 @@ where
     fn mul(self, rhs: (&ShareColumn<Rep3RingShare<T>>, &'b mut NetStateArgs<'a, N>)) -> Self::Output {
         assert_eq!(self.len(), rhs.0.len(), "Columns must have the same length");
 
-        let (nets, state, _state1, _) = rhs.1.split();
+        let (nets, states) = rhs.1.split();
         let mul_data = self.get_data();
-        let mul_tmp = arithmetic::local_mul_vec(mul_data, &rhs.0.get_data(), state);
+        let mul_tmp = arithmetic::local_mul_vec(mul_data, &rhs.0.get_data(), states[0]);
         let result = utils::reshare_vec_q_multithreads(&mul_tmp, nets).unwrap_or_else(|e|panic!("sharecolumn mul reshare error : {}", e));
         
         ShareColumn::new(result, ShareType::Arithmetic, self.get_name().to_string())
@@ -133,9 +132,9 @@ where
     fn mul_assign(&mut self, rhs: (&ShareColumn<Rep3RingShare<T>>, &'b mut NetStateArgs<'a, N>)){
         assert_eq!(self.len(), rhs.0.len(), "Columns must have the same length");
 
-        let (nets, state, _, _) = rhs.1.split();
+        let (nets, states) = rhs.1.split();
         let mul_data = self.get_data();
-        let mul_tmp = arithmetic::local_mul_vec(mul_data, &rhs.0.get_data(), state);
+        let mul_tmp = arithmetic::local_mul_vec(mul_data, &rhs.0.get_data(), states[0]);
         let result = utils::reshare_vec_q_multithreads(&mul_tmp, nets).unwrap_or_else(|e|panic!("sharecolumn mul reshare error : {}", e));
         self.update_data(result);
     }
@@ -146,7 +145,7 @@ impl<'a, 'b, N: Network> std::ops::Div<(&RingElement<u64>, &'b mut NetStateArgs<
 
     fn div(self, rhs: (&RingElement<u64>, &'b mut NetStateArgs<'a, N>)) -> Self::Output {
         let data = self.get_data();
-        let (nets, _state0, _state1, states) = rhs.1.split();
+        let (nets, states) = rhs.1.split();
         let res_data = div::div_share_by_public_arithmetic_multithreads(data, rhs.0, nets, states).unwrap_or_else(|e|panic!("ShareColumn: div error: {}", e));
         ShareColumn::new(res_data, ShareType::Arithmetic, self.get_name().to_string())
     }
@@ -155,7 +154,7 @@ impl<'a, 'b, N: Network> std::ops::Div<(&RingElement<u64>, &'b mut NetStateArgs<
 impl<'a, 'b, N: Network> std::ops::DivAssign<(&RingElement<u64>, &'b mut NetStateArgs<'a, N>)> for ShareColumn<Rep3RingShare<u64>> {
     fn div_assign(&mut self, rhs: (&RingElement<u64>, &'b mut NetStateArgs<'a, N>)) {
         let data = self.get_data();
-        let (nets, _state0, _state1, states) = rhs.1.split();
+        let (nets, states) = rhs.1.split();
         let res_data = div::div_share_by_public_arithmetic_multithreads(data, rhs.0, nets, states).unwrap_or_else(|e|panic!("ShareColumn: div error: {}", e));
         self.update_data(res_data);
     }
@@ -169,7 +168,7 @@ where
         let rhs_data = rhs.0.get_data();
         let data = self.get_data();
         let bitsize = T::K / 2;
-        let (nets, _state0, _state1, states) = rhs.1.split();
+        let (nets, states) = rhs.1.split();
         let res_data = div::div_multithreads::<T,N>(data, &rhs_data, bitsize, nets, states).unwrap_or_else(|e|panic!("ShareColumn: div error: {}", e));
         ShareColumn::new(res_data, ShareType::Arithmetic, self.get_name().to_string())
     }
@@ -182,7 +181,7 @@ where
         let rhs_data = rhs.0.get_data();
         let data = self.get_data();
         let bitsize = T::K / 2;
-        let (nets, _state0, _state1, states) = rhs.1.split();
+        let (nets, states) = rhs.1.split();
         let res_data = div::div_multithreads::<T,N>(data, &rhs_data, bitsize, nets, states).unwrap_or_else(|e|panic!("ShareColumn: div error: {}", e));
         self.update_data(res_data);
     }

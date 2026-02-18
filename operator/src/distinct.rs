@@ -4,9 +4,10 @@ use itertools::izip;
 use num_traits::{One};
 use rand::{distributions::Standard, prelude::Distribution};
 use protocols::protocols::rep3_ring::{
-    Rep3RingShare, arithmetic::local_mul_vec, binary::xor_public, ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement}
+    Rep3RingShare, arithmetic::local_mul_vec, binary::xor_public
 };
-use protocols::protocols::rep3_ring::{Rep3State};
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
+use random::rep3::Rep3State;
 use net::Network;
 use primitives::{compare::{and_vec_multithreads, or_vec_multithreads},transform, utils};
 use primitives::compare::{eq_many_multithreads,neq_many_multithreads};

@@ -2,17 +2,16 @@
 //!
 //! This module contains operations with arithmetic shares
 
-use crate::protocols::rep3_ring::{Rep3State, id::PartyID, network::Rep3NetworkExt};
+use communication::rep3::id::PartyID;
+use communication::rep3::net_impl::Rep3NetworkImpl;
+use random::rep3::Rep3State;
 use itertools::{Itertools, izip};
 use net::Network;
-use num_traits::{One, Zero};
+use num_traits::{Zero};
 use rand::{distributions::Standard, prelude::Distribution};
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use types::Rep3RingShare;
-
-use super::{
-    ring::{int_ring::IntRing2k, ring_impl::RingElement},
-};
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 
 mod ops;
 pub(super) mod types;
@@ -104,23 +103,6 @@ pub fn sub_public_by_shared<T: IntRing2k>(
     add_public(-shared, public, id)
 }
 
-/// Performs multiplication of two shared values.
-pub fn mul<T: IntRing2k, N: Network>(
-    a: RingShare<T>,
-    b: RingShare<T>,
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<RingShare<T>>
-where
-    Standard: Distribution<T>,
-{
-    let local_a = a * b + state.rngs.rand.masking_element::<RingElement<T>>();
-    let local_b = net.reshare(local_a)?;
-    Ok(RingShare {
-        a: local_a,
-        b: local_b,
-    })
-}
 
 /// Performs multiplication of a shared value and a public value.
 pub fn mul_public<T: IntRing2k>(shared: RingShare<T>, public: RingElement<T>) -> RingShare<T> {
@@ -176,28 +158,6 @@ pub fn reshare_vec<T: IntRing2k, N: Network>(
 }
 
 
-/// Performs element-wise multiplication of two vectors of shared values.
-/// Use this function for small vecs. For large vecs see [`local_mul_vec`] and [`reshare_vec`]
-pub fn mul_vec<T: IntRing2k, N: Network>(
-    lhs: &[RingShare<T>],
-    rhs: &[RingShare<T>],
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<Vec<RingShare<T>>>
-where
-    Standard: Distribution<T>,
-{
-    // do not use local_mul_vec here!!! We are , this means we
-    // run on a tokio runtime. local_mul_vec uses rayon and starves the
-    // runtime. This method is for small multiplications of vecs.
-    // If you want a larger one use local_mul_vec and then reshare_vec.
-    debug_assert_eq!(lhs.len(), rhs.len());
-    let local_a = izip!(lhs.iter(), rhs.iter())
-        .map(|(lhs, rhs)| lhs * rhs + state.rngs.rand.masking_element::<RingElement<T>>())
-        .collect_vec();
-    reshare_vec(local_a, net)
-}
-
 /// Negates a shared value.
 pub fn neg<T: IntRing2k>(a: RingShare<T>) -> RingShare<T> {
     -a
@@ -250,30 +210,6 @@ pub fn open_vec<T: IntRing2k, N: Network>(
 
 
 
-/// Convenience method for \[a\] + \[b\] * c
-pub fn add_mul_public<T: IntRing2k>(
-    a: RingShare<T>,
-    b: RingShare<T>,
-    c: RingElement<T>,
-) -> RingShare<T> {
-    add(a, mul_public(b, c))
-}
-
-/// Convenience method for \[a\] + \[b\] * \[c\]
-pub fn add_mul<T: IntRing2k, N: Network>(
-    a: RingShare<T>,
-    b: RingShare<T>,
-    c: RingShare<T>,
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<RingShare<T>>
-where
-    Standard: Distribution<T>,
-{
-    let mul = mul(c, b, net, state)?;
-    Ok(add(a, mul))
-}
-
 /// Transforms a public value into a shared value: \[a\] = a.
 pub fn promote_to_trivial_share<T: IntRing2k>(
     id: PartyID,
@@ -286,113 +222,6 @@ pub fn promote_to_trivial_share<T: IntRing2k>(
     }
 }
 
-/// This function performs a multiplication directly followed by an opening. This safes one round of communication in some MPC protocols compared to calling `mul` and `open` separately.
-pub fn mul_open<T: IntRing2k, N: Network>(
-    a: RingShare<T>,
-    b: RingShare<T>,
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<RingElement<T>>
-where
-    Standard: Distribution<T>,
-{
-    let a = a * b + state.rngs.rand.masking_element::<RingElement<T>>();
-    let (b, c) = net.broadcast(a)?;
-    Ok(a + b + c)
-}
-
-/// This function performs a multiplication directly followed by an opening. This safes one round of communication in some MPC protocols compared to calling `mul` and `open` separately.
-pub fn mul_open_vec<T: IntRing2k, N: Network>(
-    a: &[RingShare<T>],
-    b: &[RingShare<T>],
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<Vec<RingElement<T>>>
-where
-    Standard: Distribution<T>,
-{
-    let mut a = izip!(a, b)
-        .map(|(a, b)| a * b + state.rngs.rand.masking_element::<RingElement<T>>())
-        .collect_vec();
-    let (b, c) = net.broadcast_many(&a)?;
-    izip!(a.iter_mut(), b, c).for_each(|(a, b, c)| *a += b + c);
-    Ok(a)
-}
-
-
-
-/// Performs a pow operation using a shared value as base and a public value as exponent.
-pub fn pow_public<T: IntRing2k, N: Network>(
-    shared: RingShare<T>,
-    mut public: RingElement<T>,
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<RingShare<T>>
-where
-    Standard: Distribution<T>,
-{
-    // TODO: are negative exponents allowed in circom?
-    let mut res = promote_to_trivial_share(state.id, RingElement::one());
-    let mut shared: RingShare<T> = shared;
-    while !public.is_zero() {
-        if public.get_bit(0) == RingElement::one() {
-            public -= RingElement::one();
-            res = mul(res, shared, net, state)?;
-        }
-        shared = mul(shared, shared, net, state)?;
-        public >>= 1;
-    }
-    Ok(res)
-}
-
-/// computes XOR using arithmetic operations, only valid when x and y are known to be 0 or 1.
-pub fn arithmetic_xor<T: IntRing2k, N: Network>(
-    x: RingShare<T>,
-    y: RingShare<T>,
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<RingShare<T>>
-where
-    Standard: Distribution<T>,
-{
-    let mut d = x * y + state.rngs.rand.masking_element::<RingElement<T>>();
-    d <<= 1;
-    let e = x.a + y.a;
-    let res_a = e - d;
-
-    let res_b = net.reshare(res_a)?;
-    Ok(RingShare { a: res_a, b: res_b })
-}
-
-/// computes XOR on many inputs using arithmetic operations, only valid when x and y are known to be 0 or 1.
-pub fn arithmetic_xor_many<T: IntRing2k, N: Network>(
-    x: &[RingShare<T>],
-    y: &[RingShare<T>],
-    net: &N,
-    state: &mut Rep3State,
-) -> eyre::Result<Vec<RingShare<T>>>
-where
-    Standard: Distribution<T>,
-{
-    debug_assert_eq!(x.len(), y.len());
-
-    let mut a = Vec::with_capacity(x.len());
-    for (x, y) in x.iter().zip(y.iter()) {
-        let mut d = x * y + state.rngs.rand.masking_element::<RingElement<T>>();
-        d <<= 1;
-        let e = x.a + y.a;
-        let res_a = e - d;
-        a.push(res_a);
-    }
-
-    let b = net.reshare_many(&a)?;
-    let res = a
-        .into_iter()
-        .zip(b)
-        .map(|(a, b)| RingShare { a, b })
-        .collect();
-    Ok(res)
-}
 
 
 

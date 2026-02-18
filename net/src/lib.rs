@@ -6,8 +6,14 @@ use std::{
 };
 
 pub mod config;
+
+#[cfg(feature = "fast_tcp")]
+pub mod fast_tcp;
+
 #[cfg(feature = "tcp")]
 pub mod tcp;
+
+
 
 
 
@@ -28,6 +34,35 @@ pub trait Network: Send + Sync {
     /// Get connection statistics for the Network.
     /// The returned HashMap maps party_id to a tuple of (sent_bytes, received_bytes).
     fn get_connection_stats(&self) -> ConnectionStats;
+
+    /// Write data to the send buffer without forcing immediate transmission.
+    ///
+    /// The data will be delivered when [`flush_to`] or [`flush_all`] is
+    /// called, or when the internal buffer is full.  Implementations
+    /// without userspace buffering (like [`crate::tcp::TcpNetwork`])
+    /// simply delegate to [`send`].
+    ///
+    /// Default: delegates to [`send`].
+    fn send_buffered(&self, to: usize, data: &[u8]) -> eyre::Result<()> {
+        self.send(to, data)
+    }
+
+    /// Flush any buffered data for the connection to party `to`.
+    ///
+    /// After this call, all data previously written via [`send_buffered`]
+    /// to party `to` is guaranteed to have been pushed to the kernel.
+    ///
+    /// Default: no-op (for unbuffered implementations).
+    fn flush_to(&self, _to: usize) -> eyre::Result<()> {
+        Ok(())
+    }
+
+    /// Flush buffered data for **all** connections.
+    ///
+    /// Default: no-op.
+    fn flush_all(&self) -> eyre::Result<()> {
+        Ok(())
+    }
 }
 
 // This implements a dummy network that is used for plain variants of MPC protocols

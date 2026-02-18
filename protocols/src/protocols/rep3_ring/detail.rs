@@ -1,10 +1,9 @@
 //! Implementation of the low-depth binary addition
 //! This module provides functions for performing low-depth binary addition
-use super::{
-    Rep3RingShare, binary, conversion,
-    ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement},
-};
-use crate::protocols::rep3_ring::{network::Rep3NetworkExt, Rep3State};
+use super::{Rep3RingShare, binary, conversion};
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
+use communication::rep3::net_impl::Rep3NetworkImpl;
+use random::rep3::Rep3State;
 use itertools::izip;
 use net::Network;
 use num_traits::{One, Zero};

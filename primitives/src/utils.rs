@@ -1,10 +1,28 @@
+use communication::rep3::multinet_impl::reshare_many_multinet;
 use itertools::izip;
-use protocols::protocols::rep3_ring::{id::PartyID, network::Rep3NetworkExt};
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use itertools::Itertools;
+use communication::rep3::id::PartyID;
+use communication::rep3::net_impl::Rep3NetworkImpl;
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::{rep3_ring::Rep3RingShare};
 use protocols::protocols::rep3_ring::arithmetic::promote_to_trivial_share;
 use net::Network;
+
+/// Performs the opening of a shared value and returns the equivalent public value.
+pub fn open_vec_multinet<T: IntRing2k, N: Network>(
+    a: &[Rep3RingShare<T>],
+    nets: &[&N],
+) -> eyre::Result<Vec<RingElement<T>>> {
+    // TODO think about something better... it is not so bad
+    // because we use it exactly once in PLONK where we do it for 4
+    // shares..
+    let (a, b) = a
+        .iter()
+        .map(|share| (share.a, share.b))
+        .collect::<(Vec<RingElement<T>>, Vec<RingElement<T>>)>();
+    let c = reshare_many_multinet(nets, &b)?;
+    Ok(izip!(a, b, c).map(|(a, b, c)| a + b + c).collect_vec())
+}
 
 pub fn get_data_share<T:IntRing2k>(
     data: &T,
@@ -82,7 +100,7 @@ pub fn get_mut_task_chunks<T>(
 }
 
 /// Performs a reshare on all shares in the vector.
-pub fn reshare_vec_q<T: IntRing2k, N: Network>(
+pub fn reshare_mulslice_vec<T: IntRing2k, N: Network>(
     local_a: &[RingElement<T>],
     net: &N,
 ) -> eyre::Result<Vec<Rep3RingShare<T>>> {

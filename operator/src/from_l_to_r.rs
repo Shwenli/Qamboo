@@ -5,9 +5,9 @@
 
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use protocols::protocols::rep3_ring::{Rep3State};
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::{arithmetic};
+use random::rep3::Rep3State;
+use algebra::ring::int_ring::IntRing2k;
+use protocols::protocols::rep3_ring::arithmetic;
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
 use primitives::transform::{bit_decompose_many_multithreads, bit_decompose_many};
@@ -187,8 +187,6 @@ pub fn from_l_to_r_gen_perm_multithreads<T: IntRing2k, N: Network>(
     k_r: &[Rep3RingShare<T>],  // Right table keys (length n)
     bitsize: usize,             // Bit size for sorting
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<PermRing>>>
 where
@@ -216,8 +214,6 @@ where
         order,
         bitsize,
         nets,
-        state0,
-        state1,
         states,
     )?;
     
@@ -230,8 +226,6 @@ pub fn from_l_to_r_gen_multi_keys_perm_multithreads<T: IntRing2k, N: Network>(
     k_r: &Vec<Vec<Rep3RingShare<T>>>,  // Right table keys (length n)
     bitsize: usize,             // Bit size for sorting
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<PermRing>>>
 where
@@ -256,8 +250,6 @@ where
         true,
         bitsize,
         nets,
-        state0,
-        state1,
         states,
     )?;
 
@@ -266,7 +258,7 @@ where
         let kl_i = k_l[i].as_slice();
         let kr_i = k_r[i].as_slice();
         let key_i  = [kl_i, kr_i, kl_i].concat();
-        let key_i_after_perm = permute::apply_inv_multithreads(&perm, &key_i, nets, state0, state1)?;
+        let key_i_after_perm = permute::apply_inv_multithreads(&perm, &key_i, nets, states)?;
         let key_i_bits = bit_decompose_many_multithreads(&key_i_after_perm, bitsize, nets, states)?;
 
         let perm_i = permute::gen_perm_multithreads(
@@ -274,12 +266,10 @@ where
             true,
             bitsize,
             nets,
-            state0,
-            state1,
             states,
         )?;
 
-        perm = permute::compose_perm_multithreads(perm, perm_i, nets, state0)?;
+        perm = permute::compose_perm_multithreads(perm, perm_i, nets, states)?;
     }
 
     // Note: The permutation is generated in ascending order, which is suitable for the FromLtoR join operation.
@@ -293,8 +283,7 @@ pub fn from_l_to_r_other_multithreads<T: IntRing2k, N: Network>(
     perm: &[Rep3RingShare<PermRing>],  // Permutation from sorting
     a: &[Rep3RingShare<T>],    // Left table column values (length m)
     net: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,
@@ -317,13 +306,13 @@ where
     //这里有问题，负数会变成大整数
 
     // Step 3: Apply inverse permutation to values
-    let values_apply_perm = permute::apply_inv_multithreads(&perm, &values, net, state0, state1)?;
+    let values_apply_perm = permute::apply_inv_multithreads(&perm, &values, net, states)?;
 
     // Step 4: Compute prefix sum on sorted values
     let prefix_sum_values = prefix_sum_sequential(&values_apply_perm)?;
 
     //Step 5: Apply inverse permutation to restore R's original order
-    let values_apply_perm_inv = permute::apply_perm_multithreads(&perm, &prefix_sum_values, net, state0, state1)?;
+    let values_apply_perm_inv = permute::apply_perm_multithreads(&perm, &prefix_sum_values, net, states)?;
 
     let result = values_apply_perm_inv[len_m..len_m+len_n].to_vec();
 

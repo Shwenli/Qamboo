@@ -2,10 +2,8 @@
 use itertools::izip;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use protocols::protocols::rep3_ring::{Rep3State};
-use protocols::protocols::rep3_ring::ring::bit::Bit;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use random::rep3::Rep3State;
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::{arithmetic,binary};
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
@@ -21,8 +19,7 @@ pub fn table_agg_count_multithreads<T: IntRing2k, N: Network>(
     e: &[Rep3RingShare<T>],
     perm_e: &[Rep3RingShare<u32>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{
@@ -40,11 +37,11 @@ Standard: Distribution<T>,{
     let mut x = Vec::new();
     let e_m = vec_x[len-1]; 
     for i in 0..len{
-        let x_i = mux::mux_if_then_public(&e[i], &vec_x[i], &e_m, state0)?;
+        let x_i = mux::mux_if_then_public(&e[i], &vec_x[i], &e_m, states[0])?;
         x.push(x_i);
     }
     
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, state0, state1)?;
+    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
 
     let mut s = y.clone();
     for i in 1..s.len(){
@@ -59,15 +56,14 @@ pub fn table_agg_count_by_valid_multithreads<T: IntRing2k, N: Network>(
     old_valid: &[Rep3RingShare<T>],
     perm_e: &[Rep3RingShare<u32>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{ 
 
     let x = utils::prefix_sum_sequential(old_valid)?;
     
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, state0, state1)?;
+    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
 
     let mut s = y.clone();
 
@@ -84,8 +80,7 @@ pub fn table_agg_sum_multithreads<T: IntRing2k, N: Network>(
     e: &[Rep3RingShare<T>],
     perm_e: &[Rep3RingShare<u32>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{
@@ -99,10 +94,10 @@ Standard: Distribution<T>,{
     let w_m = vec![w[w.len()-1];w.len()];
     //println!("w_m: {:?}", arithmetic::open_vec(&w_m, net0)?);
 
-    let x = mux::mux_if_then_share_vec_multithreads(&e, &w, &w_m, nets, state0, state1)?;
+    let x = mux::mux_if_then_share_vec_multithreads(&e, &w, &w_m, nets, states[0])?;
     //println!("x: {:?}",arithmetic::open_vec(&x, net0));
 
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, state0, state1)?;
+    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
     //println!("y: {:?}",arithmetic::open_vec(&y, net0));
 
     let mut s = y.clone();
@@ -120,38 +115,38 @@ pub fn table_agg_min_multithreads<T: IntRing2k, N: Network>(
     e: &[Rep3RingShare<T>],
     e_bit: &[Rep3RingShare<Bit>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{
+
+    let id = states[0].id;
 
     // e_now = [1, e[0], e[1], ..., e[len-2]]
     let mut e_now = Vec::new();
     let mut e_bit_now = Vec::new();
 
     let one =  RingElement(T::one());
-    let one_share = arithmetic::promote_to_trivial_share(state0.id, one);
+    let one_share = arithmetic::promote_to_trivial_share(id, one);
     e_now.push(one_share);
     e_now.extend(e[0..e.len()-1].iter());
 
     let bit_one = RingElement(Bit::new(true));
-    let bit_one_share = binary::promote_to_trivial_share(state0.id, &bit_one);
+    let bit_one_share = binary::promote_to_trivial_share(id, &bit_one);
     e_bit_now.push(bit_one_share);
     e_bit_now.extend(e_bit[0..e_bit.len()-1].iter());
 
 
     //[[xi]] ← Ifthen( [[ei−1]] : [[vG [i]]], [[0]])
     let zero = RingElement(T::zero());
-    let x = mux::mux_if_share_then_public_vec_multithreads(&e_now, &v_g, &zero, nets, state0, states)?;
+    let x = mux::mux_if_share_then_public_vec_multithreads(&e_now, &v_g, &zero, nets, states)?;
 
     //[[gi]] := 1 − [[ei−1]]
-    let g = izip!(e_bit_now).map(|e_i| binary::xor_public(&e_i, &bit_one, state0.id)).collect::<Vec<_>>();
+    let g = izip!(e_bit_now).map(|e_i| binary::xor_public(&e_i, &bit_one, id)).collect::<Vec<_>>();
     let g_t = transform::from_bit_to_arithmetic_t_multithreads::<u32,N>(&g, nets, states)?;
-    let perm_g = permute::gen_bit_perm_multithreads(g_t, nets, state0, state1)?;
+    let perm_g = permute::gen_bit_perm_multithreads(g_t, nets, states)?;
 
-    let y = permute::apply_inv_multithreads(&perm_g, &x, nets, state0, state1)?;
+    let y = permute::apply_inv_multithreads(&perm_g, &x, nets, states)?;
 
     Ok(y)
 }
@@ -163,8 +158,6 @@ pub fn table_agg_max_multithreads<T: IntRing2k, N: Network>(
     e: &[Rep3RingShare<T>],
     perm_e: &[Rep3RingShare<u32>],
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
@@ -172,9 +165,9 @@ Standard: Distribution<T>,{
 
     // [[xi ]] ← Ifthen( [[ei ]] : [[vG [i]]], [[0]])
     let zero = RingElement(T::zero());
-    let x = mux::mux_if_share_then_public_vec_multithreads(&e, &v_g, &zero, nets, state0, states)?;
+    let x = mux::mux_if_share_then_public_vec_multithreads(&e, &v_g, &zero, nets, states)?;
 
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, state0, state1)?;
+    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
 
     Ok(y)
 }

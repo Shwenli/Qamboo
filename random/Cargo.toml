@@ -1,0 +1,35 @@
+[package]
+name = "random"
+version = "0.1.0"
+publish.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+dangerous = []
+
+[dependencies]
+tracing.workspace = true
+ark-serialize = { workspace = true }
+eyre = { workspace = true }
+itertools = { workspace = true }
+net = { version = "0.4.0", path = "../net", default-features = true }
+communication = { version = "0.1.0", path = "../communication"}
+num-traits = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+rayon = { workspace = true }
+serde = { workspace = true }
+
+
+
+[dev-dependencies]
+ark-std = { workspace = true }
+paste.workspace = true
+criterion.workspace = true
+

@@ -4,10 +4,9 @@ use crate::table_operator::{GroupBySinge, Groupby, AggFunc};
 use crate::NetStateArgs;
 use operator::{group_by, agg_func};
 use itertools::izip;
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::{Rep3RingShare};
-use protocols::protocols::rep3_ring::ring::bit::Bit;
+use random::rep3::Rep3State;
+use protocols::protocols::rep3_ring::Rep3RingShare;
+use algebra::ring::{bit::Bit, int_ring::IntRing2k};
 use net::Network;
 use primitives::permute::apply_perm_multithreads;
 use rand::distributions::Standard;
@@ -143,7 +142,7 @@ where
         netstate_args: &mut NetStateArgs<N>
     ) -> eyre::Result<(Vec<Rep3RingShare<T>>, Vec<Rep3RingShare<u32>>, Vec<Rep3RingShare<Bit>>)> {
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets,  states) = netstate_args.split();
 
         let group_keys = izip!(&group_key_names).map(|name| self[*name].get_data()).collect::<Vec<_>>();
         let vals: Vec<_> = self.schema.values()
@@ -161,8 +160,6 @@ where
                 true,
                 64,
                 nets,
-                state0,
-                state1,
                 states,
             )?;
 
@@ -193,7 +190,7 @@ where
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<(Vec<Rep3RingShare<T>>,Vec<Rep3RingShare<u32>>, Vec<Rep3RingShare<Bit>>, Vec<Rep3RingShare<T>>)> {
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets,  states) = netstate_args.split();
 
         let group_keys = izip!(&group_key_names).map(|name| self[*name].get_data()).collect::<Vec<_>>();
         let vals: Vec<_> = self.schema.values()
@@ -211,8 +208,6 @@ where
                 true,
                 64,
                 nets,
-                state0,
-                state1,
                 states,
             )?;
 
@@ -253,14 +248,13 @@ where
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()> {
 
-        let (nets, state0, state1, _states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let agg_res = agg_func::table_agg_count_multithreads(
             e,
             perm,
             nets,
-            state0,
-            state1,
+            states,
         )?;
 
         let agg_column = ShareColumn::new(agg_res, ShareType::Arithmetic, new_agg_name.to_string());
@@ -281,14 +275,13 @@ where
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()> {
         
-        let (nets, state0, state1, _states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let agg_res = agg_func::table_agg_count_by_valid_multithreads(
             old_valid,
             perm,
             nets,
-            state0,
-            state1,
+            states,
         )?;
 
         let agg_column = ShareColumn::new(agg_res, ShareType::Arithmetic, new_agg_name.to_string());
@@ -308,19 +301,18 @@ where
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()> {
 
-        let (nets, state0, state1, _states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
         
         //* get v_g from v_out by applying inverse permutation. 
         let v_out = self[to_agg_name].get_data();
-        let v_g = apply_perm_multithreads(perm, v_out, nets, state0, state1)?;
+            let v_g = apply_perm_multithreads(perm, v_out, nets, states)?;
 
         let agg_res = agg_func::table_agg_sum_multithreads(
             &v_g,
             e,
             perm,
             nets,
-            state0,
-            state1,
+            states,
         )?;
 
         let agg_column = ShareColumn::new(agg_res, ShareType::Arithmetic, new_agg_name.to_string());
@@ -339,18 +331,16 @@ where
             netstate_args: &mut NetStateArgs<N>,
         ) -> eyre::Result<()> {
 
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let v_out = self[to_agg_name].get_data();
-        let v_g = apply_perm_multithreads(perm, v_out, nets, state0, state1)?;
+        let v_g = apply_perm_multithreads(perm, v_out, nets, states)?;
 
         let agg_res = agg_func::table_agg_max_multithreads(
             &v_g,
             e,
             perm,
             nets,
-            state0,
-            state1,
             states,
         )?;
 
@@ -371,18 +361,16 @@ where
         netstate_args: &mut NetStateArgs<N>,
     )-> eyre::Result<()>{
         
-        let (nets, state0, state1, states) = netstate_args.split();
+        let (nets, states) = netstate_args.split();
 
         let v_out = self[to_agg_name].get_data();
-        let v_g = apply_perm_multithreads(perm, v_out, nets, state0, state1)?;
+        let v_g = apply_perm_multithreads(perm, v_out, nets, states)?;
 
         let agg_res = agg_func::table_agg_min_multithreads(
             &v_g,
             e,
             e_bit,
             nets,
-            state0,
-            state1,
             states,
         )?;
 

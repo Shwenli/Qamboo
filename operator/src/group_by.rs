@@ -1,14 +1,12 @@
 
 use itertools::izip;
 use num_traits::One;
+use primitives::mul::mul_share_vec;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use protocols::protocols::rep3_ring::{Rep3State};
-use protocols::protocols::rep3_ring::ring::bit::Bit;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
-use protocols::protocols::rep3_ring::{arithmetic,binary};
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use random::rep3::Rep3State;
+use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
+use protocols::protocols::rep3_ring::{arithmetic,binary,Rep3RingShare};
 use net::Network;
 use primitives::utils;
 use primitives::transform;
@@ -47,8 +45,6 @@ pub fn compute_muti_keys_perm_multithreads<T: IntRing2k, N: Network>(
     bitsize: usize,
     order: bool,
     nets: &[&N], 
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<PermRing>>>
 where
@@ -57,14 +53,14 @@ Standard: Distribution<T>,{
     let len =keys.len();
 
     let keys_binary_0 = transform::bit_decompose_many_multithreads(keys[len-1], bitsize, nets, states)?;
-    let mut perm = permute::gen_perm_multithreads(&keys_binary_0, order, bitsize, nets, state0, state1, states)?;
+    let mut perm = permute::gen_perm_multithreads(&keys_binary_0, order, bitsize, nets, states)?;
     
     for i in (0..len-1).rev(){
-        let new_k = permute::apply_inv_multithreads(&perm, keys[i], nets, state0, state1)?;
+        let new_k = permute::apply_inv_multithreads(&perm, keys[i], nets, states)?;
         let keys_binary = transform::bit_decompose_many_multithreads(&new_k, bitsize, nets, states)?;
-        let perm_i = permute::gen_perm_multithreads(&keys_binary, order, bitsize, nets, state0, state1, states)?;//这里做完之后需要apply_inv吗
+        let perm_i = permute::gen_perm_multithreads(&keys_binary, order, bitsize, nets, states)?;//这里做完之后需要apply_inv吗
         
-        perm = permute::compose_perm_multithreads(perm, perm_i, nets, state0)?;
+        perm = permute::compose_perm_multithreads(perm, perm_i, nets, states)?;
     }
 
     Ok(perm)
@@ -78,8 +74,6 @@ pub fn table_group_by_common_multithreads<T: IntRing2k, N: Network>(
     order: bool,
     sort_bitsize: usize,
     nets: &[&N],
-    state0: &mut Rep3State,
-    state1: &mut Rep3State,
     states: &mut [&mut Rep3State],
 ) -> eyre::Result<(Vec<Vec<Rep3RingShare<T>>>, Vec<Vec<Rep3RingShare<T>>>, Vec<Rep3RingShare<T>>, Vec<Rep3RingShare<Bit>>,
     Vec<Vec<Rep3RingShare<T>>>,Vec<Rep3RingShare<u32>>,Vec<Vec<Rep3RingShare<T>>>, Vec<Vec<Rep3RingShare<T>>>, Vec<Rep3RingShare<T>>, Vec<Rep3RingShare<T>>)> 
@@ -90,31 +84,31 @@ Standard: Distribution<T>,{
 
     let mut new_keys_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in keys{
-        let new_k = make_group_key_null_multithreads(k, valid, nets, state0)?;
+        let new_k = make_group_key_null_multithreads(k, valid, nets, states[0])?;
         new_keys_vec.push(new_k);
     }
 
     let mut new_vals_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for v in vals{
-        let new_v = make_group_key_null_multithreads(v, valid, nets, state0)?;
+        let new_v = make_group_key_null_multithreads(v, valid, nets, states[0])?;
         new_vals_vec.push(new_v);
     }
 
-    let perm = compute_muti_keys_perm_multithreads(&new_keys_vec.iter().map(|v| v.as_slice()).collect::<Vec<_>>(), sort_bitsize, order, nets, state0, state1, states)?;
+    let perm = compute_muti_keys_perm_multithreads(&new_keys_vec.iter().map(|v| v.as_slice()).collect::<Vec<_>>(), sort_bitsize, order, nets, states)?;
 
     let mut k_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in new_keys_vec{
-        let k_g_i = permute::apply_inv_multithreads(&perm, &k, nets, state0, state1)?;
+        let k_g_i = permute::apply_inv_multithreads(&perm, &k, nets, states)?;
         k_g.push(k_g_i);
     }
     
     let mut v_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for v in new_vals_vec{
-        let v_g_i = permute::apply_inv_multithreads(&perm, &v, nets, state0, state1)?;
+        let v_g_i = permute::apply_inv_multithreads(&perm, &v, nets, states)?;
         v_g.push(v_g_i);
     }
 
-    let valid = permute::apply_inv_multithreads(&perm, valid, nets, state0, state1)?;
+    let valid = permute::apply_inv_multithreads(&perm, valid, nets, states)?;
 
     eprintln!("After sorting in muti_key_group_by_common:");
 
@@ -128,7 +122,6 @@ Standard: Distribution<T>,{
     let mut e = f;
 
     for i in 1..k_g.len(){
-        //println!("Computing equality for key {}", i);
         
         let k_g_0 = &k_g[i][0..k_g[i].len()-1].to_vec();
         let k_g_1 = &k_g[i][1..].to_vec();
@@ -151,48 +144,46 @@ Standard: Distribution<T>,{
         e = nxt_e;
     }
     
-    //最后做一次1-e,因为只有全部键相等时,e才为1
-    e = izip!(e).map(|e_i| binary::xor_public(&e_i, &bit_one, state0.id)).collect::<Vec<_>>();
+    // Finally do 1-e, because only when all keys are equal, e is 1
+    e = izip!(e).map(|e_i| binary::xor_public(&e_i, &bit_one, states[0].id)).collect::<Vec<_>>();
 
-    let e_m: Rep3RingShare<Bit> = binary::promote_to_trivial_share(state0.id,&RingElement(Bit::new(true)));
+    let e_m: Rep3RingShare<Bit> = binary::promote_to_trivial_share(states[0].id,&RingElement(Bit::new(true)));
     e.push(e_m);
    
     let e_t_res: Vec<Rep3RingShare<T>> = transform::from_bit_to_arithmetic_t_multithreads(&e, nets, states)?;
     //eprintln!("e_t_res len: {}", open_vec(e_t_res));
 
-    //计算分组后的表的valid,如果不是一组的标识行，那么就是0。
-    //TODO: 现在这里有问题，new valid不会更新，原因是需要在之后对new valid做一次inv
-    let new_valid_tmp = arithmetic::local_mul_vec(&e_t_res, &valid, state0);
-    let new_valid = utils::reshare_vec_q_multithreads(&new_valid_tmp, nets)?;
+    //Compute the validity of the grouped table, if it's not the representative row of a group, then it's 0.
+    let new_valid = mul_share_vec(&e_t_res, &valid, nets, states)?;
 
     let mut k_g_n: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     let k_2 = RingElement::one();
     let k_2_64 = k_2<<63;
     for i in 0..k_g.len(){
-        let k_g_n_i = mux::mux_if_share_then_public_vec_multithreads(&e_t_res, &k_g[i], &k_2_64, nets, state0, states)?;
+        let k_g_n_i = mux::mux_if_share_then_public_vec_multithreads(&e_t_res, &k_g[i], &k_2_64, nets, states)?;
         k_g_n.push(k_g_n_i);
     }
 
     //这里获取e_t之后要对e_t去取反，因为:算法是按将1排到前面，0排到后面，还要求是稳定的，不能直接对按原e获得的perm逆置。取反后，靠前的1仍然靠前，是稳定的。
     let mut e_t= transform::from_bit_to_arithmetic_t_multithreads::<u32,N>(&e, nets, states)?;
     for p in e_t.iter_mut() {
-        *p = arithmetic::add_public(-(*p), RingElement::one(), state0.id);
+        *p = arithmetic::add_public(-(*p), RingElement::one(), states[0].id);
     }
-    let perm_e = permute::gen_bit_perm_multithreads(e_t, nets, state0, state1)?;
+    let perm_e = permute::gen_bit_perm_multithreads(e_t, nets, states)?;
     
     let mut k_out: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for i in 0..k_g_n.len(){
-        let k_out_i= permute::apply_inv_multithreads(&perm_e, &k_g_n[i], nets, state0, state1)?;
+        let k_out_i= permute::apply_inv_multithreads(&perm_e, &k_g_n[i], nets, states)?;
         k_out.push(k_out_i);
     }
 
     let mut v_out: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for i in 0..v_g.len(){
-        let v_out_i= permute::apply_inv_multithreads(&perm_e, &v_g[i], nets, state0, state1)?;
+        let v_out_i= permute::apply_inv_multithreads(&perm_e, &v_g[i], nets, states)?;
         v_out.push(v_out_i);
     }
 
-    let valid_out = permute::apply_inv_multithreads(&perm_e, &new_valid, nets, state0, state1)?;
+    let valid_out = permute::apply_inv_multithreads(&perm_e, &new_valid, nets, states)?;
 
     Ok((k_g, v_g, e_t_res, e, k_g_n, perm_e, k_out, v_out, valid.to_vec(), valid_out))
     // [[kG]], [[vG]], [[e]], [[e_bit]], [[kGN]], [[πGNtoOUT]], [[kOUT]], [[vOUT]](目前没有使用), [[old_valid]], [[new_valid]]

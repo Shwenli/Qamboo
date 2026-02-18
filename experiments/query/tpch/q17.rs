@@ -97,8 +97,6 @@ fn main() -> Result<()> {
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
-        &mut state0,
-        &mut state1,
         &mut states,
     );
 

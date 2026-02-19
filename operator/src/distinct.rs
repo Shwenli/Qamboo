@@ -3,15 +3,14 @@
 use itertools::izip;
 use num_traits::{One};
 use rand::{distributions::Standard, prelude::Distribution};
-use protocols::protocols::rep3_ring::{
-    Rep3RingShare, arithmetic::local_mul_vec, binary::xor_public
-};
+use protocols::protocols::rep3_ring::{Rep3RingShare, binary::xor_public};
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use random::rep3::Rep3State;
 use net::Network;
-use primitives::{compare::{and_vec_multithreads, or_vec_multithreads},transform, utils};
+use primitives::{compare::{and_vec_multithreads, or_vec_multithreads},transform};
 use primitives::compare::{eq_many_multithreads,neq_many_multithreads};
-use primitives::utils::reshare_vec_multithreads;
+use primitives::mul::mul_share_vec;
+use primitives::utils::get_data_share;
 
 
 /// Before using this function, the input must be sorted.
@@ -43,12 +42,11 @@ Standard: Distribution<T>,{
     let result_cond_u64 = transform::from_bit_to_arithmetic_t_multithreads(&result_cond_tmp, nets, states)?;
 
     let mut result_cond = Vec::with_capacity(result_cond_tmp.len()+1);
-    let one_share = utils::get_data_share::<T>(&T::one(), states[0].id)?;
+    let one_share = get_data_share::<T>(&T::one(), states[0].id)?;
     result_cond.push(one_share);
     result_cond.extend(result_cond_u64);
 
-    let result_valid_tmp = local_mul_vec(valid, &result_cond, states[0]);
-    let result_valid = reshare_vec_multithreads(result_valid_tmp, nets)?;
+    let result_valid = mul_share_vec(valid, &result_cond, nets, states)?;
 
     Ok(result_valid)
 }

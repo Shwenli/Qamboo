@@ -1,13 +1,14 @@
 //! Rep3 RNGs
 //!
 //! This module contains implementations of rep3 rngs
-
+use itertools::Itertools;
 use communication::rep3::id::PartyID;
-use crate::rep3::{RngType, SEED_SIZE};
 use std::mem::MaybeUninit;
 use rand::{
     Rng, SeedableRng, distributions::Standard, prelude::Distribution, seq::SliceRandom,
 };
+use crate::rep3::{RngType, SEED_SIZE};
+
 
 #[derive(Debug)]
 /// A correlated rng for rep3
@@ -99,9 +100,9 @@ impl Rep3Rand {
             || (0..len).map(|_| self.rng2.r#gen()).collect::<Vec<_>>(),
         );
         a.into_iter()
-            .zip(b.into_iter())
-            .map(|(a, b)| a - b)
-            .collect()
+        .zip_eq(b.into_iter())
+        .map(|(a, b)| a - b)
+        .collect()
     }
 
     /// Generate two random elements

@@ -1,14 +1,14 @@
-use crate::share_table::ShareTable;
-use crate::table_operator::{Filter};
-use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
-use primitives::compare::{self,and_vec_multithreads};
-use protocols::protocols::rep3_ring::arithmetic::local_mul_vec;
-use protocols::protocols::rep3_ring::Rep3RingShare;
-use net::Network;
-use primitives::transform::*;
-use primitives::utils::{reshare_vec_multithreads};
+
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
+use net::Network;
+use primitives::transform::*;
+use primitives::mul::mul_share_vec;
+use primitives::compare::{self,and_vec_multithreads};
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
+use protocols::protocols::rep3_ring::Rep3RingShare;
+use crate::share_table::ShareTable;
+use crate::table_operator::Filter;
 use crate::predicate::Predicate;
 use crate::NetStateArgs;
 
@@ -141,8 +141,8 @@ where
         ans = b2a_many_multithreads(&ans, nets, states)?;
 
         let valid_data = self["valid"].get_data();
-        let update_valid = local_mul_vec( &ans, valid_data, states[0]);
-        let update_valid = reshare_vec_multithreads(update_valid, nets)?;
+
+        let update_valid = mul_share_vec(&ans, &valid_data, nets, states)?;
         
         self["valid"].update_data(update_valid);
 

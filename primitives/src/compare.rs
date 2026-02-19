@@ -2,18 +2,18 @@
 use itertools::izip;
 use itertools::Itertools;
 use num_traits::{One};
+use net::Network;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
 use rayon::iter::IntoParallelRefMutIterator;
+use random ::rep3::Rep3State;
 use random::rep3::rep3rng_rayon::random_elements_vec_multithreads;
 use communication::rep3::multinet_impl::reshare_many_multinet;
 use rand::{distributions::Standard, prelude::Distribution};
 use protocols::protocols::rep3_ring::{Rep3RingShare, binary, conversion};
 use protocols::protocols::rep3_ring::arithmetic;
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
-use random ::rep3::Rep3State;
-use net::Network;
 use crate::transform::a2b_many_multithreads;
 use crate::kogge_stone_adder;
 

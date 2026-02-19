@@ -12,9 +12,10 @@ use protocols::protocols::rep3_ring::detail;
 use protocols::protocols::rep3_ring::conversion::b2a;
 use communication::rep3::id::PartyID;
 use communication::rep3::net_impl::Rep3NetworkImpl;
+use communication::task::get_task_chunks;
 use random::rep3::Rep3State;
 use num_traits::{One, Zero};
-use crate::{kogge_stone_adder::{low_depth_binary_add_const_many, low_depth_binary_add_many}, transform, utils::get_task_chunks};
+use crate::{kogge_stone_adder::{low_depth_binary_add_const_many, low_depth_binary_add_many}, transform};
 
 
 /// Computes a CMUX: If `c` is `1`, returns `x_t`, otherwise returns `x_f`.
@@ -189,14 +190,6 @@ pub fn div_rem_const_public_arithmetic_i64<N: Network>(
 
     Ok(res)
 }
-/*
-err_share: 18446744073709551611
-err_share: 18446744073709551611
-err_share: 18446744073709551611
-err: 1
-err: 1
-err: 1
- */
 
 pub fn div_rem_const_public_arithmetic_many_i64<N: Network>(
     numerator: &[Rep3RingShare<u64>],

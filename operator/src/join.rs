@@ -7,7 +7,8 @@ use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use primitives::mux;
 use primitives::permute::{apply_inv, apply_inv_multithreads, apply_perm, apply_perm_multithreads};
-use primitives::utils::{reshare_vec_q_multithreads,prefix_sum_sequential};
+use primitives::utils::prefix_sum_sequential;
+use primitives::mul::mul_share_vec;
 use crate::from_l_to_r;
 
 type PermRing = u32;
@@ -64,17 +65,15 @@ where
 fn compute_jrj_multithreads<T: IntRing2k, N: Network>(
     c: &[Rep3RingShare<T>],
     r:  &[Rep3RingShare<T>],
-    net: &[&N],
-    state0: &mut Rep3State,
+    nets: &[&N],
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
     Standard: Distribution<T>,
 {
-    let jrj_tmp = arithmetic::local_mul_vec(c, r, state0);
+    let result = mul_share_vec(c, r, nets, states)?;
 
-    let results = reshare_vec_q_multithreads(&jrj_tmp, net)?;
-
-    Ok(results)
+    Ok(result)
 }
 
 fn compute_vj_multithreads<T: IntRing2k, N: Network>(
@@ -98,12 +97,9 @@ where
         states,
     )?;
 
-    let vj_tmp = arithmetic::local_mul_vec(&v, vr, states[0]);
+    let result = mul_share_vec(&v, vr, net, states)?;
     
-    //TODO: mutithreaded reshare
-    let results = reshare_vec_q_multithreads(&vj_tmp, net)?;
-    
-    Ok(results)
+    Ok(result)
 }
 
 
@@ -172,14 +168,14 @@ where
 
     let perm = from_l_to_r::from_l_to_r_gen_perm_multithreads(&k_l, &k_r, bitsize, nets, states)?;
     
-    //* j is final tabla. d is the number of value columns in left table, e is the number of  value columns in right table
-    //* 2: k_r and v_j
+    //j is final tabla. d is the number of value columns in left table, e is the number of  value columns in right table
+    //2: k_r and v_j
     let mut j: Vec<Vec<Rep3RingShare<T>>> = Vec::with_capacity(d+e+2);
 
-    //* k_r remain the same order without permutation
+    //k_r remain the same order without permutation
     j.push(k_r);
 
-    //* compute jl_k, l_k is column form left table
+    //compute jl_k, l_k is column form left table
     for l_k in val_l{
         let jl_k = compute_jlk_multithreads(len_m, len_n, &perm, l_k, nets, states)?;
         j.push(jl_k);
@@ -189,7 +185,7 @@ where
     let c = compute_c_multithreads(len_m, len_n, &perm, nets, states)?;
 
     for r_j in val_r{
-        let jr_j = compute_jrj_multithreads(&c, r_j, nets, states[0])?;
+        let jr_j = compute_jrj_multithreads(&c, r_j, nets, states)?;
         j.push(jr_j);
     }
 
@@ -252,7 +248,7 @@ where
     let c = compute_c_multithreads(len_m, len_n, &perm, nets, states)?;
 
     for r_j in val_r{
-        let jr_j = compute_jrj_multithreads(&c, r_j, nets, states[0])?;
+        let jr_j = compute_jrj_multithreads(&c, r_j, nets, states)?;
         j.push(jr_j);
     }
 
@@ -293,10 +289,8 @@ where
 
     // invert f_res to get the final flags. If k_l is in k_r, then f_res == 1 else f_res ==0
     let f_res = f_inv.iter().map(|f_i| arithmetic::sub_public_by_shared(one, *f_i, states[0].id)).collect::<Vec<_>>();
-    let new_valid_tmp = arithmetic::local_mul_vec(&f_res, &valid_l, states[0]);
 
-    //*  multiply f_res with v_l to get the final result
-    let new_valid = reshare_vec_q_multithreads(&new_valid_tmp, nets)?;
+    let new_valid = mul_share_vec(&f_res, &valid_l, nets, states)?;
 
     Ok(new_valid)
 }
@@ -330,9 +324,8 @@ where
         states,
     )?;
 
-    //*  update valid in table l by multiplying with f_inv
-    let new_valid_tmp = arithmetic::local_mul_vec(&f_inv, &valid_l, states[0]);
-    let new_valid = reshare_vec_q_multithreads(&new_valid_tmp, nets)?;
+    // update valid in table l by multiplying with f_inv
+    let new_valid = mul_share_vec(&f_inv, &valid_l, nets, states)?;
 
     Ok(new_valid)
 }

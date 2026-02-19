@@ -28,7 +28,6 @@ pub fn local_mul_vec_multithreads<T: IntRing2k>(
 where
     Standard: Distribution<T>,
 {
-    //squeeze all random elements at once in beginning for determinismus
     let masking_fes = masking_elements_vec_multithreads::<RingElement<T>>(states, lhs.len());
 
     lhs.par_iter()

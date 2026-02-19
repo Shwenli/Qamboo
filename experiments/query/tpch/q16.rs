@@ -34,23 +34,26 @@
 use std::path::PathBuf;
 use std::vec;
 use clap::Parser;
-use protocols::protocols::rep3_ring::arithmetic::{open};
-use primitives::utils::prefix_sum_sequential;
-use table::column_operator::{Distinct};
 use std::time::Instant;
 use color_eyre::{Result, eyre::Context};
-use protocols::protocols::rep3_ring::Rep3State;
-use net::tcp::{TcpNetwork, NetworkConfig};
+use random::rep3::Rep3State;
+use random::MpcState;
+use communication::rep3::id::PartyID;
+use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
+use protocols::protocols::rep3_ring::arithmetic::{open};
+//use primitives::utils::prefix_sum_sequential;
 use experiments::tpch_database_gen;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
+use table::column_operator::TransformBetweenArithAndBinary;
+use table::column_operator::Distinct;
 use table::predicate::Predicate;
 use table::column_operator::PrefixSum;
 use table::table_operator::Open;
 use table::NetStateArgs;
 use polars::prelude::*;
-use protocols::protocols::rep3_ring::id::PartyID;
+
 
 const BRAND: u64 = 10;
 const TYPE: u64 = 10;
@@ -90,33 +93,32 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid=args.party_id.clone();
+    let default_threads = rayon::current_num_threads();
 
     tracing::info!("setting up network");
-
-    let mut nets: Vec<TcpNetwork> = Vec::new();
+    let mut nets: Vec<FastTcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
-    let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
-    let net0 = TcpNetwork::new(config)?;
-    let mut state0 = Rep3State::new(&net0)?;
-
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = TcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
-
-    for i in 2..(2+args.threads){
+    for i in 0..args.threads {
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = TcpNetwork::new(config)?;
+        let net = FastTcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
     }
 
-    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
+    if states.len() <= default_threads {
+        let diff = default_threads - states.len();
+        for _i in 0..diff{
+            let state = states[0].fork(0)?;
+            states.push(state);
+        }
+    }
+    
+    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -139,28 +141,16 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let p_brand_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_table["p_brand"],
-        &mut mpc_exec_args,
-    )?;
+    let p_brand_binary = part_table["p_brand"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_table.insert_column("[p_brand]".to_string(), p_brand_binary);
 
-    let p_type_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_table["p_type"],
-        &mut mpc_exec_args,
-    )?;
+    let p_type_binary = part_table["p_type"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_table.insert_column("[p_type]".to_string(), p_type_binary);
 
-    let p_size_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_table["p_size"],
-        &mut mpc_exec_args,
-    )?;
+    let p_size_binary = part_table["p_size"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_table.insert_column("[p_size]".to_string(), p_size_binary);
 
-    let s_comment_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &supplier_table["s_comment"],
-        &mut mpc_exec_args,
-    )?;
+    let s_comment_binary = supplier_table["s_comment"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     supplier_table.insert_column("[s_comment]".to_string(), s_comment_binary);
 
 
@@ -256,13 +246,13 @@ fn main() -> Result<()> {
 
 
     tracing::info!("count(distinct ps_suppkey) as supplier_cnt");
-    let open_old_valid = prefix_sum_sequential(&old_valid)?;
-    tracing::info!("old valid cnt: {:?}", open(open_old_valid[open_old_valid.len() - 1], &net0));
+    //let open_old_valid = prefix_sum_sequential(&old_valid)?;
+    //tracing::info!("old valid cnt: {:?}", open(open_old_valid[open_old_valid.len() - 1], mpc_exec_args.nets[0]));
 
     let agg_valid = part_partsupp_table["ps_suppkey"].distinct(&old_valid, &e, &mut mpc_exec_args)?;
 
-    let result_distinct = prefix_sum_sequential(&agg_valid)?;
-    tracing::info!("distinct supplier cnt: {:?}", open(result_distinct[result_distinct.len() - 1], &net0));
+    //let result_distinct = prefix_sum_sequential(&agg_valid)?;
+    //tracing::info!("distinct supplier cnt: {:?}", open(result_distinct[result_distinct.len() - 1], &net0));
 
     let _ = part_partsupp_table.agg_count_by_valid("supplier_cnt",&agg_valid, &perm, &mut mpc_exec_args)?;
 
@@ -274,7 +264,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q16 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q16 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q16");
@@ -291,13 +281,13 @@ fn main() -> Result<()> {
     let _ = result_table.order_by("valid", false, &mut mpc_exec_args)?;
     
     let sum_valid = result_table["valid"].prefix_sum();
-    let open_valid = open(sum_valid, &net0)?.0;
+    let open_valid = open(sum_valid, mpc_exec_args.nets[0])?.0;
     tracing::info!("open valid: {}", open_valid);
     result_table.head(open_valid as usize);
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q16 polars:");
         let partsupp = partsupp_table_polars.unwrap();
         let part = part_table_polars.unwrap();

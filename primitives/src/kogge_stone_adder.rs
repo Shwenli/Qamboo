@@ -68,8 +68,8 @@ where
     Standard: Distribution<T>,
 {
     let mut p = x1.par_iter()
+        .zip_eq(x2.par_iter())
         .with_min_len(1024)
-        .zip(x2.par_iter())
         .map(|(x1_i, x2_i)| x1_i ^ x2_i)
         .collect::<Vec<_>>();
 
@@ -136,7 +136,8 @@ where
     for i in 0..d {
         let shift = 1 << i;
 
-        let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter().zip(g.par_iter())
+        let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter()
+        .zip_eq(g.par_iter())
         .with_min_len(1024)
         .map(|(p_el, g_el)| (p_el << shift, g_el << shift))
         .unzip();
@@ -154,8 +155,9 @@ where
     }
 
     g.par_iter_mut()
+    .zip_eq(s_.into_par_iter())
     .with_min_len(1024)
-    .zip(s_.into_par_iter()).for_each(|(g, s_)| {
+    .for_each(|(g, s_)| {
         *g <<= 1;
         *g ^= s_;
     });
@@ -257,7 +259,8 @@ where
 
     for i in 0..d {
         let shift = 1 << i;
-        let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter().zip(g.par_iter())
+        let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter()
+        .zip_eq(g.par_iter())
         .with_min_len(1024)
         .map(|(p_el, g_el)| (p_el << shift, g_el << shift))
         .unzip();
@@ -266,7 +269,10 @@ where
         // maybe just input the mask into AND?
         let (r1, r2) = and_twice_many_multithreads(&p, g_, p_, nets, states)?;
         p = r2;
-        g.par_iter_mut().with_min_len(1024).zip(r1.par_iter()).for_each(|(g, r1)| *g ^= r1);
+        g.par_iter_mut()
+        .zip_eq(r1.par_iter())
+        .with_min_len(1024)
+        .for_each(|(g, r1)| *g ^= r1);
     }
     Ok(g)
 }
@@ -325,20 +331,26 @@ where
     //let mut local_a2 = Vec::with_capacity(a.len());
 
     let (mut mask1, mask_b) = random_elements_vec_multithreads::<RingElement<T>>(states, a.len() );
-    mask1.par_iter_mut().with_min_len(1024).zip(mask_b.par_iter()).for_each(|(m1, mb)| {
+    mask1.par_iter_mut()
+    .zip_eq(mask_b.par_iter())
+    .with_min_len(1024)
+    .for_each(|(m1, mb)| {
         *m1 ^= *mb;
     });
 
     let (mut mask2, mask_b) = random_elements_vec_multithreads::<RingElement<T>>(states, a.len());
-    mask2.par_iter_mut().with_min_len(1024).zip(mask_b.par_iter()).for_each(|(m2, mb)| {
+    mask2.par_iter_mut()
+    .zip_eq(mask_b.par_iter())
+    .with_min_len(1024)
+    .for_each(|(m2, mb)| {
         *m2 ^= *mb;
     });
 
     let (local_a1, local_a2):(Vec<RingElement<T>>, Vec<RingElement<T>>) = a.par_iter()
-        .zip(b1.par_iter())
-        .zip(b2.par_iter())
-        .zip(mask1.par_iter())
-        .zip(mask2.par_iter())
+        .zip_eq(b1.par_iter())
+        .zip_eq(b2.par_iter())
+        .zip_eq(mask1.par_iter())
+        .zip_eq(mask2.par_iter())
         .with_min_len(1024)
         .map(|((((a, b1), b2), mask1i), mask2i)| {
             let local_a1 = (b1 & a) ^ mask1i;
@@ -350,8 +362,11 @@ where
     let result = recv_prev_many_multinet::<RingElement<T>, N>(nets)?;
     let (local_b1, local_b2) = result.split_at(a.len());
 
-    let (r1, r2): (Vec<_>, Vec<_>) = local_a1.par_iter().with_min_len(1024)
-    .zip(local_b1.par_iter()).zip(local_a2.par_iter()).zip(local_b2.par_iter())
+    let (r1, r2): (Vec<_>, Vec<_>) = local_a1.par_iter()
+    .zip_eq(local_b1.par_iter())
+    .zip_eq(local_a2.par_iter())
+    .zip_eq(local_b2.par_iter())
+    .with_min_len(1024)
     .map(|(((a1, b1), a2), b2)| (Rep3RingShare::new_ring(*a1, *b1), Rep3RingShare::new_ring(*a2, *b2)))
     .unzip();
 
@@ -396,8 +411,9 @@ where
     Standard: Distribution<T>,
 {
     let (x2,p):(Vec<_>,Vec<_>) = x1.par_iter()
+    .zip_eq(x2.par_iter())
     .with_min_len(1024)
-    .zip(x2.par_iter()).map(|(x1_i, x2_i)| {
+    .map(|(x1_i, x2_i)| {
         let x2_i = !x2_i;
         let p_i = *x1_i ^ x2_i;
         (x2_i, p_i)
@@ -406,14 +422,17 @@ where
     let mut g = and_vec_multithreads(x1, &x2, nets, states)?;
     
     // Since carry_in = 1, we need to XOR the LSB of x1 and x2 to g (i.e., xor the LSB of p)
-    g.par_iter_mut().zip(p.par_iter()).with_min_len(1024)
+    g.par_iter_mut()
+    .zip_eq(p.par_iter())
+    .with_min_len(1024)
     .for_each(|(g_item, p_item)| {
         *g_item ^= *p_item & RingElement::one();
     });
 
     let (mut res, c) = kogge_stone_inner_with_carry_many_multithreads(&p, &g, nets, states)?;
     // cin=1
-    res.par_iter_mut().with_min_len(1024)
+    res.par_iter_mut()
+    .with_min_len(1024)
     .for_each(|res_item| {
         *res_item = binary::xor_public(res_item, &RingElement::one(), states[0].id);
     });
@@ -464,7 +483,8 @@ where
     let id = states[0].id;
 
     let (_x2_, (p, g)): (Vec<_>, (Vec<_>, Vec<_>)) = x1.par_iter()
-    .with_min_len(1024).zip(x2.par_iter())
+    .zip_eq(x2.par_iter())
+    .with_min_len(1024)
     .map(|(x1_i, x2_i)| {
         let x2_i = !x2_i + RingElement::one();
         let p_i = binary::xor_public(x1_i, &x2_i, id);
@@ -475,7 +495,8 @@ where
     let (res, mut carries) = kogge_stone_inner_with_carry_many_multithreads(&p, &g, nets, states)?;
 
     // Correct the carry for cases where x2[i] was zero
-    carries.par_iter_mut().zip(x2.par_iter())
+    carries.par_iter_mut()
+    .zip_eq(x2.par_iter())
     .with_min_len(1024)
     .for_each(|(c, x2_i)| {
         if x2_i.is_zero() {
@@ -530,7 +551,8 @@ where
     let id= states[0].id;
 
     let (_x2_, (p, g)): (Vec<_>, (Vec<_>, Vec<_>)) = x1.par_iter()
-    .with_min_len(1024).zip(x2.par_iter())
+    .zip_eq(x2.par_iter())
+    .with_min_len(1024)
     .map(|(x1_i, x2_i)| {
         let x2_i = !x2_i;
         let p_i = binary::xor_public(&x2_i, &x1_i, id);

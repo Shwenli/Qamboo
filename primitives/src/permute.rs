@@ -7,7 +7,6 @@ use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
 use communication::rep3::id::PartyID;
 use communication::rep3::net_impl::Rep3NetworkImpl;
-use communication::task::get_task_chunks;
 use random::rep3::Rep3State;
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::arithmetic;
@@ -16,6 +15,7 @@ use net::Network;
 use crate::shuffle::*;
 use crate::mul::*;
 use crate::transform::{inject_bit_multithreads, inject_bit};
+
 
 
 // u32 allows to sort 4*10^9 elements. Inputs of this size require 32*4*10^9*2 bytes, i.e., 256 GB of RAM
@@ -145,6 +145,11 @@ where
     let len = rho.len();
     debug_assert_eq!(len, bits.len());
 
+    // Apply perm standard implementation:
+    // Step1: generate random permutation π_rand and compute ρ ∘ π_rand (opened)
+    // Step2: locally shuffle bits according to π_rand, obtaining [[π_rand(v)]] (bits_shuffled)
+    // Step3: locally apply the opened permutation ρ to bits_shuffled, obtaining [[ρ(π_rand(v))]] = [[π(v)]]
+
     let unshuffled = (0..len as PermRing).collect::<Vec<_>>();
     let (perm_a, perm_b) = states[0].rngs.rand.random_perm(unshuffled);
 
@@ -156,18 +161,20 @@ where
 
     let opened = shuffle_reveal_multithreads::<PermRing, _>(&perm, rho, nets, states);
     
-    // apply_perm 标准实现：
-    // 步骤2-3: shuffle_reveal 得到 ρ = π ∘ π_rand⁻¹ (opened)
-    // 步骤4: shuffle 得到 [[π_rand(v)]] (bits_shuffled)
-    // 步骤5: 本地应用公开排列 ρ，得到 [[ρ(π_rand(v))]] = [[π(v)]]
     let opened = opened?;
     
-    // 步骤5：本地应用公开排列 ρ
-    // result[i] = bits_shuffled[ρ[i] - 1]
+    let result_pre = opened.into_par_iter()
+    .with_min_len(1024)
+    .map(|opened_i| {
+        let p = opened_i.0 as usize - 1;
+        bits[p]
+    }).collect::<Vec<_>>();
+    /*
     let mut result_pre = vec![Rep3RingShare::zero_share(); len];
     for i in 0..len {
         result_pre[i] = bits[opened[i].0 as usize - 1];
     }
+    */
     let result = unshuffle_multithreads(&perm, &result_pre, nets,states)?;
     
     Ok(result)
@@ -206,9 +213,23 @@ where
     );
     
     let mut result = vec![Rep3RingShare::zero_share(); len];
+    let ptr = result.as_mut_ptr() as usize;
+    opened?.into_par_iter()
+    .zip_eq(bits_shuffled?.into_par_iter())
+    .with_min_len(1024)
+    .for_each(move |(p, b)| {
+        let idx = (p.0 as usize) - 1;
+        unsafe {
+            let p = ptr as *mut Rep3RingShare<T>;
+            p.add(idx).write(b);
+        }
+    });
+    /* 
+    let mut result = vec![Rep3RingShare::zero_share(); len];
     for (p, b) in opened?.into_iter().zip(bits_shuffled?) {
         result[p.0 as usize - 1] = b;
     }
+    */
 
     Ok(result)
 }
@@ -246,12 +267,26 @@ where
     let opened = opened?;
     let bits_shuffled = bits_shuffled?;
 
+    /*
     let mut temp_result = vec![Rep3RingShare::zero_share(); len];
     for (p, b) in opened.into_iter().zip(bits_shuffled) {
         temp_result[p.0 as usize - 1] = b;
     }
+    */
+    
+    let ptr = bits.as_mut_ptr() as usize;
+    opened.into_par_iter()
+    .zip_eq(bits_shuffled.into_par_iter())
+    .with_min_len(1024)
+    .for_each(move |(p, b)| {  // ← 加 move
+        let idx = (p.0 as usize) - 1;
+        unsafe {
+            let p = ptr as *mut Rep3RingShare<T>;
+            p.add(idx).write(b);
+        }
+    });
 
-    bits.copy_from_slice(&temp_result);
+    //bits.copy_from_slice(&temp_result);
 
     Ok(())
 }
@@ -278,10 +313,18 @@ pub fn compose_perm_multithreads<N: Network>(
 
     let opened = shuffle_reveal_multithreads(&perm, &sigma, nets, states)?;
 
+    let shuffled = opened.into_par_iter()
+    .with_min_len(1024)
+    .map(|opened_i| {
+        let p = opened_i.0 as usize - 1;
+        phi[p]
+     }).collect::<Vec<_>>();
+    /*
     let mut shuffled = Vec::with_capacity(len);
     for p in opened {
         shuffled.push(phi[p.0 as usize - 1]);
     }
+    */
 
     unshuffle_multithreads(&perm, &shuffled, nets, states)
 }

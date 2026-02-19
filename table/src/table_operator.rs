@@ -14,18 +14,8 @@ pub trait Open<T,U>{
     ) -> eyre::Result<ShareTable<U>>;
 }
 
-/// Trait for tables that support order by operations
 pub trait OrderBySingle<T> {
-    /// 根据指定的列进行排序
-    /// 
-    /// # Arguments
-    /// * `key_column` - 用作排序键的列的引用
-    /// * `order` - 排序顺序，每个位对应一个比特位的排序方向
-    /// * `bitsize` - 考虑的比特大小
-    /// * `net0` - 第一个网络连接
-    /// * `net1` - 第二个网络连接
-    /// * `state0` - 第一个 Rep3 状态
-    /// * `state1` - 第二个 Rep3 状态
+
     fn order_by_single<N: Network>(
         &mut self,
         key_column: &str,
@@ -47,16 +37,7 @@ pub trait OrderBy<T> {
 
 pub trait Filter<T,U>{
 
-    /// 根据指定的列和谓词进行过滤（与公开值比较）
-    /// 
-    /// # Arguments
-    /// * `filter_column` - 用作过滤的列引用
-    /// * `predicate` - 谓词（比较操作类型）
-    /// * `filter_value` - 过滤值
-    /// * `valid_column` - 有效性列的名称，用于标记哪些行是有效的
-    /// * `nets` - 网络连接切片,支持多线程并行执行
-    /// * `states` - Rep3 状态切片,与网络连接一一对应
-    /// 
+    // Filter by comparison of a column of shared values with a public value.
     fn filter_public<N: Network>(
         &mut self,
         filter_column: &str,
@@ -65,16 +46,8 @@ pub trait Filter<T,U>{
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()>;
 
-    /// 根据两列共享值的比较进行过滤
-    /// 
-    /// # Arguments
-    /// * `lhs_column` - 左侧列引用
-    /// * `predicate` - 谓词(比较操作类型)
-    /// * `rhs_column` - 右侧列引用
-    /// * `valid_column` - 有效性列的名称,用于标记哪些行是有效的
-    /// * `nets` - 网络连接切片,支持多线程并行执行
-    /// * `states` - Rep3 状态切片,与网络连接一一对应
-    /// 
+    
+    // Filter by comparison of two columns of shared values. 
     fn filter_shared<N: Network>(
         &mut self,
         lhs_column: &str,
@@ -112,15 +85,6 @@ pub trait Filter<T,U>{
 
 pub trait GroupBySinge<T>{
 
-    /// 根据指定的列进行分组聚合
-    /// 
-    /// # Arguments
-    /// * `group_column` - 用作分组的列引用
-    /// * `agg_column` - 用作聚合的列引用
-    /// * `agg_func` - 聚合函数类型（如求和、计数等）
-    /// * `nets` - 网络连接切片,支持多线程并行执行
-    /// * `states` - Rep3 状态切片,与网络连接一一对应
-    /// 
     fn group_by_single<N: Network>(
         &mut self,
         group_key: Vec<&str>,

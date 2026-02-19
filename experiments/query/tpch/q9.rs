@@ -84,7 +84,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid=args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
     tracing::info!("setting up network");
     let mut nets: Vec<FastTcpNetwork> = Vec::new();
@@ -109,7 +109,7 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let party_id = state0.id;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -292,7 +292,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q9 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q9 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q9");
@@ -318,7 +318,7 @@ fn main() -> Result<()> {
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q9 Polars Validation:");
 
         let lineitem = lineitem_table_polars.unwrap();

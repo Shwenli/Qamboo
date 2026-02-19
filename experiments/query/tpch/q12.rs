@@ -39,6 +39,9 @@ use random::rep3::Rep3State;
 use random::MpcState;
 use communication::rep3::id::PartyID;
 use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
+use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::protocols::rep3_ring::Rep3RingShare;
+use primitives::utils::{get_one_share_vec};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use experiments::tpch_database_gen;
@@ -47,9 +50,7 @@ use table::column_operator::{ColumnBooleanOperator, PrefixSum};
 use table::share_column::ShareColumn;
 use table::share_column::ShareType;
 use table::NetStateArgs;
-use protocols::protocols::rep3_ring::arithmetic::open;
-use protocols::protocols::rep3_ring::Rep3RingShare;
-use primitives::utils::{get_one_share_vec};
+use table::column_operator::TransformBetweenArithAndBinary;
 use polars::prelude::*;
 
 
@@ -112,7 +113,7 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let party_id = state0.id;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -134,34 +135,19 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let l_shipmode_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipmode"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipmode_binary = lineitem_table["l_shipmode"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column(l_shipmode_binary.get_name().to_string(),l_shipmode_binary);
 
-    let l_shipdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipdate_binary = lineitem_table["l_shipdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column(l_shipdate_binary.get_name().to_string(),l_shipdate_binary);
 
-    let l_commitdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_commitdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_commitdate_binary = lineitem_table["l_commitdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column(l_commitdate_binary.get_name().to_string(),l_commitdate_binary);
 
-    let l_receiptdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_receiptdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_receiptdate_binary = lineitem_table["l_receiptdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column(l_receiptdate_binary.get_name().to_string(),l_receiptdate_binary);
 
-    let o_orderpriority_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &orders_table["o_orderpriority"],
-        &mut mpc_exec_args,
-    )?;
+    let o_orderpriority_binary = orders_table["o_orderpriority"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     orders_table.insert_column(o_orderpriority_binary.get_name().to_string(),o_orderpriority_binary);
 
 
@@ -263,7 +249,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q12 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q12 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q12");
@@ -283,7 +269,7 @@ fn main() -> Result<()> {
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q12 polars:");
         let lineitem = _lineitem_table_polars.unwrap();
         let orders = _orders_table_polars.unwrap();

@@ -1,4 +1,3 @@
-/// project operator for ShareTable
 
 use crate::share_table::ShareTable;
 use crate::table_operator::Project;

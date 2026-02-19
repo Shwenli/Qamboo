@@ -36,6 +36,7 @@ use communication::rep3::id::PartyID;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use experiments::tpch_database_gen;
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::column_operator::{ColumnBooleanOperator, PrefixSum};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, Open, OrderBy, Project};
 use table::predicate::Predicate;
@@ -74,7 +75,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid= args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
     tracing::info!("Q4 with SF: {}", sf);
     
@@ -101,13 +102,10 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let mut state0 = states[0].fork(0)?;
-    let mut state1 = states[0].fork(0)?;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
-        &mut state0,
-        &mut state1,
         &mut states,
     );
 
@@ -120,23 +118,13 @@ fn main() -> Result<()> {
     let (mut orders_table, orders_table_polars) = tpch_database_gen::gen_orders_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Orders table generated with {} rows", orders_table.num_rows());
 
-    let l_commidate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_commitdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_commidate_binary = lineitem_table["l_commitdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column(l_commidate_binary.get_name().to_string(),l_commidate_binary);
 
-    let l_receiptdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_receiptdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_receiptdate_binary = lineitem_table["l_receiptdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column(l_receiptdate_binary.get_name().to_string(),l_receiptdate_binary);
 
-
-    let o_orderdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &orders_table["o_orderdate"],
-        &mut mpc_exec_args,
-    )?;
+    let o_orderdate_binary = orders_table["o_orderdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     orders_table.insert_column(o_orderdate_binary.get_name().to_string(),o_orderdate_binary);
 
 
@@ -229,7 +217,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q4 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q4 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q4");
@@ -249,7 +237,7 @@ fn main() -> Result<()> {
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q4 polars:");
 
         let lineitem = lineitem_table_polars.unwrap();

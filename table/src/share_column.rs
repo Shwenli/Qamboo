@@ -35,13 +35,14 @@ impl<T> ShareColumn<T> {
         self.data.is_empty()
     }
 
-    // self.0的返回值是&Vec<T, Global> Global 是默认的分配器
     pub fn get_data(&self) -> &[T] {
         &self.data
     }
+
     pub fn get_name(&self) -> &str {
         &self.name
     }
+    
     pub fn get_data_mut(&mut self) -> &mut Vec<T> {
         &mut self.data
     }
@@ -58,11 +59,12 @@ impl<T> ShareColumn<T> {
         self.name = new_name;
     }
 
-    //只保留前n行
+    //Keep the first n rows
     pub fn truncate_first(&mut self, n: usize) {
         self.data.truncate(n);
     }
-    //只保留后n行
+
+    //Keep the last n rows
     pub fn truncate_last(&mut self, n: usize) {
         let len = self.data.len();
         self.data.drain(0..(len - n));

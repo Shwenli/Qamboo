@@ -66,7 +66,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid= args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
     
     tracing::info!("setting up network");
     let mut nets: Vec<FastTcpNetwork> = Vec::new();
@@ -91,6 +91,7 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -210,7 +211,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q4 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q4_no_semi execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q4_no_semi");

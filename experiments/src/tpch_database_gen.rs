@@ -1,14 +1,12 @@
-use itertools::izip;
+
 use communication::rep3::id::PartyID;
-use communication::rep3::multinet_impl::{send_many_multinet, recv_many_multinet};
-use protocols::protocols::rep3_ring::{self, Rep3RingShare};
+use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
 use table::share_table::ShareTable;
 use table::share_column::{ShareColumn, ShareType};
 use table::NetStateArgs;
 use algebra::ring::ring_impl::RingElement;
-use primitives::transform::a2b_many_multithreads;
-use rand::{thread_rng,Rng};
+use crate::{gen_rand_column_pk_u64_ring, gen_rand_column_u64_ring, gen_valid_column_u64_ring};
 use polars::prelude::*;
 
 
@@ -46,175 +44,7 @@ pub fn get_region_table_size() -> u64 {
 
 
 
-fn gen_rand_column_data_pk_u64(num_rows: usize) -> Vec<u64> {
-    //生成的值为1-numrows的序列
-    let mut data = vec![];
 
-    for i in 0..num_rows {
-        let val = i as u64 + 1;
-        data.push(val);
-    }
-
-    data
-}
-
-fn gen_rand_column_data_u64(num_rows: usize, max_val: u64, min_val: u64) -> Vec<u64> {
-
-    let range = max_val - min_val;
-    let mut rng = thread_rng();
-
-    let data: Vec<u64> = (0..num_rows).map(|_| rng.r#gen::<u64>()%range + min_val).collect();
-
-    data
-}
-
-fn gen_valid_column_data_u64(num_rows: usize) -> Vec<u64> {
-
-    let data = vec![1;num_rows];
-
-    data
-}
-
-fn gen_valid_column_u64_ring<N: Network>(
-    num_rows: usize,
-    name: String,
-    datatype: ShareType,
-    nets: &[&N],
-    partyid: PartyID,
-) -> ShareColumn<Rep3RingShare<u64>>
-{
-    match partyid{
-        PartyID::ID0=>{
-            let data = gen_valid_column_data_u64(num_rows);
-
-            let data_ring = izip!(data).map(|val| RingElement(val)).collect::<Vec<_>>();
-
-            let mut rng = thread_rng();
-            let data_ring_share = rep3_ring::share_ring_elements(&data_ring, &mut rng);
-            
-            let _ = send_many_multinet(nets, PartyID::ID1, &data_ring_share[1]);
-            let _ = send_many_multinet(nets, PartyID::ID2, &data_ring_share[2]);
-
-            let share_col = ShareColumn::new(data_ring_share[0].clone(), datatype, name);
-
-            share_col
-        }
-        PartyID::ID1=>{
-            let data_ring_share_1: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| panic!("gen_valid_column_u64_ring: Recv failed: {:?}", e));
-            let share_col = ShareColumn::new(data_ring_share_1, datatype, name);
-
-            share_col
-        }
-        PartyID::ID2=>{
-            let data_ring_share_2: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| panic!("gen_valid_column_u64_ring: Recv failed: {:?}", e));
-            let share_col = ShareColumn::new(data_ring_share_2, datatype, name);
-
-            share_col
-        }
-        
-    }
-}
-
-pub fn gen_rand_column_u64_ring<N: Network>(
-    num_rows: usize,
-    name: String,
-    max_val: u64,
-    min_val: u64,
-    datatype: ShareType,
-    nets: &[&N],
-    partyid: PartyID,
-) -> (ShareColumn<Rep3RingShare<u64>>, Option<Vec<u64>>)
-{
-    match  partyid{
-        PartyID::ID0=>{
-            let mut rng = thread_rng();
-
-            let data = gen_rand_column_data_u64(num_rows, max_val, min_val);
-            let data_clone = data.clone();
-
-            let data_ring = izip!(data).map(|val| RingElement(val)).collect::<Vec<_>>();
-
-            let data_ring_share = rep3_ring::share_ring_elements(&data_ring, &mut rng);
-            
-            let _ = send_many_multinet(nets, PartyID::ID1, &data_ring_share[1]);
-            let _ = send_many_multinet(nets, PartyID::ID2, &data_ring_share[2]);
-
-            let share_col = ShareColumn::new(data_ring_share[0].clone(), datatype, name);
-
-            (share_col, Some(data_clone))
-
-        }
-        PartyID::ID1=>{
-            let data_ring_share_1: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| panic!("gen_valid_column_u64_ring: Recv failed: {:?}", e));
-            let share_col = ShareColumn::new(data_ring_share_1, datatype, name);
-            (share_col, None)
-
-        }
-        PartyID::ID2=>{
-            let data_ring_share_2: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| panic!("gen_valid_column_u64_ring: Recv failed: {:?}", e));
-            let share_col = ShareColumn::new(data_ring_share_2, datatype, name);
-
-            (share_col, None)
-        }
-        
-    }
-}
-
-fn get_rand_column_pk_u64_ring<N: Network>(
-    num_rows: usize,
-    name: String,
-    datatype: ShareType,
-    nets: &[&N],
-    partyid: PartyID
-) -> (ShareColumn<Rep3RingShare<u64>>, Option<Vec<u64>>)
-{
-    match  partyid{
-        PartyID::ID0=>{
-            let data = gen_rand_column_data_pk_u64(num_rows);
-            let data_clone = data.clone();
-
-            let data_ring = izip!(data).map(|val| RingElement(val)).collect::<Vec<_>>();
-
-            let mut rng = thread_rng();
-            let data_ring_share = rep3_ring::share_ring_elements(&data_ring, &mut rng);
-
-            let _ = send_many_multinet(nets, PartyID::ID1, &data_ring_share[1]);
-            let _ = send_many_multinet(nets, PartyID::ID2, &data_ring_share[2]);
-
-            let share_col = ShareColumn::new(data_ring_share[0].clone(), datatype, name);
-
-            (share_col, Some(data_clone))
-
-        }
-        PartyID::ID1=>{
-            let data_ring_share_1: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| panic!("gen_valid_column_u64_ring: Recv failed: {:?}", e));
-            let share_col = ShareColumn::new(data_ring_share_1, datatype, name);
-            (share_col, None)
-
-        }
-        PartyID::ID2=>{
-            let data_ring_share_2: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| panic!("gen_valid_column_u64_ring: Recv failed: {:?}", e));
-            let share_col = ShareColumn::new(data_ring_share_2, datatype, name);
-
-            (share_col, None)
-        }
-        
-    }
-}
-
-pub fn convert_binary_from_arithmetic<N: Network>(
-    ori_col: &ShareColumn<Rep3RingShare<u64>>,
-    netstate_args: &mut NetStateArgs<N>,
-) -> eyre::Result<ShareColumn<Rep3RingShare<u64>>> { 
-
-    let arithematic_data = ori_col.get_data();
-    let (nets, states) = netstate_args.split();
-    let binary_data = a2b_many_multithreads(arithematic_data, nets, states)?;
-    let new_name = format!("[{}]", ori_col.get_name());
-    let share_col = ShareColumn::new(binary_data, ShareType::Binary, new_name);
-
-    Ok(share_col)
-}
 
 //* TPCH lineitem table
 //* 
@@ -412,7 +242,7 @@ pub fn gen_orders_table<N: Network>(
     let mut columns: Vec<Column> = Vec::new();
 
     orders_table.key_name = Some("o_orderkey".to_string());
-    let (col, plain_col) = get_rand_column_pk_u64_ring(num_rows, "o_orderkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_col) = gen_rand_column_pk_u64_ring(num_rows, "o_orderkey".to_string(), ShareType::Arithmetic, nets, partyid);
     orders_table.insert_column("o_orderkey".to_string(), col);
     if let Some(data) = plain_col {
         columns.push(Column::new("o_orderkey".into(), data));
@@ -510,7 +340,7 @@ pub fn gen_customer_table<N: Network>(
 
     customer_table.key_name = Some("c_custkey".to_string());
 
-    let (col, plain_custkey) = get_rand_column_pk_u64_ring(num_rows, "c_custkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_custkey) = gen_rand_column_pk_u64_ring(num_rows, "c_custkey".to_string(), ShareType::Arithmetic, nets, partyid);
     customer_table.insert_column("c_custkey".to_string(), col);
     if let Some(data) = plain_custkey {
         columns.push(Column::new("c_custkey".into(), data.clone())); // Clone needed because we use it for c_name plain as well
@@ -612,7 +442,7 @@ pub fn gen_part_table<N: Network>(
     let mut columns: Vec<Column> = Vec::new();
 
     part_table.key_name = Some("p_partkey".to_string());
-    let (col, plain_partkey) = get_rand_column_pk_u64_ring(num_rows, "p_partkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_partkey) = gen_rand_column_pk_u64_ring(num_rows, "p_partkey".to_string(), ShareType::Arithmetic, nets, partyid);
     part_table.insert_column("p_partkey".to_string(), col);
     if let Some(data) = plain_partkey {
         columns.push(Column::new("p_partkey".into(), data));
@@ -706,7 +536,7 @@ pub fn gen_supplier_table<N: Network>(
 
     supplier_table.key_name = Some("s_suppkey".to_string());
 
-    let (suppkey, plain_suppkey) = get_rand_column_pk_u64_ring(num_rows, "s_suppkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (suppkey, plain_suppkey) = gen_rand_column_pk_u64_ring(num_rows, "s_suppkey".to_string(), ShareType::Arithmetic, nets, partyid);
     supplier_table.insert_column("s_suppkey".to_string(), suppkey);
     let plain_suppkey_clone = plain_suppkey.clone();
     if let Some(data) = plain_suppkey {
@@ -791,13 +621,13 @@ pub fn gen_partsupp_table<N: Network>(
     let mut columns: Vec<Column> = Vec::new();
 
     partsupp_table.key_name = Some("ps_partkey".to_string());
-    let (col, plain_partkey) = get_rand_column_pk_u64_ring(num_rows, "ps_partkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_partkey) = gen_rand_column_pk_u64_ring(num_rows, "ps_partkey".to_string(), ShareType::Arithmetic, nets, partyid);
     partsupp_table.insert_column("ps_partkey".to_string(), col);
     if let Some(data) = plain_partkey {
         columns.push(Column::new("ps_partkey".into(), data));
     }
 
-    let (col, plain_suppkey) = get_rand_column_pk_u64_ring(num_rows, "ps_suppkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_suppkey) = gen_rand_column_pk_u64_ring(num_rows, "ps_suppkey".to_string(), ShareType::Arithmetic, nets, partyid);
     partsupp_table.insert_column("ps_suppkey".to_string(), col);
     if let Some(data) = plain_suppkey {
         columns.push(Column::new("ps_suppkey".into(), data));
@@ -848,7 +678,7 @@ pub fn gen_nation_table<N: Network>(
 
     nation_table.key_name = Some("n_nationkey".to_string());
 
-    let (col, plain_nationkey) = get_rand_column_pk_u64_ring(num_rows, "n_nationkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_nationkey) = gen_rand_column_pk_u64_ring(num_rows, "n_nationkey".to_string(), ShareType::Arithmetic, nets, partyid);
     nation_table.insert_column("n_nationkey".to_string(), col);
     if let Some(data) = plain_nationkey {
         columns.push(Column::new("n_nationkey".into(), data.clone()));
@@ -912,7 +742,7 @@ pub fn gen_region_table<N: Network>(
 
     region_table.key_name = Some("r_regionkey".to_string());
 
-    let (col, plain_regionkey) = get_rand_column_pk_u64_ring(num_rows, "r_regionkey".to_string(), ShareType::Arithmetic, nets, partyid);
+    let (col, plain_regionkey) = gen_rand_column_pk_u64_ring(num_rows, "r_regionkey".to_string(), ShareType::Arithmetic, nets, partyid);
     region_table.insert_column("r_regionkey".to_string(), col);
     if let Some(data) = plain_regionkey {
         columns.push(Column::new("r_regionkey".into(), data.clone()));

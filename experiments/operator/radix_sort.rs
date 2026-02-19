@@ -8,7 +8,7 @@ use communication::rep3::id::PartyID;
 use protocols::protocols::rep3_ring::arithmetic::open_vec;
 use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
 use experiments::net_statistics::{install_tracing, print_communication_stats_operator};
-use experiments::tpch_database_gen;
+use experiments::gen_rand_column_u64_ring;
 use table::share_column::{ShareType};
 
 
@@ -53,11 +53,7 @@ fn main() -> Result<()> {
     let config: NetworkConfig = toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
     let net0 = FastTcpNetwork::new(config)?;
     let mut state0 = Rep3State::new(&net0)?;
-
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig = toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = FastTcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
+    
 
     for i in 2..(2+args.threads){
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
@@ -76,7 +72,7 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Generating input");
-    let input = tpch_database_gen::gen_rand_column_u64_ring(
+    let input = gen_rand_column_u64_ring(
         rows,
         "test".to_string(), 
         rows as u64, 

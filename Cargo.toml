@@ -70,3 +70,5 @@ overflow-checks = false
 
 #[profile.release]
 #lto = "thin"
+#codegen-units = 1
+#panic = "abort"

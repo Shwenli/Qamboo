@@ -6,7 +6,7 @@ use net::{Network};
 use rand::{distributions::Standard, prelude::Distribution, random};
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::Rep3RingShare;
-use protocols::protocols::rep3_ring::arithmetic::{open_bit};
+//use protocols::protocols::rep3_ring::arithmetic::{open_bit};
 use protocols::protocols::rep3_ring::binary;
 use protocols::protocols::rep3_ring::detail;
 use protocols::protocols::rep3_ring::conversion::b2a;

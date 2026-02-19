@@ -86,7 +86,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid=args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
     tracing::info!("setting up network");
     let mut nets: Vec<FastTcpNetwork> = Vec::new();
@@ -111,9 +111,7 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let mut state0 = states[0].fork(0)?;
-    let mut state1 = states[0].fork(0)?;
-    let party_id = state0.id;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -321,7 +319,7 @@ fn main() -> Result<()> {
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q10 polars:");
         let lineitem = lineitem_table_polars.unwrap();
         let orders = orders_table_polars.unwrap();

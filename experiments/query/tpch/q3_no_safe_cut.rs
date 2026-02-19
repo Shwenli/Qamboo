@@ -75,7 +75,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid= args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
     tracing::info!("setting up network");
     let mut nets: Vec<FastTcpNetwork> = Vec::new();

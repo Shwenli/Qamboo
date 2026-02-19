@@ -31,6 +31,7 @@ use experiments::tpch_database_gen;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use protocols::protocols::rep3_ring::Rep3RingShare;
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::table_operator::{Filter, Join, Project};
 use table::share_column::ShareColumn;
 use table::column_operator::PrefixSum;
@@ -114,10 +115,7 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let l_shipdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipdate_binary = lineitem_table["l_shipdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column("[l_shipdate]".to_string(), l_shipdate_binary);
 
 
@@ -199,13 +197,13 @@ fn main() -> Result<()> {
 
     //eprintln!("sum_new_revenue: {:?}", open(sum_new_revenue.clone(), &net0));
 
-    let result = div(&sum_new_revenue, &sum_revenue, 32, mpc_exec_args.nets[0], mpc_exec_args.state0)?;
+    let result = div(&sum_new_revenue, &sum_revenue, 32, mpc_exec_args.nets[0], mpc_exec_args.states[0])?;
     
     let open_result = open(result.clone(), mpc_exec_args.nets[0])?;
 
     tracing::info!("Q14 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q14 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q14");
@@ -214,7 +212,8 @@ fn main() -> Result<()> {
 
 //************* polars verification *************//
 
-    if state0.id == PartyID::ID0 {
+
+    if party_id == PartyID::ID0 {
         tracing::info!("Q14 polars:");
         let lineitem = lineitem_table_polars.unwrap();
         let part = part_table_polars.unwrap();

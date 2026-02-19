@@ -1,14 +1,18 @@
 use core::panic;
-use crate::share_column::{ShareType, ShareColumn};
+use net::Network;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::IntoParallelRefMutIterator;
 use communication::rep3::id::PartyID;
 use random::rep3::Rep3State;
-use protocols::protocols::rep3_ring::arithmetic;
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
+use protocols::protocols::rep3_ring::arithmetic;
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use rand::distributions::{Distribution, Standard};
-use net::Network;
-use primitives::{div, utils};
+use primitives::{div, mul::mul_share_vec};
 use crate::NetStateArgs;
+use crate::share_column::{ShareType, ShareColumn};
 
 
 
@@ -19,8 +23,9 @@ impl<T: IntRing2k> std::ops::Add<ShareColumn<Rep3RingShare<T>>> for ShareColumn<
 
         let data = self
             .get_data()
-            .iter()
-            .zip(rhs.get_data().iter())
+            .par_iter()
+            .zip_eq(rhs.get_data().par_iter())
+            .with_min_len(1024)
             .map(|(a, b)| *a + *b)
             .collect();
 
@@ -35,7 +40,8 @@ impl<T: IntRing2k> std::ops::Add<(RingElement<T>,&PartyID)> for ShareColumn<Rep3
 
         let data = self
             .get_data()
-            .iter()
+            .par_iter()
+            .with_min_len(1024)
             .map(|a| arithmetic::add_public(*a, rhs.0, *rhs.1))
             .collect::<Vec<_>>();
 
@@ -49,8 +55,9 @@ impl<T: IntRing2k> std::ops::AddAssign for ShareColumn<Rep3RingShare<T>> {
         assert_eq!(self.len(), rhs.len(), "Columns must have the same length");
             self
             .get_data_mut()
-            .iter_mut()
-            .zip(rhs.get_data().iter())
+            .par_iter_mut()
+            .zip_eq(rhs.get_data().par_iter())
+            .with_min_len(1024)
             .for_each(|(a, b)| arithmetic::add_assign(a, *b));
     }
 }
@@ -64,8 +71,9 @@ impl<T: IntRing2k> std::ops::Sub<ShareColumn<Rep3RingShare<T>>> for ShareColumn<
         assert_eq!(self.len(), rhs.len(), "Columns must have the same length");
         let data = self
             .get_data()
-            .iter()
-            .zip(rhs.get_data().iter())
+            .par_iter()
+            .zip_eq(rhs.get_data().par_iter())
+            .with_min_len(1024)
             .map(|(a, b)| *a - *b)
             .collect();
         ShareColumn::new(data, ShareType::Arithmetic, self.get_name().to_string())
@@ -77,7 +85,11 @@ impl<T: IntRing2k> std::ops::Mul<RingElement<T>> for ShareColumn<Rep3RingShare<T
     type Output = Self;
 
     fn mul(self, rhs: RingElement<T>) -> Self::Output {
-        let data = self.get_data().iter().map(|a| *a * rhs).collect();
+        let data = self.get_data()
+        .par_iter()
+        .with_min_len(1024)
+        .map(|a| *a * rhs)
+        .collect();
         ShareColumn::new(data, ShareType::Arithmetic, self.get_name().to_string())
     }
 }
@@ -118,8 +130,7 @@ where
 
         let (nets, states) = rhs.1.split();
         let mul_data = self.get_data();
-        let mul_tmp = arithmetic::local_mul_vec(mul_data, &rhs.0.get_data(), states[0]);
-        let result = utils::reshare_vec_q_multithreads(&mul_tmp, nets).unwrap_or_else(|e|panic!("sharecolumn mul reshare error : {}", e));
+        let result = mul_share_vec(mul_data,rhs.0.get_data(), nets, states).unwrap_or_else(|e|panic!("ShareColumn: mul error: {}", e));
         
         ShareColumn::new(result, ShareType::Arithmetic, self.get_name().to_string())
     }
@@ -134,8 +145,7 @@ where
 
         let (nets, states) = rhs.1.split();
         let mul_data = self.get_data();
-        let mul_tmp = arithmetic::local_mul_vec(mul_data, &rhs.0.get_data(), states[0]);
-        let result = utils::reshare_vec_q_multithreads(&mul_tmp, nets).unwrap_or_else(|e|panic!("sharecolumn mul reshare error : {}", e));
+        let result = mul_share_vec(mul_data,rhs.0.get_data(), nets, states).unwrap_or_else(|e|panic!("ShareColumn: mul error: {}", e));
         self.update_data(result);
     }
 }
@@ -193,10 +203,13 @@ impl<T: IntRing2k> std::ops::Neg for ShareColumn<Rep3RingShare<T>> {
     type Output = Self;
     fn neg(self)-> Self:: Output{
 
-        let data = self.get_data().iter().map(|a| arithmetic::neg(*a)).collect();
+        let data = self.get_data()
+        .par_iter()
+        .with_min_len(1024)
+        .map(|a| arithmetic::neg(*a))
+        .collect();
 
         ShareColumn::new(data, ShareType::Arithmetic, self.get_name().to_string() + "_temp")
-
     }
 }
 

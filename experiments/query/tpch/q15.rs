@@ -50,6 +50,7 @@ use experiments::tpch_database_gen;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project, Open};
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::column_operator::PrefixSum;
 use table::share_column::ShareColumn;
 use table::predicate::Predicate;
@@ -131,10 +132,7 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let l_shipdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipdate_binary = lineitem_table["l_shipdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column("[l_shipdate]".to_string(), l_shipdate_binary);
 
 
@@ -243,7 +241,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q15 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q15 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q15");
@@ -263,7 +261,7 @@ fn main() -> Result<()> {
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q15 polars:");
         let lineitem = lineitem_table_polars.unwrap();
         let supplier = supplier_table_polars.unwrap();

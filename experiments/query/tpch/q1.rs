@@ -27,6 +27,7 @@ use std::path::PathBuf;
 use std::vec;
 use clap::Parser;
 use table::NetStateArgs;
+use table::column_operator::TransformBetweenArithAndBinary;
 use std::time::Instant;
 use color_eyre::{Result, eyre::Context};
 use protocols::protocols::rep3_ring::Rep3RingShare;
@@ -76,7 +77,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid=args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
     tracing::info!("setting up network");
     let mut nets: Vec<FastTcpNetwork> = Vec::new();
@@ -116,10 +117,7 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let l_shipdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipdate"],
-            &mut mpc_exec_args,
-    )?;
+    let l_shipdate_binary = lineitem_table["l_shipdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column("[l_shipdate]".to_string(), l_shipdate_binary);
 
 

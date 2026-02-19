@@ -1055,10 +1055,11 @@ where
     let len = a.len();
     let (mut mask,mask_b) = random_elements_vec_multithreads::<RingElement<T>>(states, len);
     
-    let local_a :Vec<RingElement<T>> = a.par_iter().with_min_len(1024)
+    let local_a :Vec<RingElement<T>> = a.par_iter()
         .zip(b.par_iter())
         .zip(mask.par_iter_mut())
         .zip(mask_b.par_iter())
+        .with_min_len(1024)
         .map(|(((a, b), mask), mask_b)| {
             *mask ^= *mask_b;
             (a & b) ^ *mask
@@ -1067,6 +1068,41 @@ where
     
     let local_b = reshare_many_multinet(nets, &local_a.clone())?;
     
+    Ok(izip!(local_a, local_b)
+        .map(|(a, b)| Rep3RingShare::new_ring(a, b))
+        .collect_vec())
+}
+
+pub fn and_vec_bit_multithreads<N: Network>(
+    a: &[Rep3RingShare<Bit>],
+    b: &[Rep3RingShare<Bit>],
+    nets: &[&N],
+    states: &mut [&mut Rep3State],
+) -> eyre::Result<Vec<Rep3RingShare<Bit>>>
+where
+    Standard: Distribution<Bit>,
+{
+    let (mut mask, mask_b) = random_elements_vec_multithreads::<RingElement<Bit>>(states, a.len());
+    let local_a:Vec<_> = a.par_iter()
+        .zip(b.par_iter())
+        .zip(mask.par_iter_mut())
+        .zip(mask_b.par_iter())
+        .with_min_len(1024)
+        .map(|(((a, b), mask), mask_b)| {
+            *mask ^= *mask_b;
+            (a & b) ^ *mask
+        })
+        .collect();
+    /* 
+    let local_a = izip!(a, b)
+        .map(|(a, b)| {
+            let (mut mask, mask_b) = state.rngs.rand.random_elements::<RingElement<Bit>>();
+            mask ^= mask_b;
+            (a & b) ^ mask
+        })
+        .collect_vec();
+    */
+    let local_b = reshare_many_multinet(nets, &local_a)?;
     Ok(izip!(local_a, local_b)
         .map(|(a, b)| Rep3RingShare::new_ring(a, b))
         .collect_vec())
@@ -1082,8 +1118,8 @@ where
     Standard: Distribution<T>,
 { 
     let xor = a.par_iter()
-        .with_min_len(1024)
         .zip(b.par_iter())
+        .with_min_len(1024)
         .map(|(a, b)| a ^ b)
         .collect::<Vec<_>>();
 

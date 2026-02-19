@@ -32,6 +32,16 @@ pub trait TransformBetweenArithAndBinary<T>{
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()>;
 
+    fn add_new_col_from_arithmetic_to_binary<N: Network>(
+        &self,
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<ShareColumn<T>>;
+
+    fn add_new_col_from_binary_to_arithmetic<N: Network>(
+        &self,
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<ShareColumn<T>>;
+
 }
 
 pub trait ColumnBooleanOperator<T,U>{

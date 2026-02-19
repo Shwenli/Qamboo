@@ -45,6 +45,7 @@ use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
 use table::predicate::Predicate;
 use table::share_column::ShareColumn;
 use table::column_operator::PrefixSum;
+use table::column_operator::TransformBetweenArithAndBinary;
 use protocols::protocols::rep3_ring::arithmetic::open;
 use table::table_operator::Open;
 use table::NetStateArgs;
@@ -79,7 +80,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf;// scale factor for testing
     let partyid=args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
     tracing::info!("Q3 with SF: {}", sf);
     
@@ -128,22 +129,13 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let l_shipdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipdate"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipdate_binary = lineitem_table["l_shipdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column("[l_shipdate]".to_string(), l_shipdate_binary);
 
-    let o_orderdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &orders_table["o_orderdate"],
-        &mut mpc_exec_args,
-    )?;
+    let o_orderdate_binary = orders_table["o_orderdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     orders_table.insert_column("[o_orderdate]".to_string(), o_orderdate_binary);
 
-    let c_mktsegment_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &customer_table["c_mktsegment"],
-        &mut mpc_exec_args,
-    )?;
+    let c_mktsegment_binary = customer_table["c_mktsegment"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     customer_table.insert_column("[c_mktsegment]".to_string(), c_mktsegment_binary);
 
     

@@ -1,5 +1,6 @@
 
 use itertools::izip;
+use itertools::Itertools;
 use std::ops::Neg;
 use communication::rep3::multinet_impl::{recv_prev_many_multinet, reshare_many_multinet, send_next_many_multinet};
 use num_traits::{One,AsPrimitive};
@@ -84,7 +85,7 @@ where
             
             let res_a: Vec<RingElement<T>> = x0
                 .par_iter()
-                .zip(x.par_iter())
+                .zip_eq(x.par_iter())
                 .with_min_len(1024)
                 .map(|(x0, el)| {
                     let y = el.b;
@@ -105,8 +106,8 @@ where
             let x1 = masking_elements_vec_multithreads::<RingElement<T>>(states, len);
 
             let res_a: Vec<RingElement<T>> = x1.par_iter()
-            .zip(x.par_iter())
-            .with_min_len(1024)  // 至少 1024 元素才拆任务
+            .zip_eq(x.par_iter())
+            .with_min_len(1024)
             .map(|(x1, el)| *x1 + (el.a ^ el.b))
             .collect();
 
@@ -126,8 +127,8 @@ where
 
             let res_a: Vec<RingElement<T>> = x2
                 .par_iter()
-                .zip(x.par_iter())
-                .zip(res_b.par_iter())
+                .zip_eq(x.par_iter())
+                .zip_eq(res_b.par_iter())
                 .with_min_len(1024)
                 .map(|((x2, el), x1)| {
                     let y = el.a;
@@ -186,7 +187,10 @@ where
     
     let mut input_bit_vec = a2b_many_multithreads(inputs, nets, states)?;
 
-    input_bit_vec.iter_mut().zip(bits.iter_mut()).for_each(|(input_bit, bit_i)| {
+    input_bit_vec.par_iter_mut()
+    .zip_eq(bits.par_iter_mut())
+    .with_min_len(1024)
+    .for_each(|(input_bit, bit_i)| {
         *input_bit &= &mask;
         *bit_i = *input_bit;
     });
@@ -298,20 +302,28 @@ where
     let mut x2 = vec![Rep3RingShare::zero_share(); x.len()];
 
     let (mut r_vec, r2_vec) = random_elements_vec_multithreads::<RingElement<T>>(states, x.len());
-    r_vec.par_iter_mut().zip(r2_vec.par_iter()).for_each(|(r, r2)| {
+    r_vec.par_iter_mut()
+    .zip_eq(r2_vec.par_iter())
+    .with_min_len(1024)
+    .for_each(|(r, r2)| {
         *r ^= r2;
     });
 
     let x01_a = match id {
         PartyID::ID0 => {
-            x2.iter_mut().zip(x.iter()).for_each(|(x2_i, x_i)| {
+            x2.iter_mut()
+            .zip_eq(x.iter())
+            .for_each(|(x2_i, x_i)| {
                 x2_i.b = x_i.b;
             });
             r_vec
         }
 
         PartyID::ID1 => {
-            let res = x.iter().zip(r_vec.iter()).map(|(x_i, r)| {
+            let res = x.par_iter()
+            .zip_eq(r_vec.par_iter())
+            .with_min_len(1024)
+            .map(|(x_i, r)| {
                 let tmp = x_i.a + x_i.b;
                 tmp ^ r
             }).collect::<Vec<_>>();
@@ -319,7 +331,9 @@ where
         }
             
         PartyID::ID2 => {
-            x2.iter_mut().zip(x.iter()).for_each(|(x2_i, x_i)| {
+            x2.iter_mut()
+            .zip_eq(x.iter())
+            .for_each(|(x2_i, x_i)| {
                 x2_i.a = x_i.a;
             });
             r_vec
@@ -382,15 +396,23 @@ where
     match id {
         PartyID::ID0 => {
             let k2 = random_elements2_3keys_vec_multithreads::<RingElement<T>>(states, x.len());
-            res.par_iter_mut().with_min_len(1024)
-            .zip(k2.0.into_par_iter()).zip(k2.1.into_par_iter()).zip(k2.2.into_par_iter()).for_each(|(((res, k2_0), k2_1), k2_2)| {
+            res.par_iter_mut()
+            .zip_eq(k2.0.into_par_iter())
+            .zip_eq(k2.1.into_par_iter())
+            .zip_eq(k2.2.into_par_iter())
+            .with_min_len(1024)
+            .for_each(|(((res, k2_0), k2_1), k2_2)| {
                 res.b = (k2_0 + k2_1 + k2_2).neg();
             });
         }
         PartyID::ID1 => {
             let k1 = random_elements1_3keys_vec_multithreads::<RingElement<T>>(states, x.len());
-            res.par_iter_mut().with_min_len(1024)
-            .zip(k1.0.into_par_iter()).zip(k1.1.into_par_iter()).zip(k1.2.into_par_iter()).for_each(|(((res, k1_0), k1_1), k1_2)| {
+            res.par_iter_mut()
+            .zip(k1.0.into_par_iter())
+            .zip(k1.1.into_par_iter())
+            .zip(k1.2.into_par_iter())
+            .with_min_len(1024)
+            .for_each(|(((res, k1_0), k1_1), k1_2)| {
                 res.a = (k1_0 + k1_1 + k1_2).neg();
             });
         }
@@ -398,10 +420,15 @@ where
             let k1 = random_elements1_3keys_vec_multithreads::<RingElement<T>>(states, x.len());
             let k2 = random_elements2_3keys_vec_multithreads::<RingElement<T>>(states, x.len());
             
-            res.par_iter_mut().with_min_len(1024)
-            .zip(k1.0.into_par_iter()).zip(k1.1.into_par_iter()).zip(k1.2.into_par_iter())
-            .zip(k2.0.into_par_iter()).zip(k2.1.into_par_iter()).zip(k2.2.into_par_iter())
-            .zip(r_vec.par_iter_mut())
+            res.par_iter_mut()
+            .zip_eq(k1.0.into_par_iter())
+            .zip_eq(k1.1.into_par_iter())
+            .zip_eq(k1.2.into_par_iter())
+            .zip_eq(k2.0.into_par_iter())
+            .zip_eq(k2.1.into_par_iter())
+            .zip_eq(k2.2.into_par_iter())
+            .zip_eq(r_vec.par_iter_mut())
+            .with_min_len(1024)
             .for_each(|(((((((res, k1_0), k1_1), k1_2), k2_0), k2_1), k2_2), y)| {
                 let k1_comp = k1_0 + k1_1 + k1_2;
                 let k2_comp = k2_0 + k2_1 + k2_2;
@@ -430,20 +457,29 @@ where
             send_next_many_multinet(nets,&z_b)?;
             let rcv: Vec<RingElement<T>> = recv_prev_many_multinet(nets)?;
 
-            res.par_iter_mut().with_min_len(1024)
-            .zip(z.into_par_iter()).zip(rcv.into_par_iter()).for_each(|((res, z), rcv)| {
+            res.par_iter_mut()
+            .zip_eq(z.into_par_iter())
+            .zip_eq(rcv.into_par_iter())
+            .with_min_len(1024)
+            .for_each(|((res, z), rcv)| {
                 res.a = z.a ^ z.b ^ rcv;
             });
         }
         PartyID::ID1 => {
             let rcv: Vec<RingElement<T>> = recv_prev_many_multinet(nets)?;
-            res.par_iter_mut().with_min_len(1024)
-            .zip(z.into_par_iter()).zip(rcv.into_par_iter()).for_each(|((res, z), rcv)| {
+            res.par_iter_mut()
+            .zip_eq(z.into_par_iter())
+            .zip_eq(rcv.into_par_iter())
+            .with_min_len(1024)
+            .for_each(|((res, z), rcv)| {
                 res.b = z.a ^ z.b ^ rcv;
             });
         }
         PartyID::ID2 => {
-            let z_b = z.into_iter().map(|z| z.b).collect::<Vec<_>>();
+            let z_b = z.into_par_iter()
+            .with_min_len(1024)
+            .map(|z| z.b)
+            .collect::<Vec<_>>();
             send_next_many_multinet(nets,&z_b)?;
         }
     }

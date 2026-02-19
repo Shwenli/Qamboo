@@ -2,17 +2,17 @@
 use itertools::izip;
 use num_traits::One;
 use primitives::mul::mul_share_vec;
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use random::rep3::Rep3State;
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::protocols::rep3_ring::{arithmetic,binary,Rep3RingShare};
 use net::Network;
-use primitives::utils;
-use primitives::transform;
-use primitives::mux;
-use primitives::permute;
-use primitives::compare::{eq_many, eq_many_multithreads};
+use primitives::{transform, mux, permute};
+use primitives::compare::{eq_many, eq_many_multithreads, and_vec_bit_multithreads};
 
 
 type PermRing = u32;
@@ -22,18 +22,22 @@ pub fn make_group_key_null_multithreads<T: IntRing2k, N: Network>(
     keys: &[Rep3RingShare<T>],
     valid: &[Rep3RingShare<T>],
     nets: &[&N],
-    state: &mut Rep3State,
+    states: &mut [&mut Rep3State],
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{
     let big_one = RingElement::one()<<63;
     //let valid_a = b2a_many_multithreads(&valid, net, states)?;
-    let valid_inv = izip!(valid).map(|v| arithmetic::sub_public_by_shared(RingElement::one(), *v, state.id)).collect::<Vec<_>>();
+    let keys_null: Vec<_> = valid.par_iter()
+    .with_min_len(1024)
+    .map(|v| arithmetic::mul_public(arithmetic::sub_public_by_shared(RingElement::one(), *v, states[0].id), big_one))
+    .collect();
+    /* 
+    let valid_inv = izip!(valid).map(|v| arithmetic::sub_public_by_shared(RingElement::one(), *v, states[0].id)).collect::<Vec<_>>();
     let keys_null = izip!(valid_inv.iter()).map(|v| arithmetic::mul_public( *v,big_one)).collect::<Vec<_>>();
-
-    let keys_true_tmp = arithmetic::local_mul_vec(&valid, &keys, state);
-    let keys_true = utils::reshare_vec_q_multithreads(&keys_true_tmp, nets)?;
-
+    */
+    let keys_true = mul_share_vec(&valid, &keys, nets, states)?;
+    
     let new_keys = izip!(keys_true.iter(), keys_null.iter()).map(|(a,b)| arithmetic::add(*a,*b)).collect::<Vec<_>>();
 
     Ok(new_keys)
@@ -84,13 +88,13 @@ Standard: Distribution<T>,{
 
     let mut new_keys_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in keys{
-        let new_k = make_group_key_null_multithreads(k, valid, nets, states[0])?;
+        let new_k = make_group_key_null_multithreads(k, valid, nets, states)?;
         new_keys_vec.push(new_k);
     }
 
     let mut new_vals_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for v in vals{
-        let new_v = make_group_key_null_multithreads(v, valid, nets, states[0])?;
+        let new_v = make_group_key_null_multithreads(v, valid, nets, states)?;
         new_vals_vec.push(new_v);
     }
 
@@ -128,19 +132,8 @@ Standard: Distribution<T>,{
 
         let f = eq_many_multithreads(k_g_0, k_g_1, nets, states)?;
 
-        let f_chunks = utils::get_task_chunks(&f,f.len(), nets.len())?;
-        let e_chunks = utils::get_task_chunks(&e,e.len(), nets.len())?;
-
-        let nxt_e = net::join_all(
-            e_chunks.into_iter().zip(f_chunks.into_iter()).zip(nets.iter()).zip(states.iter_mut()).map(|(((e_chunk, f_chunk), &n), state_i)| {
-                move || {
-                    let e_res = binary::and_vec_bit(e_chunk, f_chunk, n, state_i).unwrap_or_else(|e| panic!("table groupby common : and failed: {:?}", e));
-                    e_res
-                }
-            })
-        );
+        let nxt_e = and_vec_bit_multithreads(&e, &f, nets, states)?;
         
-        let nxt_e = nxt_e.concat();
         e = nxt_e;
     }
     

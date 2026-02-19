@@ -42,16 +42,18 @@ use clap::Parser;
 use table::predicate::Predicate;
 use std::time::Instant;
 use color_eyre::{Result, eyre::Context};
-use protocols::protocols::rep3_ring::Rep3State;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+use random::rep3::Rep3State;
+use random::MpcState;
+use communication::rep3::id::PartyID;
+use algebra::ring::ring_impl::RingElement;
+use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
 use protocols::protocols::rep3_ring::arithmetic::open;
-use protocols::protocols::rep3_ring::id::PartyID;
-use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::tpch_database_gen::{self};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Join, Project};
 use table::column_operator::{ColumnBooleanOperator, PrefixSum};
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::NetStateArgs;
 use polars::prelude::*;
 
@@ -92,39 +94,35 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid=args.party_id.clone();
+    let default_threads = rayon::current_num_threads();
 
     tracing::info!("setting up network");
-
-    let mut nets: Vec<TcpNetwork> = Vec::new();
+    let mut nets: Vec<FastTcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
-    let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
-    let net0 = TcpNetwork::new(config)?;
-    let mut state0 = Rep3State::new(&net0)?;
-
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = TcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
-
-    for i in 2..(2+args.threads){
+    for i in 0..args.threads {
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = TcpNetwork::new(config)?;
+        let net = FastTcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
     }
 
-    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
+    if states.len() <= default_threads {
+        let diff = default_threads - states.len();
+        for _i in 0..diff{
+            let state = states[0].fork(0)?;
+            states.push(state);
+        }
+    }
+    
+    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let party_id = state0.id;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
-        &mut state0,
-        &mut state1,
         &mut states,
     );
 
@@ -142,16 +140,10 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let l_shipmode_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipmode"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipmode_binary = lineitem_table["l_shipmode"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column("[l_shipmode]".to_string(), l_shipmode_binary);
 
-    let l_shipinstruct_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &lineitem_table["l_shipinstruct"],
-        &mut mpc_exec_args,
-    )?;
+    let l_shipinstruct_binary = lineitem_table["l_shipinstruct"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     lineitem_table.insert_column("[l_shipinstruct]".to_string(), l_shipinstruct_binary);
 
 
@@ -213,28 +205,16 @@ fn main() -> Result<()> {
           (PL["[Quantity]"] <= QUANTITY3 + 10) & (PL["[Size]"] <= 15)));
     */
 
-    let pl_brand_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_lineitem_table["p_brand"],
-        &mut mpc_exec_args,
-    )?;
+    let pl_brand_binary = part_lineitem_table["p_brand"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_lineitem_table.insert_column("[p_brand]".to_string(), pl_brand_binary);
 
-    let pl_container_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_lineitem_table["p_container"],
-        &mut mpc_exec_args,
-    )?;
+    let pl_container_binary = part_lineitem_table["p_container"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_lineitem_table.insert_column("[p_container]".to_string(), pl_container_binary);
 
-    let pl_size_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_lineitem_table["p_size"],
-        &mut mpc_exec_args,
-    )?;
+    let pl_size_binary = part_lineitem_table["p_size"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_lineitem_table.insert_column("[p_size]".to_string(), pl_size_binary);
 
-    let pl_quantity_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &part_lineitem_table["l_quantity"],
-        &mut mpc_exec_args,
-    )?;
+    let pl_quantity_binary = part_lineitem_table["l_quantity"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     part_lineitem_table.insert_column("[l_quantity]".to_string(), pl_quantity_binary);
 
     let c1_b1 = part_lineitem_table["[p_brand]"].eq_public_binary(&BRAND1, &mut mpc_exec_args)?;
@@ -277,12 +257,12 @@ fn main() -> Result<()> {
     //let sum_valid = part_lineitem_table["valid"].prefix_sum();
     let sum_revenue = revenue.prefix_sum();
 
-    let open_sum_revenue = open(sum_revenue, &net0)?;
+    let open_sum_revenue = open(sum_revenue, mpc_exec_args.nets[0])?;
 
 
     tracing::info!("Q19 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q19 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q19");
@@ -293,7 +273,7 @@ fn main() -> Result<()> {
     
 //************* polars verification *************//
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q19 polars:");
         let lineitem = _lineitem_table_polars.unwrap();
         let part = _part_table_polars.unwrap();

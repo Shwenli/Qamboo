@@ -40,6 +40,7 @@ use experiments::net_statistics::print_communication_stats;
 use experiments::tpch_database_gen::{self, get_nation_table_size};
 use table::column_operator::{ColumnBooleanOperator, PrefixSum};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, Open, OrderBy, Project};
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::predicate::Predicate;
 use table::share_column::ShareColumn;
 use table::NetStateArgs;
@@ -75,7 +76,7 @@ fn main() -> Result<()> {
 
     let sf = args.sf; // scale factor for testing
     let partyid= args.party_id.clone();
-    let default_threads = rayon::current_num_threads();
+    let default_threads = rayon::current_num_threads() / 2;
 
 
     tracing::info!("setting up network");
@@ -101,7 +102,7 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
-    let party_id = state0.id;
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -131,16 +132,10 @@ fn main() -> Result<()> {
 
     tracing::info!("converting some columns to binary");
 
-    let o_orderdate_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &orders_table["o_orderdate"],
-        &mut mpc_exec_args,
-    )?;
+    let o_orderdate_binary = orders_table["o_orderdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     orders_table.insert_column("[o_orderdate]".to_string(), o_orderdate_binary);
 
-    let r_name_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &region_table["r_name"],
-        &mut mpc_exec_args,
-    )?; 
+    let r_name_binary = region_table["r_name"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     region_table.insert_column("[r_name]".to_string(), r_name_binary);
 
     
@@ -302,7 +297,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q5 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q5 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q5");
@@ -322,7 +317,7 @@ fn main() -> Result<()> {
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q5 polars:");
 
         let region = region_table_polars.unwrap();

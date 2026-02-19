@@ -4224,6 +4224,7 @@ dependencies = [
  "protocols",
  "rand 0.8.5",
  "random",
+ "rayon",
 ]
 
 [[package]]

@@ -5,7 +5,15 @@ use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelIterator;
 use rayon::iter::IndexedParallelIterator;
 
-//* 这里的两次vec
+struct SendPtr<T>(*mut T);
+impl<T> Copy for SendPtr<T> {}
+impl<T> Clone for SendPtr<T> {
+    fn clone(&self) -> Self { *self }
+}
+unsafe impl<T> Send for SendPtr<T> {}
+unsafe impl<T> Sync for SendPtr<T> {}
+
+
 pub fn random_elements_vec_multithreads<T>(
     states: &mut [&mut Rep3State],
     len: usize,
@@ -22,7 +30,6 @@ where
         .enumerate()
         .with_min_len(1024)
         .map(|(i, state)| {
-            // 前 remainder 个 state 多分 1 个
             let chunk_len = base_chunk + if i < remainder { 1 } else { 0 };
             state.rngs.rand.random_elements_vec::<T>(chunk_len)
         })
@@ -137,4 +144,82 @@ where
 
     (a, b, c)
 }
+
+
+pub fn random_elements_rng2_vec_multithreads<T>(
+    states: &mut [&mut Rep3State],
+    len: usize,
+) -> Vec<T>
+where
+    Standard: Distribution<T>,
+    T: Send + Sync,
+{
+    let num_states = states.len();
+    let base_chunk = len / num_states;
+    let remainder = len % num_states;
+
+    let mut result: Vec<T> = Vec::with_capacity(len);
+    let send_ptr = SendPtr(result.as_mut_ptr());
+
+    states
+        .par_iter_mut()
+        .enumerate()
+        .with_min_len(1024)
+        .for_each(|(i, state)| {
+            let send_ptr = send_ptr; 
+            let start = i * base_chunk + i.min(remainder);
+            let chunk_len = base_chunk + if i < remainder { 1 } else { 0 };
+
+            unsafe {
+                let dst = send_ptr.0.add(start);
+                for j in 0..chunk_len {
+                    dst.add(j).write(state.rngs.rand.random_element_rng2());
+                }
+            }
+        });
+
+    // Safety: All len elements have been written by the threads (non-overlapping regions covering [0, len))
+    unsafe { result.set_len(len); }
+
+    result
+}
+
+pub fn random_elements_rng1_vec_multithreads<T>(
+    states: &mut [&mut Rep3State],
+    len: usize,
+) -> Vec<T>
+where
+    Standard: Distribution<T>,
+    T: Send + Sync,
+{
+    let num_states = states.len();
+    let base_chunk = len / num_states;
+    let remainder = len % num_states;
+    
+    let mut result: Vec<T> = Vec::with_capacity(len);
+    let send_ptr = SendPtr(result.as_mut_ptr());
+
+    states
+        .par_iter_mut()
+        .enumerate()
+        .with_min_len(1024)
+        .for_each(|(i, state)| {
+            let send_ptr = send_ptr; 
+            let start = i * base_chunk + i.min(remainder);
+            let chunk_len = base_chunk + if i < remainder { 1 } else { 0 };
+
+            unsafe {
+                let dst = send_ptr.0.add(start);
+                for j in 0..chunk_len {
+                    dst.add(j).write(state.rngs.rand.random_element_rng1());
+                }
+            }
+        });
+
+    unsafe { result.set_len(len); }
+
+    result
+}
+
+
 

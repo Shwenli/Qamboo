@@ -94,7 +94,7 @@ Standard: Distribution<T>,{
     let w_m = vec![w[w.len()-1];w.len()];
     //println!("w_m: {:?}", arithmetic::open_vec(&w_m, net0)?);
 
-    let x = mux::mux_if_then_share_vec_multithreads(&e, &w, &w_m, nets, states[0])?;
+    let x = mux::mux_if_then_share_vec_multithreads(&e, &w, &w_m, nets, states)?;
     //println!("x: {:?}",arithmetic::open_vec(&x, net0));
 
     let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;

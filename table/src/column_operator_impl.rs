@@ -60,6 +60,40 @@ Standard: Distribution<T>,{
 
         Ok(())
     }
+
+    fn add_new_col_from_arithmetic_to_binary<N: Network>(
+        &self,
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<ShareColumn<Rep3RingShare<T>>> {
+        let (nets, states) = netstate_args.split();
+
+        let data = self.get_data();
+        let new_data = transform::a2b_many_multithreads(&data, nets, states)?;
+
+        let new_col_name = format!("[{}]", self.get_name());
+
+        let new_col = ShareColumn::new(new_data, ShareType::Binary, new_col_name);
+
+        Ok(new_col)
+    }
+
+    fn add_new_col_from_binary_to_arithmetic<N: Network>(
+        &self,
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<ShareColumn<Rep3RingShare<T>>> {
+
+        let (nets, states) = netstate_args.split();
+
+        let data = self.get_data();
+        let new_data = transform::b2a_many_multithreads(&data, nets, states)?;
+
+        let name = self.get_name();
+        let new_col_name = name.strip_prefix('[').and_then(|s| s.strip_suffix(']')).unwrap_or(name).to_string();
+
+        let new_col = ShareColumn::new(new_data, ShareType::Arithmetic, new_col_name);
+
+        Ok(new_col)
+    }
 }
 
 impl<T:IntRing2k> Distinct<Rep3RingShare<T>> for ShareColumn<Rep3RingShare<T>>

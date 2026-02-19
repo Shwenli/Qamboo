@@ -113,6 +113,7 @@ impl Rep3Rand {
         let b = self.rng2.r#gen();
         (a, b)
     }
+    
     /// Generate a vector of random elements
     pub fn random_elements_vec<T>(&mut self, len: usize) -> (Vec<T>, Vec<T>)
     where
@@ -123,6 +124,16 @@ impl Rep3Rand {
             || (0..len).map(|_| self.rng1.r#gen()).collect::<Vec<_>>(),
             || (0..len).map(|_| self.rng2.r#gen()).collect::<Vec<_>>(),
         );
+        (a, b)
+    }
+
+    pub fn random_elements_vec_test<T>(&mut self, len: usize) -> (Vec<T>, Vec<T>)
+    where
+        Standard: Distribution<T>,
+        T: Send + Sync,
+    {
+        let a = (0..len).map(|_| self.rng1.r#gen()).collect::<Vec<_>>();
+        let b = (0..len).map(|_| self.rng2.r#gen()).collect::<Vec<_>>();
         (a, b)
     }
 
@@ -184,11 +195,13 @@ impl Rep3Rand {
     }
 
     /// Generate a random shared permutation
-    pub fn random_perm<T: Clone>(&mut self, input: Vec<T>) -> (Vec<T>, Vec<T>) {
+    pub fn random_perm<T: Clone + Send>(&mut self, input: Vec<T>) -> (Vec<T>, Vec<T>) {
         let mut a = input.to_owned();
         let mut b = input;
-        a.shuffle(&mut self.rng1);
-        b.shuffle(&mut self.rng2);
+        rayon::join(
+            || a.shuffle(&mut self.rng1),
+            || b.shuffle(&mut self.rng2),
+        );
         (a, b)
     }
 }

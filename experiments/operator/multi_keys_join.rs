@@ -35,12 +35,8 @@ fn main() -> Result<()> {
     let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
     let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
     let net0 = FastTcpNetwork::new(config)?;
-    let mut state0 = Rep3State::new(&net0)?;
+    let state0 = Rep3State::new(&net0)?;
 
-    let file_path1 = PathBuf::from(format!("{}1/config_party{}.toml", args.config_dir.display(), partyid));
-    let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path1).context("opening config file")?).context("parsing config file")?;
-    let net1 = FastTcpNetwork::new(config)?;
-    let mut state1 = Rep3State::new(&net1)?;
 
     for i in 2..4{
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));

@@ -5,7 +5,12 @@ use crate::table_operator::Join;
 use algebra::ring::int_ring::IntRing2k;
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
-use operator::join::{anti_join_table_multithreads, inner_join_table_multi_keys_multithreads, inner_join_table_multithreads,semi_join_table_multithreads};
+use operator::join::{
+    anti_join_table_multithreads, 
+    inner_join_table_multi_keys_multithreads, 
+    inner_join_table_multithreads,
+    semi_join_table_multithreads
+};
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use crate::NetStateArgs;
@@ -151,9 +156,8 @@ where
 
         let mut l_vec = Vec::new();
         let mut r_vec = Vec::new();
-        //fixed:: 应该为l_vec的schema
-        for col in self.schema.values() {
 
+        for col in self.schema.values() {
             if k_l_name.contains(&col.get_name()) || col.get_name() == "valid" {
                 continue;
             }
@@ -171,7 +175,6 @@ where
 
         for col in table_r.schema.values() {
             //eprintln!("r:{}", col.get_name());
-
             if k_r_name.contains(&col.get_name()) || col.get_name() == "valid" {
                 continue;
             }
@@ -193,7 +196,6 @@ where
         );
         result_table.insert_column(valid_column.get_name().to_string(), valid_column);
 
-        
         let result_vec = inner_join_table_multi_keys_multithreads(
             k_l,
             k_r,
@@ -208,7 +210,6 @@ where
 
         for (i, data_i) in result_vec.into_iter().enumerate() {
             let col = result_table.get_column_by_index_mut(i);
-            // 将整列数据追加（移动 data_i 的元素）
             col.update_data(data_i);
         }
 

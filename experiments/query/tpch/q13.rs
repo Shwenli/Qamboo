@@ -38,6 +38,7 @@ use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project, Op
 use table::column_operator::PrefixSum;
 use table::predicate::Predicate;
 use table::NetStateArgs;
+use table::column_operator::TransformBetweenArithAndBinary;
 use polars::prelude::*;
 
 
@@ -95,6 +96,7 @@ fn main() -> Result<()> {
     
     let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
+    let party_id = states[0].id;
 
     let mut mpc_exec_args = NetStateArgs::new(
         &nets,
@@ -110,10 +112,7 @@ fn main() -> Result<()> {
     let (mut orders_table, orders_table_polars) = tpch_database_gen::gen_orders_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Orders table generated with {} rows", orders_table.num_rows());
 
-    let o_comment_binary = tpch_database_gen::convert_binary_from_arithmetic(
-        &orders_table["o_comment"],
-        &mut mpc_exec_args,
-    )?;
+    let o_comment_binary = orders_table["o_comment"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
     orders_table.insert_column(o_comment_binary.get_name().to_string(), o_comment_binary);
 
 
@@ -126,7 +125,6 @@ fn main() -> Result<()> {
     let customer_table = customer_table.project(c_col_names)?;
     
     tracing::info!("Projection completed");
-
 
 
     tracing::info!("Q13 start");
@@ -145,7 +143,6 @@ fn main() -> Result<()> {
 
     tracing::info!("orders table group by o_custkey");
     let group_by_col_names = vec!["o_custkey"];
-
     let (e,perm,_) = orders_table.group_by(
         group_by_col_names,
         &mut mpc_exec_args,
@@ -153,9 +150,7 @@ fn main() -> Result<()> {
 
 
     tracing::info!("agg count(o_orderkey)");
-    //不需要orderkey, count统计这一组的数量，与哪一个属性无关
     let new_agg_name = "c_count";
-
     let _ = orders_table.agg_count(
         new_agg_name,
         &e,
@@ -213,7 +208,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Q13 execution completed");
 
-    if mpc_exec_args.state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Total Q13 execution time: {:?}", tot_start.elapsed());
     }
     print_communication_stats(&mpc_exec_args, "Q13");
@@ -234,7 +229,7 @@ fn main() -> Result<()> {
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
-    if state0.id == PartyID::ID0 {
+    if party_id == PartyID::ID0 {
         tracing::info!("Q13 polars:");
         let customer = customer_table_polars.unwrap();
         let orders = orders_table_polars.unwrap();

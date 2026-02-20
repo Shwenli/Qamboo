@@ -28,12 +28,13 @@ def generate_config(group_id, party_ips, num_parties=3):
             f.write(content)
 
 if __name__ == "__main__":
-    # Generate for groups 0 to 9
-
     parser = argparse.ArgumentParser(description="Generate network config files.")
+    parser.add_argument("--num", type=int, nargs="?", default=10, help="Number of groups to generate (default: 10)")
     parser.add_argument("--ip", nargs="+", default=["10.0.0.1", "10.0.0.2", "10.0.0.3"], help="List of party IPs")
     args = parser.parse_args()
 
-    # Generate for groups 0 to 9
-    for i in range(10):
+    # Generate for groups 0 to num_groups-1
+    for i in range(args.num):
         generate_config(i, args.ip)
+    
+    print(f"Generated {args.num} group configurations")

@@ -200,3 +200,7 @@ path = "operator/multi_keys_join.rs"
 [[bin]]
 name = "radix_sort"
 path = "operator/radix_sort.rs"
+
+[[bin]]
+name = "comorbidity"
+path = "query/secrecy/comorbidity.rs"

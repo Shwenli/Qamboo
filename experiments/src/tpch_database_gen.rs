@@ -43,11 +43,7 @@ pub fn get_region_table_size() -> u64 {
 }
 
 
-
-
-
-//* TPCH lineitem table
-//* 
+//TPCH lineitem table 
 pub fn gen_lineitem_table<N: Network>(
     sf: f32,
     netstate_args: &mut NetStateArgs<N>,
@@ -200,9 +196,6 @@ pub fn gen_lineitem_table<N: Network>(
 
     let valid = gen_valid_column_u64_ring(num_rows, "valid".to_string(), ShareType::Arithmetic, nets, partyid);
     lineitem_table.insert_column("valid".to_string(), valid);
-    // Note: 'valid' column is usually metadata not necessary for Polars unless needed for query logic.
-    // If it's part of the standard TPCH table in this implementation, include it.
-    
 
     if partyid == PartyID::ID0 {
         let df = DataFrame::new(columns).expect("Failed to create DataFrame");

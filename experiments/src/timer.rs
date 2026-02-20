@@ -12,7 +12,7 @@ impl DebugTimer {
         Self { start: now, last: now }
     }
 
-    // 打点方法：输出当前步骤耗时和总耗时
+    // print the time elapsed since the last mark and the total time elapsed since the timer was created
     pub fn mark(&mut self, msg: &str) {
         let now = Instant::now();
         tracing::info!("⏱️ [{}]: Lap {:?}, Total {:?}", msg, now.duration_since(self.last), now.duration_since(self.start));

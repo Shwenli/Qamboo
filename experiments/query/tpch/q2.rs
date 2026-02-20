@@ -50,7 +50,7 @@ use std::path::PathBuf;
 use std::vec;
 use clap::Parser;
 use color_eyre::{Result, eyre::Context};
-use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
+use net::tcp::{TcpNetwork, NetworkConfig};
 use std::time::Instant;
 use experiments::tpch_database_gen::{self, get_part_table_size};
 use random::rep3::Rep3State;
@@ -103,13 +103,13 @@ fn main() -> Result<()> {
     tracing::info!("Q2 with SF: {}", sf);
     
     tracing::info!("setting up network");
-    let mut nets: Vec<FastTcpNetwork> = Vec::new();
+    let mut nets: Vec<TcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
     for i in 0..args.threads {
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = FastTcpNetwork::new(config)?;
+        let net = TcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
@@ -123,7 +123,7 @@ fn main() -> Result<()> {
         }
     }
     
-    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
+    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
     let party_id = states[0].id;
 

@@ -12,10 +12,10 @@ rust-version.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["fast_tcp"]
+default = ["tcp"]
 dangerous = []
 tcp = ["dep:crossbeam-channel", "dep:socket2"]
-fast_tcp = ["dep:crossbeam-channel", "dep:socket2"]
+#fast_tcp = ["dep:crossbeam-channel", "dep:socket2"]
 
 [dependencies]
 byteorder.workspace = true

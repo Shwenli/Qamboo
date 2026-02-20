@@ -17,7 +17,7 @@ set -o pipefail
 if [ "$#" -lt 3 ]; then
     echo "Error: Missing required arguments."
     echo "Usage: $0 <NUM_THREADS> <SF> <QUERIES>"
-    echo "  <NUM_THREADS> : Number of threads (e.g. 6)"
+    echo "  <NUM_THREADS> : Number of communication threads (e.g. 6)"
     echo "  <SF>          : Scale Factor (e.g. 0.1 or 1)"
     echo "  <QUERIES>     : Queries to run (e.g. \"1,3,4\" or \"1..8\")"
     echo "Example: $0 6 1 \"1,3,4\""
@@ -51,7 +51,7 @@ fi
 
 echo "============================================================"
 echo "Starting Multinode SSH Experiments"
-echo "Threads: $NUM_THREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
+echo "Comm Threads: $NUM_THREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
 echo "============================================================"
 
 # 2. Parse Query input (supports comma: "1,3,4" and range: "1..5")

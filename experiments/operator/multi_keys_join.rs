@@ -6,7 +6,7 @@ use color_eyre::{Result, eyre::Context};
 use random::rep3::Rep3State;
 use protocols::protocols::rep3_ring::arithmetic::{promote_to_trivial_share,open_vec};
 use algebra::ring::ring_impl::RingElement;
-use net::fast_tcp::{FastTcpNetwork, NetworkConfig};
+use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::net_statistics::install_tracing;
 use operator::join::inner_join_table_multi_keys_multithreads;
 
@@ -29,24 +29,24 @@ fn main() -> Result<()> {
     tracing::info!("setting up network");
     let partyid=args.party_id.clone();
 
-    let mut nets: Vec<FastTcpNetwork> = Vec::new();
+    let mut nets: Vec<TcpNetwork> = Vec::new();
     let mut states: Vec<Rep3State> = Vec::new();
 
     let file_path0 = PathBuf::from(format!("{}0/config_party{}.toml", args.config_dir.display(), partyid));
     let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path0).context("opening config file")?).context("parsing config file")?;
-    let net0 = FastTcpNetwork::new(config)?;
+    let net0 = TcpNetwork::new(config)?;
     let state0 = Rep3State::new(&net0)?;
 
 
     for i in 2..4{
         let file_path = PathBuf::from(format!("{}{}/config_party{}.toml", args.config_dir.display(), i, partyid));
         let config: NetworkConfig =toml::from_str(&std::fs::read_to_string(file_path).context("opening config file")?).context("parsing config file")?;
-        let net = FastTcpNetwork::new(config)?;
+        let net = TcpNetwork::new(config)?;
         let state = Rep3State::new(&net)?;
         nets.push(net);
         states.push(state);
     }
-    let nets = nets.iter().collect::<Vec<&FastTcpNetwork>>();
+    let nets = nets.iter().collect::<Vec<&TcpNetwork>>();
     let mut states = states.iter_mut().collect::<Vec<&mut Rep3State>>();
     /*
 

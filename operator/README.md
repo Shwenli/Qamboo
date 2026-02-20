@@ -24,6 +24,7 @@ pub fn join_on_multithreads<T, N>(
 ```
 
 **Steps:**
+
 1. Generate sorting permutation for combined keys
 2. Apply permutation to both relations
 3. Compute join indicator using prefix sums
@@ -48,12 +49,14 @@ pub fn table_group_by_common_multithreads<T, N>(
 ```
 
 **Output:**
+
 - Grouped keys
 - Aggregation values
 - Permutation for aggregation
 - Equality bits for group boundaries
 
 **Algorithm:**
+
 1. Sort by composite group key
 2. Compute group boundary indicators
 3. Apply prefix sums for aggregation
@@ -143,7 +146,7 @@ operator/
 ## SQL Operator Mapping
 
 | SQL Operator | Module Function | Complexity |
-|--------------|-----------------|------------|
+| -------------- | ----------------- | ------------ |
 | `JOIN` | `join_on_multithreads` | O(n log n) |
 | `GROUP BY` | `table_group_by_common_multithreads` | O(n log n) |
 | `COUNT(*)` | `table_agg_count_multithreads` | O(n) |
@@ -189,28 +192,6 @@ let sum_result = table_agg_sum_multithreads(
     nets,
     states,
 )?;
-```
-
-## Join Implementation Details
-
-### Sort-Merge Join
-
-```rust
-// 1. Concatenate keys from both relations
-let all_keys = concat(&keys_m, &keys_n);
-
-// 2. Generate sorting permutation
-let perm = gen_perm_multithreads(&all_keys, true, bitsize, nets, states)?;
-
-// 3. Apply permutation to values
-let permuted_m = apply_perm_multithreads(&perm, &vals_m_extended, ...)?;
-let permuted_n = apply_perm_multithreads(&perm, &vals_n_extended, ...)?;
-
-// 4. Compute join indicators
-let indicators = compute_join_indicators(&permuted_keys, ...)?;
-
-// 5. Filter valid tuples
-let result = filter_by_indicators(&permuted_values, &indicators)?;
 ```
 
 ## Aggregation Pipeline

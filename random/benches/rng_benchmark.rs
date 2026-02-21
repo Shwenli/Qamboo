@@ -62,7 +62,6 @@ fn seq_random_elements_vec<T>(state: &mut Rep3State, len: usize) -> (Vec<T>, Vec
 where
     Standard: Distribution<T>,
 {
-    // 完全顺序生成，不使用 rayon::join
     let a: Vec<T> = (0..len).map(|_| state.rngs.rand.random_element_rng1()).collect();
     let b: Vec<T> = (0..len).map(|_| state.rngs.rand.random_element_rng2()).collect();
     (a, b)

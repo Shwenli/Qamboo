@@ -6,9 +6,10 @@ use random::rep3::Rep3State;
 use itertools::izip;
 use net::Network;
 use num_traits::{One, Zero};
-use random::rep3::rep3rng_rayon::random_elements_vec_multithreads;
+//use random::rep3::rep3rng_rayon::random_elements_vec_multithreads;
 use communication::rep3::net_impl::Rep3NetworkImpl;
-use communication::rep3::multinet_impl::{send_next_many_multinet, recv_prev_many_multinet};
+//use communication::rep3::multinet_impl::{send_next_many_multinet, recv_prev_many_multinet};
+use rayon::slice::ParallelSliceMut;
 use crate::compare::and_vec_multithreads;
 use rand::{distributions::Standard, prelude::Distribution};
 use rayon::iter::*;
@@ -133,6 +134,28 @@ where
 
     let s_ = p.to_owned();
 
+    let chunk_size = std::cmp::max(1024, p.len() / (nets.len())); 
+
+    p.par_chunks_mut(chunk_size)
+    .zip_eq(g.par_chunks_mut(chunk_size))
+    .zip(nets.par_iter())
+    .zip(states.par_iter_mut())
+    .for_each(|(((p_chunk, g_chunk), net), state)| {
+        for i in 0..d {
+            let shift = 1 << i;
+            let p_: Vec<_> = p_chunk.iter().map(|el| el << shift).collect();
+            let g_: Vec<_> = g_chunk.iter().map(|el| el << shift).collect();
+
+            let (r1, r2) = and_twice_many_iter(&p_chunk, g_.into_iter(), p_.into_iter(), *net, state)
+            .unwrap_or_else(|e|panic!("Error in and_twice_many_iter: {:?}", e));
+            p_chunk.clone_from_slice(&r2);
+            for (g, r1) in g_chunk.iter_mut().zip(r1) {
+                *g ^= r1;
+            }
+        }
+    });
+
+    /* 
     for i in 0..d {
         let shift = 1 << i;
 
@@ -153,6 +176,7 @@ where
                 g.iter_mut().zip(r1.into_iter()).for_each(|(g, r1)| *g ^= r1);
         });
     }
+    */
 
     g.par_iter_mut()
     .zip_eq(s_.into_par_iter())
@@ -251,12 +275,36 @@ where
     Standard: Distribution<T>,
 {
     let bitlen = T::K;
-    let d: u32 = bitlen.ilog2(); // T is a ring with 2^k elements
+
+    // T is a ring with 2^k elements
+    let d: u32 = bitlen.ilog2(); 
     debug_assert!(bitlen.is_power_of_two());
 
     let mut p = p;
     let mut g = g;
 
+    // Adjust chunk size based on number of threads and data size
+    let chunk_size = std::cmp::max(1024, p.len() / (nets.len())); 
+
+    p.par_chunks_mut(chunk_size)
+    .zip_eq(g.par_chunks_mut(chunk_size))
+    .zip(nets.par_iter())
+    .zip(states.par_iter_mut())
+    .for_each(|(((p_chunk, g_chunk), net), state)| {
+        for i in 0..d {
+            let shift = 1 << i;
+            let p_: Vec<_> = p_chunk.iter().map(|el| el << shift).collect();
+            let g_: Vec<_> = g_chunk.iter().map(|el| el << shift).collect();
+
+            let (r1, r2) = and_twice_many_iter(&p_chunk, g_.into_iter(), p_.into_iter(), *net, state)
+            .unwrap_or_else(|e|panic!("Error in and_twice_many_iter: {:?}", e));
+            p_chunk.clone_from_slice(&r2);
+            for (g, r1) in g_chunk.iter_mut().zip(r1) {
+                *g ^= r1;
+            }
+        }
+    });
+    /* 
     for i in 0..d {
         let shift = 1 << i;
         let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter()
@@ -274,6 +322,7 @@ where
         .with_min_len(1024)
         .for_each(|(g, r1)| *g ^= r1);
     }
+    */
     Ok(g)
 }
 
@@ -316,6 +365,7 @@ where
     Ok((r1, r2))
 }
 
+/* 
 #[expect(clippy::type_complexity)]
 fn and_twice_many_multithreads<T: IntRing2k, N: Network>(
     a: &[Rep3RingShare<T>],
@@ -372,7 +422,7 @@ where
 
     Ok((r1, r2))
 }
-
+*/
 
 pub fn low_depth_binary_sub_with_carry_many<T: IntRing2k, N: Network>(
     x1: &[Rep3RingShare<T>],
@@ -400,6 +450,7 @@ where
     }
     Ok((res, c))
 }
+
 
 pub fn low_depth_binary_sub_with_carry_many_multithreads<T: IntRing2k, N: Network>(
     x1: &[Rep3RingShare<T>],

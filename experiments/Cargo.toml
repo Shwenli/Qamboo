@@ -202,5 +202,9 @@ name = "radix_sort"
 path = "operator/radix_sort.rs"
 
 [[bin]]
+name = "radix_sort_scalability"
+path = "operator/radix_sort_scalability.rs"
+
+[[bin]]
 name = "comorbidity"
 path = "query/secrecy/comorbidity.rs"

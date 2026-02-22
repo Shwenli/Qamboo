@@ -167,13 +167,10 @@ fn main() -> Result<()> {
 
 
     tracing::info!("c_custkey = o_custkey");
-    let k_l_name = "o_custkey";
-    let k_r_name = "c_custkey";
-
-    let mut final_table = orders_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &customer_table,
+    let mut final_table = customer_table.inner_join(
+        "c_custkey",
+        "o_custkey",
+        &orders_table,
         &mut mpc_exec_args,
     )?;
 

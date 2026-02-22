@@ -121,7 +121,7 @@ impl<T: IntRing2k> ColumnBooleanOperator<Rep3RingShare<T>, T> for ShareColumn<Re
 where
 Standard: Distribution<T>,{ 
 
-    fn eq<N: Network>(
+    fn equal<N: Network>(
         &self, 
         b: &ShareColumn<Rep3RingShare<T>>,
         netstate_args: &mut NetStateArgs<N>,

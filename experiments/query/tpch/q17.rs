@@ -198,6 +198,7 @@ fn main() -> Result<()> {
     )?;
 
     //safe cut to part_table size, because group by l_partkey, then the size is at most part_table size
+    tracing::info!("safe cut sub query table to part table size");
     sub_query_table.head(get_part_table_size(sf) as usize);
 
     let mut avg_l_quantity = sub_query_table["sum_l_quantity"].clone() / (&sub_query_table["count_l_quantity"], &mut mpc_exec_args);

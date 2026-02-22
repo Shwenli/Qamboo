@@ -47,7 +47,7 @@ pub trait TransformBetweenArithAndBinary<T>{
 pub trait ColumnBooleanOperator<T,U>{
 
     /// _binary means the input is binary shares and does not require transform from arithmetic to binary
-    fn eq<N: Network>(
+    fn equal<N: Network>(
         &self,
         other_column: &ShareColumn<T>,
         netstate_args: &mut NetStateArgs<N>,

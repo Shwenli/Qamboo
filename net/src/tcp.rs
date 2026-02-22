@@ -21,6 +21,8 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use socket2::{Domain, Socket, TcpKeepalive, Type};
 
+const BUFFER_SIZE: usize = 4 * 1024 * 1024; // 4MB
+
 /// A party in the network.
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct NetworkParty {
@@ -114,8 +116,8 @@ impl TcpNetwork {
             SocketAddr::V6(_) => Domain::IPV6,
         };
         let socket = Socket::new(domain, Type::STREAM, None)?;
-        socket.set_send_buffer_size(1024*1024)?;  // 4MB
-        socket.set_recv_buffer_size(1024*1024)?;  // 4MB
+        socket.set_send_buffer_size(BUFFER_SIZE)?;  // 4MB
+        socket.set_recv_buffer_size(BUFFER_SIZE)?;  // 4MB
         socket.set_reuse_address(true)?;
         if bind_addr.is_ipv6() {
             socket.set_only_v6(false)?;

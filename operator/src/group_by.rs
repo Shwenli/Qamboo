@@ -137,7 +137,7 @@ Standard: Distribution<T>,{
         e = nxt_e;
     }
     
-    // Finally do 1-e, because only when all keys are equal, e is 1
+    // Finally do 1-e, because only when a row of all keys are equal, e is 1
     e = izip!(e).map(|e_i| binary::xor_public(&e_i, &bit_one, states[0].id)).collect::<Vec<_>>();
 
     let e_m: Rep3RingShare<Bit> = binary::promote_to_trivial_share(states[0].id,&RingElement(Bit::new(true)));
@@ -157,7 +157,7 @@ Standard: Distribution<T>,{
         k_g_n.push(k_g_n_i);
     }
 
-    //这里获取e_t之后要对e_t去取反，因为:算法是按将1排到前面，0排到后面，还要求是稳定的，不能直接对按原e获得的perm逆置。取反后，靠前的1仍然靠前，是稳定的。
+    //这里获取e_t之后要对e_t去取反，因为:算法是将不重复的排到前面，还要求是稳定的，不能直接对按原e获得的perm逆置。取反后，靠前的1仍然靠前，是稳定的。
     let mut e_t= transform::from_bit_to_arithmetic_t_multithreads::<u32,N>(&e, nets, states)?;
     for p in e_t.iter_mut() {
         *p = arithmetic::add_public(-(*p), RingElement::one(), states[0].id);

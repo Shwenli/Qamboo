@@ -180,18 +180,15 @@ path = "query/tpch/q22.rs"
 
 [[bin]]
 name = "q3_no_safe_cut"
-path = "query/tpch/q3_no_safe_cut.rs"
-
-
-[[bin]]
-name = "q4_no_semi"
-path = "query/tpch/q4_no_semi.rs"
-
+path = "query/optimization/no_safe_cut/q3_no_safe_cut.rs"
 
 [[bin]]
 name = "q18_no_safe_cut"
-path = "query/tpch/q18_no_safe_cut.rs"
+path = "query/optimization/no_safe_cut/q18_no_safe_cut.rs"
 
+[[bin]]
+name = "q4_no_semi"
+path = "query/optimization/no_semi_join/q4_no_semi.rs"
 
 [[bin]]
 name = "multi_keys_join"
@@ -208,3 +205,7 @@ path = "operator/radix_sort_scalability.rs"
 [[bin]]
 name = "comorbidity"
 path = "query/secrecy/comorbidity.rs"
+
+[[bin]]
+name = "rcdiff"
+path = "query/secrecy/rcdiff.rs"

@@ -68,8 +68,8 @@ fn main() -> Result<()> {
     tracing::info!("Network setup completed");
 
 
-    for i in 0..7 {
-        let rows = 1 << (19 + i);
+    for i in 0..args.number {
+        let rows = 1 << (20 + i);
         let input = gen_rand_column_u64_ring(
             rows,
             "test".to_string(), 

@@ -249,8 +249,9 @@ fn main() -> Result<()> {
         
         let polars_val = final_df.column("promo_revenue")?.get(0)?.try_extract::<u64>()?;
         let mpc_val = open_result.0;
+        tracing::info!("MPC result: {}", mpc_val);
         
-        assert_eq!(mpc_val, polars_val);
+        assert_eq!(mpc_val, polars_val, "promo_revenue not matched !");
         tracing::info!("Verification passed!");
     }
 

@@ -134,7 +134,8 @@ where
 
     let s_ = p.to_owned();
 
-    let chunk_size = std::cmp::max(1024, p.len() / (nets.len())); 
+    let num_threads = nets.len();
+    let chunk_size = (p.len() + num_threads - 1) / num_threads; 
 
     p.par_chunks_mut(chunk_size)
     .zip_eq(g.par_chunks_mut(chunk_size))
@@ -284,7 +285,8 @@ where
     let mut g = g;
 
     // Adjust chunk size based on number of threads and data size
-    let chunk_size = std::cmp::max(1024, p.len() / (nets.len())); 
+    let num_threads = nets.len();
+    let chunk_size = (p.len() + num_threads - 1) / num_threads; 
 
     p.par_chunks_mut(chunk_size)
     .zip_eq(g.par_chunks_mut(chunk_size))
@@ -440,7 +442,7 @@ where
     let mut g = binary::and_vec(x1, &x2, net, state)?;
     // Since carry_in = 1, we need to XOR the LSB of x1 and x2 to g (i.e., xor the LSB of p)
     for (g_item, p_item) in izip!(g.iter_mut(), p.iter()) {
-        *g_item ^= *p_item & RingElement::one();//这里好好想想要不要加*
+        *g_item ^= *p_item & RingElement::one();
     }
 
     let (mut res, c) = kogge_stone_inner_with_carry_many(&p, &g, net, state)?;

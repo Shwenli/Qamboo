@@ -235,6 +235,7 @@ fn main() -> Result<()> {
 
     let _ = lineitem_table.agg_sum("l_quantity", "sum_quantity", &e, &perm, &mut mpc_exec_args)?;
 
+    tracing::info!("safe cut lineitem table to partsupp size");
     lineitem_table.head(get_partsupp_table_size(sf) as usize);
 
     lineitem_table["sum_quantity"] /= (&RingElement(2u64), &mut mpc_exec_args);

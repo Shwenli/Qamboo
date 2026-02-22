@@ -277,7 +277,10 @@ fn main() -> Result<()> {
         &perm,
         &mut mpc_exec_args
     )?;
+
+    tracing::info!("safe cut sub_table_clone to partsupp size");
     sub_table_clone.head(get_part_table_size(sf) as usize);
+    
     let sub_table_clone = sub_table_clone.project(vec!["ps_partkey", "min_ps_supplycost", "valid"])?;
 
 

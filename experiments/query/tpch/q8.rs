@@ -386,7 +386,7 @@ fn main() -> Result<()> {
     final_table.delete_column("nation");
     final_table.delete_column("filter_volume");
     
-
+    tracing::info!("Safe cut final table to orders size");
     final_table.head(get_orders_table_size(sf) as usize);
 
 

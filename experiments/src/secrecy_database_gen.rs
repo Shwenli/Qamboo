@@ -526,16 +526,16 @@ pub fn gen_diagnosis_table<N: Network>(
     // diagnosis column: [0, 10)
     let (diag_col, plain_diag) = gen_rand_column_u64_ring(
         num_rows,
-        "diagnosis".to_string(),
+        "diag".to_string(),
         10,
         0,
         ShareType::Arithmetic,
         nets,
         partyid,
     );
-    table.insert_column("diagnosis".to_string(), diag_col);
+    table.insert_column("diag".to_string(), diag_col);
     if let Some(data) = plain_diag {
-        columns.push(Column::new("diagnosis".into(), data));
+        columns.push(Column::new("diag".into(), data));
     }
 
     let valid = gen_valid_column_u64_ring(num_rows, "valid".to_string(), ShareType::Arithmetic, nets, partyid);

@@ -28,8 +28,8 @@
  * Ignores o_shippriority because it is always 0 as per TCPH spec
  */
 
-use std::path::PathBuf;
 use std::vec;
+use std::path::PathBuf;
 use std::time::Instant;
 use clap::Parser;
 use color_eyre::{Result, eyre::Context};
@@ -300,6 +300,8 @@ fn main() -> Result<()> {
     print_communication_stats(&mpc_exec_args, "Q3");
     
     
+    
+
 //************* polars verification *************//
 
     let sum_valid = final_table["valid"].prefix_sum();

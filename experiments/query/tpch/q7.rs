@@ -1,4 +1,3 @@
-/// Q7 apply reorder join optimization version
 /* 
 select
  *      supp_nation,
@@ -157,14 +156,7 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-    /*
-    Supplier.project({"[SuppKey]", "[NationKey]"});
-    LineItem.project({"[ShipDate]", "ExtendedPrice", "Discount", "[SuppKey]", "[OrderKey]"});
-    Orders.project({"[OrderKey]", "[CustKey]"});
-    Customer.project({"[CustKey]", "[NationKey]"});
-    Nation1.project({"[NationKey]", "[Name]"});
-    Nation2.project({"[NationKey]", "[Name]"});
-    */
+    
     let lineitem_col_names = vec!["l_shipdate", "[l_shipdate]", "l_extendedprice", "l_discount", "l_suppkey", "l_orderkey", "valid"];
     let mut lineitem_table = lineitem_table.project(lineitem_col_names)?;
 

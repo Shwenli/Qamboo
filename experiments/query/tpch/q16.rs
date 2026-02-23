@@ -155,9 +155,6 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-    //Part.project({"[PartKey]", "[Brand]", "[Type]", "[Size]"});
-    //PartSupp.project({"[SuppKey]", "[PartKey]"});
-    //Supplier.project({"[SuppKey]", "[Comment]"});
 
     let p_col_names = vec!["p_partkey", "[p_brand]", "[p_type]", "[p_size]", "p_brand", "p_type", "p_size", "valid"];
     let mut part_table = part_table.project(p_col_names)?;

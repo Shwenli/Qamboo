@@ -82,7 +82,6 @@ name = "q3"
 path = "query/tpch/q3.rs"
 
 
-# Add for q4 to q22
 [[bin]]
 name = "q4"
 path = "query/tpch/q4.rs"
@@ -179,12 +178,44 @@ path = "query/tpch/q22.rs"
 
 
 [[bin]]
-name = "q3_no_safe_cut"
-path = "query/optimization/no_safe_cut/q3_no_safe_cut.rs"
+name = "q2_no_secure_cut"
+path = "query/optimization/no_secure_cut/q2_no_secure_cut.rs"
 
 [[bin]]
-name = "q18_no_safe_cut"
-path = "query/optimization/no_safe_cut/q18_no_safe_cut.rs"
+name = "q3_no_secure_cut"
+path = "query/optimization/no_secure_cut/q3_no_secure_cut.rs"
+
+[[bin]]
+name = "q5_no_secure_cut"
+path = "query/optimization/no_secure_cut/q5_no_secure_cut.rs"
+
+[[bin]]
+name = "q8_no_secure_cut"
+path = "query/optimization/no_secure_cut/q8_no_secure_cut.rs"
+
+[[bin]]
+name = "q13_no_secure_cut"
+path = "query/optimization/no_secure_cut/q13_no_secure_cut.rs"
+
+[[bin]]
+name = "q17_no_secure_cut"
+path = "query/optimization/no_secure_cut/q17_no_secure_cut.rs"
+
+[[bin]]
+name = "q18_no_secure_cut"
+path = "query/optimization/no_secure_cut/q18_no_secure_cut.rs"
+
+[[bin]]
+name = "q20_no_secure_cut"
+path = "query/optimization/no_secure_cut/q20_no_secure_cut.rs"
+
+[[bin]]
+name = "q21_no_secure_cut"
+path = "query/optimization/no_secure_cut/q21_no_secure_cut.rs"
+
+[[bin]]
+name = "q5_no_join_reorder"
+path = "query/optimization/no_join_reorder/q5_no_join_reorder.rs"
 
 [[bin]]
 name = "q4_no_semi"

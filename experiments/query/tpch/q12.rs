@@ -133,6 +133,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Generate tables completed");
 
+
     tracing::info!("converting some columns to binary");
 
     let l_shipmode_binary = lineitem_table["l_shipmode"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
@@ -152,10 +153,7 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-    /*
-    L.project({"[ShipMode]", "[CommitDate]", "[ReceiptDate]", "[ShipDate]", "[OrderKey]"});
-    O.project({"[OrderPriority]", "[OrderKey]"});
-    */
+    
     let l_col_names = vec!["l_shipmode", "[l_shipmode]", "[l_shipdate]", "[l_commitdate]", "l_orderkey", "[l_receiptdate]", "valid"];
     let mut lineitem_table = lineitem_table.project(l_col_names)?;
 

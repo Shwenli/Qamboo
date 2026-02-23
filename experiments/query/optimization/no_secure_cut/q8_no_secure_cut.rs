@@ -1,3 +1,4 @@
+/// Q2 apply reorder join optimization version
 /* 
 *  select
  *  o_year,
@@ -49,7 +50,7 @@ use random::MpcState;
 use communication::rep3::id::PartyID;
 use algebra::ring::ring_impl::RingElement;
 use net::tcp::{TcpNetwork, NetworkConfig};
-use experiments::tpch_database_gen::{self, get_orders_table_size};
+use experiments::tpch_database_gen::{self};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
@@ -385,9 +386,10 @@ fn main() -> Result<()> {
     final_table.delete_column("nation");
     final_table.delete_column("filter_volume");
     
+    /* 
     tracing::info!("secure cut final table to orders size");
     final_table.head(get_orders_table_size(sf) as usize);
-
+    */
 
     let _ = final_table.order_by("valid", false, &mut mpc_exec_args)?;
 

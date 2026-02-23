@@ -137,8 +137,6 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-    //LineItem.project({"[SuppKey]", "ExtendedPrice", "Discount", "[ShipDate]"});
-    //Supplier.project({"[SuppKey]", "[Name]", "[Address]", "[Phone]"});
 
     let l_col_names = vec!["[l_shipdate]", "l_suppkey", "l_discount", "l_extendedprice", "valid"];
     let mut lineitem_table = lineitem_table.project(l_col_names)?;

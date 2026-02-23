@@ -1,6 +1,6 @@
-cargo build --release --package experiments --bin q3_no_safe_cut --features tcp
+cargo build --release --package experiments --bin q3_no_secure_cut --features tcp
 
-BIN_PATH=../../../../target/release/q3_no_safe_cut
+BIN_PATH=../../../../target/release/q3_no_secure_cut
 
 NUM_THREADS=${1:-6} #number of threads (default: 6)
 

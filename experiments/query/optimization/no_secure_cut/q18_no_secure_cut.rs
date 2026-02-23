@@ -1,4 +1,3 @@
-//* 使用了安全的行数裁剪优化。
 /*
   *
  * Equivalent SQL:
@@ -234,9 +233,9 @@ fn main() -> Result<()> {
     tracing::info!("Q18 execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q18_no_safe_cut execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q18_no_secure_cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q18_no_safe_cut");
+    print_communication_stats(&mpc_exec_args, "Q18_no_secure_cut");
 
 
 

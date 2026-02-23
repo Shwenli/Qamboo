@@ -53,7 +53,7 @@ use net::tcp::{TcpNetwork, NetworkConfig};
 use protocols::protocols::rep3_ring::arithmetic::open;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
-use experiments::tpch_database_gen::{self, get_partsupp_table_size};
+use experiments::tpch_database_gen::{self};
 use table::column_operator::{ColumnBooleanOperator, PrefixSum, TransformBetweenArithAndBinary};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
 use table::predicate::Predicate;
@@ -160,7 +160,13 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-
+    /* 
+    S.project({"[SuppKey]", "[Name]", "[NationKey]", "[Name]", "[Address]"});
+    PS.project({"AvailQty", "[PartKey]", "[SuppKey]"});
+    L.project({"[ShipDate]", "[PartKey]", "[SuppKey]", "Quantity"});
+    P.project({"[Name]", "[PartKey]"});
+    N.project({"[NationKey]", "[Name]"});
+    */
     let lineitem_col_names = vec!["[l_shipdate]", "l_partkey", "l_suppkey", "l_quantity", "valid"]; 
     let mut lineitem_table = lineitem_table.project(lineitem_col_names)?;
 
@@ -229,8 +235,10 @@ fn main() -> Result<()> {
 
     let _ = lineitem_table.agg_sum("l_quantity", "sum_quantity", &e, &perm, &mut mpc_exec_args)?;
 
+    /*
     tracing::info!("secure cut lineitem table to partsupp size");
     lineitem_table.head(get_partsupp_table_size(sf) as usize);
+    */
 
     lineitem_table["sum_quantity"] /= (&RingElement(2u64), &mut mpc_exec_args);
 

@@ -1,3 +1,4 @@
+/// Q2 apply reorder join optimization version
 /*
  select
  *     s_acctbal,
@@ -51,7 +52,7 @@ use clap::Parser;
 use color_eyre::{Result, eyre::Context};
 use net::tcp::{TcpNetwork, NetworkConfig};
 use std::time::Instant;
-use experiments::tpch_database_gen::{self, get_part_table_size};
+use experiments::tpch_database_gen::{self};
 use random::rep3::Rep3State;
 use random::MpcState;
 use communication::rep3::id::PartyID;
@@ -151,6 +152,13 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
+    /* 
+        *Part.project({"[PartKey]", "[Size]", "[Type]"});
+        *Supplier.project({"[SuppKey]", "[NationKey]", "[AcctBal]", "[Name]"});
+        *PartSupp.project({"[PartKey]", "[SuppKey]", "[SupplyCost]"});
+        *Nation.project({"[NationKey]", "[RegionKey]", "[Name]"});
+        *Region.project({"[RegionKey]", "[Name]"});
+    */
 
     let part_col_names = vec!["p_partkey", "p_size", "p_type", "valid"];
     let mut part_table = part_table.project(part_col_names)?;
@@ -270,9 +278,11 @@ fn main() -> Result<()> {
         &mut mpc_exec_args
     )?;
 
+    /* 
     tracing::info!("secure cut sub_table_clone to partsupp size");
     sub_table_clone.head(get_part_table_size(sf) as usize);
-
+    */
+    
     let sub_table_clone = sub_table_clone.project(vec!["ps_partkey", "min_ps_supplycost", "valid"])?;
 
 

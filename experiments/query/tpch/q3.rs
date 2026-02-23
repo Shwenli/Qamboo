@@ -1,7 +1,5 @@
 
 /*
- *
- * Equivalent SQL:
  * select
  *     l_orderkey,
  *     sum(l_extendedprice*(1-l_discount)) as revenue,
@@ -139,12 +137,7 @@ fn main() -> Result<()> {
     customer_table.insert_column("[c_mktsegment]".to_string(), c_mktsegment_binary);
 
     
-
     tracing::info!("Projecting tables");
-
-    //*LineItem.project({"[OrderKey]", "[ShipDate]", "ExtendedPrice", "Discount"});
-    //*Orders.project({"[OrderKey]", "[CustKey]", "[OrderDate]"});
-    //*Customers.project({"[CustKey]", "[MktSegment]"});
 
     let l_col_names = vec!["l_orderkey", "[l_shipdate]", "l_extendedprice", "l_discount", "valid"];
     let mut lineitem_table = lineitem_table.project(l_col_names)?;
@@ -265,7 +258,7 @@ fn main() -> Result<()> {
     let mut final_table = custorderline_table.project(vec!["l_orderkey", "o_orderdate", "revenue", "valid"])?;
 
 
-    tracing::info!("safe cut custorderline_table size to order_table size");
+    tracing::info!("secure cut custorderline_table size to order_table size");
     final_table.head(get_orders_table_size(sf) as usize);
 
 
@@ -300,7 +293,7 @@ fn main() -> Result<()> {
     print_communication_stats(&mpc_exec_args, "Q3");
     
     
-    
+
 
 //************* polars verification *************//
 

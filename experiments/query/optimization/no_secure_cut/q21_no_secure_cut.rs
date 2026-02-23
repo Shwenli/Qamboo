@@ -51,7 +51,7 @@ use random::MpcState;
 use communication::rep3::id::PartyID;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use protocols::protocols::rep3_ring::arithmetic::open;
-use experiments::tpch_database_gen::{self, get_orders_table_size, get_supplier_table_size};
+use experiments::tpch_database_gen::{self};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
@@ -152,7 +152,13 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-
+    /*
+        S.project({"[Name]", "[SuppKey]", "[NationKey]"});
+        L1.project({"[SuppKey]", "[OrderKey]", "[ReceiptDate]", "[CommitDate]"});
+        L2.project({"[SuppKey]", "[OrderKey]", "[ReceiptDate]", "[CommitDate]"});
+        O.project({"[OrderKey]", "[OrderStatus]"});
+        N.project({"[NationKey]", "[Name]"});
+    */
     let lineitem_col_names = vec!["l_suppkey", "l_orderkey", "[l_receiptdate]", "[l_commitdate]", "valid"];
     let mut lineitem_table = lineitem_table.project(lineitem_col_names)?;
 
@@ -226,16 +232,19 @@ fn main() -> Result<()> {
     let _ = lineitem2_table.agg_sum("is_late", "num_late", &e, &perm, &mut mpc_exec_args)?;
     lineitem2_table.delete_column("is_late");
 
+    /*
     tracing::info!("Secure Cutting Rows to Ordertable Cardinality");
     lineitem2_table.head(get_orders_table_size(sf) as usize);
-
+    */
 
     tracing::info!("Tree2: Count");
     let (e, perm, _) = l_nofilter_table.group_by(vec!["l_orderkey"], &mut mpc_exec_args)?;
     let _ = l_nofilter_table.agg_count("cnt_suppkey", &e, &perm, &mut mpc_exec_args)?;
+    
+    /* 
     l_nofilter_table.head(get_orders_table_size(sf) as usize);
     l_nofilter_table.delete_column("l_suppkey");
-
+    */
 
     tracing::info!("Merge Tree1, Tree2 and lineitem_table");
     let lineitem_table = lineitem2_table.inner_join("l2_orderkey", "l_orderkey", &lineitem_table, &mut mpc_exec_args)?;
@@ -273,9 +282,10 @@ fn main() -> Result<()> {
     let (e, perm, _) = final_table.group_by(vec!["s_name"], &mut mpc_exec_args)?;
     let _ = final_table.agg_count( "numwait", &e, &perm, &mut mpc_exec_args)?;
 
+    /* 
     tracing::info!("secure cut rows to supplier table size");
     final_table.head(get_supplier_table_size(sf) as usize);
-
+    */
 
     tracing::info!("Order by numwait desc, s_name");
     let _ = final_table.order_by("numwait", false, &mut mpc_exec_args)?;

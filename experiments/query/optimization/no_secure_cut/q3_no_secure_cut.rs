@@ -1,6 +1,5 @@
 
 /*
- *
  * Equivalent SQL:
  * select
  *     l_orderkey,
@@ -43,11 +42,12 @@ use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use experiments::tpch_database_gen;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::predicate::Predicate;
 use table::share_column::ShareColumn;
 use table::NetStateArgs;
 
-
+const DATE : u64 = 80;
 
 
 #[derive(Parser)]
@@ -110,67 +110,70 @@ fn main() -> Result<()> {
     tracing::info!("Network setup completed");
     
 
-    let (lineitem_table, _lineitem_table_polars) = tpch_database_gen::gen_lineitem_table(sf, &mut mpc_exec_args)?;
+    let (mut lineitem_table, _lineitem_table_polars) = tpch_database_gen::gen_lineitem_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Lineitem table generated with {} rows", lineitem_table.num_rows());
 
-    let (customer_table, _customer_table_polars) = tpch_database_gen::gen_customer_table(sf, &mut mpc_exec_args)?;
+    let (mut customer_table, _customer_table_polars) = tpch_database_gen::gen_customer_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Customer table generated with {} rows", customer_table.num_rows());
 
-    let (orders_table, _orders_table_polars) = tpch_database_gen::gen_orders_table(sf, &mut mpc_exec_args)?;
+    let (mut orders_table, _orders_table_polars) = tpch_database_gen::gen_orders_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Orders table generated with {} rows", orders_table.num_rows());
 
-    // TODO: Implement Q3 query logic using lineitem_table
 
-    //*LineItem.project({"[OrderKey]", "[ShipDate]", "ExtendedPrice", "Discount"});
-    //*Orders.project({"[OrderKey]", "[CustKey]", "[OrderDate]"});
-    //*Customers.project({"[CustKey]", "[MktSegment]"});
+    tracing::info!("converting some columns to binary");
+
+    let l_shipdate_binary = lineitem_table["l_shipdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
+    lineitem_table.insert_column("[l_shipdate]".to_string(), l_shipdate_binary);
+
+    let o_orderdate_binary = orders_table["o_orderdate"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
+    orders_table.insert_column("[o_orderdate]".to_string(), o_orderdate_binary);
+
+    let c_mktsegment_binary = customer_table["c_mktsegment"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
+    customer_table.insert_column("[c_mktsegment]".to_string(), c_mktsegment_binary);
+
 
     tracing::info!("Projecting tables");
 
-    let l_col_names = vec!["l_orderkey", "l_shipdate", "l_extendedprice", "l_discount", "valid"];
+    let l_col_names = vec!["l_orderkey", "[l_shipdate]", "l_extendedprice", "l_discount", "valid"];
     let mut lineitem_table = lineitem_table.project(l_col_names)?;
 
-    let o_col_names = vec!["o_orderkey", "o_custkey", "o_orderdate", "valid"];
+    let o_col_names = vec!["o_orderkey", "o_custkey", "o_orderdate", "[o_orderdate]", "valid"];
     let mut orders_table = orders_table.project(o_col_names)?;
 
-    let c_col_names = vec!["c_custkey", "c_mktsegment", "valid"];
+    let c_col_names = vec!["c_custkey", "[c_mktsegment]", "valid"];
     let mut customer_table = customer_table.project(c_col_names)?;
     
     tracing::info!("Projection completed");
 
+
     tracing::info!("Q3 start");
-    
     let tot_start = Instant::now();
+
     tracing::info!("Filtering tables");
 
-    let c_filter_name = "c_mktsegment";
-
     let _ = customer_table.filter_public(
-        c_filter_name,
-        Predicate::Equal,
+        "[c_mktsegment]",
+        Predicate::EqualBinary,
         &1u64,
         &mut mpc_exec_args,
     )?;
+    customer_table.delete_column("[c_mktsegment]");
 
-    tracing::info!("Filtering1 completed");
-
-    let o_filter_name = "o_orderdate";
     let _ = orders_table.filter_public(
-        o_filter_name,
-        Predicate::LessThan,
-        &1995u64,
+        "[o_orderdate]",
+        Predicate::LessThanBinary,
+        &DATE,
         &mut mpc_exec_args,
     )?;
 
-    let l_filter_name = "l_shipdate";
     let _ = lineitem_table.filter_public(
-        l_filter_name,
-        Predicate::GreaterThan,
-        &1995u64,
+        "[l_shipdate]",
+        Predicate::GreaterThanBinary,
+        &DATE,
         &mut mpc_exec_args,
     )?;
-
-    customer_table.delete_column(c_filter_name);
+    lineitem_table.delete_column("[l_shipdate]");
+    orders_table.delete_column("[o_orderdate]");
     
     tracing::info!("Filtering completed");
 
@@ -206,7 +209,6 @@ fn main() -> Result<()> {
     )?;
 
     tracing::info!("First join time: {:?}", start.elapsed());
-
     let start = Instant::now();
 
     let k_l_name = "o_orderkey";
@@ -281,9 +283,9 @@ fn main() -> Result<()> {
     tracing::info!("Q3 execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q3_no_safe_cut execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q3_no_secure_cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q3_no_safe_cut");
+    print_communication_stats(&mpc_exec_args, "Q3_no_secure_cut");
     
     Ok(())
 }

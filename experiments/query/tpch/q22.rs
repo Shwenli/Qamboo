@@ -149,10 +149,7 @@ fn main() -> Result<()> {
     
 
     tracing::info!("Projecting tables");
-    /*
-    Customer.project({"[CustKey]", "[CntryCode]", "[AcctBal]", "AcctBal"});
-    Order.project({"[CustKey]"});
-    */
+
     let o_col_names = vec!["o_custkey", "valid"];
     let orders_table = orders_table.project(o_col_names)?;
 

@@ -188,13 +188,6 @@ fn main() -> Result<()> {
         &mut mpc_exec_args,
     );
 
-    /*
-    let result = binary::open_vec(lineitem_table["valid"].get_data(),nets[0])?;
-    //提取前10个
-    let result = result[0..100].to_vec();
-    eprintln!("valid: {:?}", result);
-    */
-
     lineitem_table.delete_column(l_filter_name);
     
     

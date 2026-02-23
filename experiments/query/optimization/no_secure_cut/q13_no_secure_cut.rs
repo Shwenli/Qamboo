@@ -105,7 +105,7 @@ fn main() -> Result<()> {
 
     tracing::info!("Network setup completed");
     
-    
+
     let (customer_table, customer_table_polars) = tpch_database_gen::gen_customer_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Customer table generated with {} rows", customer_table.num_rows());
 
@@ -158,10 +158,11 @@ fn main() -> Result<()> {
         &mut mpc_exec_args,
     )?;
 
-
+    /* 
     tracing::info!("Reduce orders table to customer table size");
     let customers_size = tpch_database_gen::get_customer_table_size(sf);
     orders_table.head(customers_size as usize);
+    */
 
     tracing::info!("orders table reduced to {} rows", orders_table.num_rows());
 

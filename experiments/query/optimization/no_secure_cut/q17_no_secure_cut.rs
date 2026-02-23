@@ -30,7 +30,7 @@ use algebra::ring::ring_impl::RingElement;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use protocols::protocols::rep3_ring::arithmetic::open;
 use primitives::div::{div_share_by_public};
-use experiments::tpch_database_gen::{self, get_part_table_size};
+use experiments::tpch_database_gen::{self};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
@@ -123,6 +123,10 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
+    /*
+    LineItem.project({"[PartKey]", "Quantity", "ExtendedPrice"});
+    Part.project({"[PartKey]", "[Brand]", "[Container]"});
+    */
 
     let l_col_names = vec!["l_partkey", "l_quantity", "l_extendedprice", "valid"];
     let lineitem_table = lineitem_table.project(l_col_names)?;
@@ -193,9 +197,11 @@ fn main() -> Result<()> {
         &mut mpc_exec_args,
     )?;
 
+    /*
     //secure cut to part_table size, because group by l_partkey, then the size is at most part_table size
     tracing::info!("secure cut sub query table to part table size");
     sub_query_table.head(get_part_table_size(sf) as usize);
+    */
 
     let mut avg_l_quantity = sub_query_table["sum_l_quantity"].clone() / (&sub_query_table["count_l_quantity"], &mut mpc_exec_args);
     avg_l_quantity /= (&RingElement(5u64), &mut mpc_exec_args);
@@ -291,6 +297,4 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-
 

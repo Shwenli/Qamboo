@@ -37,7 +37,7 @@ use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
-use experiments::tpch_database_gen::{self, get_nation_table_size};
+use experiments::tpch_database_gen::{self};
 use table::column_operator::{ColumnBooleanOperator, PrefixSum};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, Open, OrderBy, Project};
 use table::column_operator::TransformBetweenArithAndBinary;
@@ -258,7 +258,6 @@ fn main() -> Result<()> {
     final_table.delete_column("l_discount");
     final_table.delete_column("l_extendedprice");
 
-
      
     tracing::info!("group by n_name");
 
@@ -280,10 +279,10 @@ fn main() -> Result<()> {
         &mut mpc_exec_args,
     )?;
 
-
+    /* 
     tracing::info!("secure cut lineorder_table size to nation_table size");
     final_table.head(get_nation_table_size() as usize);
-
+    */
 
     tracing::info!("order by revenue desc");
 
@@ -420,15 +419,9 @@ fn main() -> Result<()> {
         .sort(["revenue"], SortMultipleOptions::default().with_order_descending(true))
         .collect()
         .unwrap();
-
-        //let q5_result = q5_result.head(Some(100));
-        //let q5_final = q5_final.head(Some(open_valid as usize));
-
-        
-
+  
         let mpc_n_name = mpc_result["n_name"].get_data();
         let mpc_revenue = mpc_result["revenue"].get_data();
-        //let mpc_valid = mpc_result["valid"].get_data();
 
         //let polars_n_name_1 = q5_result.column("n_name")?.u64()?.into_no_null_iter().collect::<Vec<_>>();
         let polars_n_name = q5_final.column("n_name")?.u64()?.into_no_null_iter().collect::<Vec<_>>();

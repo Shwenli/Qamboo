@@ -1,4 +1,3 @@
-/// Q2 apply reorder join optimization version
 /* 
 * select
  *     nation,

@@ -140,14 +140,6 @@ fn main() -> Result<()> {
 
     
     tracing::info!("Projecting tables");
-    /* 
-    Customer.project({"[CustKey]", "[NationKey]"});
-    Orders.project({"[OrderKey]", "[CustKey]", "[OrderDate]"});
-    Lineitem.project({"[OrderKey]", "[SuppKey]", "ExtendedPrice", "Discount"});
-    Supplier.project({"[SuppKey]", "[NationKey]"});
-    Nation.project({"[NationKey]", "[RegionKey]", "[Name]"});
-    Region.project({"[RegionKey]", "[Name]"});
-    */
 
     let l_col_names = vec!["l_orderkey", "l_suppkey", "l_extendedprice", "l_discount", "valid"];
     let lineitem_table = lineitem_table.project(l_col_names)?;
@@ -186,62 +178,51 @@ fn main() -> Result<()> {
     orders_table.delete_column("[o_orderdate]");
 
 
-
     tracing::info!("r_name = '[REGION]'");
 
     let _ = region_table.filter_public("[r_name]", Predicate::EqualBinary, &REGION, &mut mpc_exec_args)?;
-
     region_table.delete_column("[r_name]");
 
-
-    tracing::info!("sub query 1: s_nationkey = n_nationkey and n_regionkey = r_regionkey");
-
-    let region_nation_table = region_table.inner_join(
-        "r_regionkey",
-        "n_regionkey",
-        &nation_table,
-        &mut mpc_exec_args,
-    )?;
-
-    let region_nation_supplier_table = region_nation_table.inner_join(
-        "n_nationkey",
-        "s_nationkey",
-        &supplier_table,
-        &mut mpc_exec_args,
-    )?;
-
     
-    let sub1_table = region_nation_supplier_table.inner_join(
-        "s_suppkey",
-        "l_suppkey",
-        &lineitem_table,
-        &mut mpc_exec_args,
-    )?;
+    tracing::info!("Joining tables: customer, orders, lineitem, supplier, nation, region");
 
-
-    tracing::info!("sub query 2: c_custkey = o_custkey");
-
-    let sub2_table = customer_table.inner_join(
+    let c_o_table = customer_table.inner_join(
         "c_custkey",
         "o_custkey",
         &orders_table,
         &mut mpc_exec_args,
     )?;
 
-
-    tracing::info!("merge tree: l_orderkey = o_orderkey");
-
-    let mut final_table = sub2_table.inner_join(
+    let c_o_l_table = c_o_table.inner_join(
         "o_orderkey",
         "l_orderkey",
-        &sub1_table,
+        &lineitem_table,
         &mut mpc_exec_args,
     )?;
 
-    
-    //tracing::info!("c_nationkey = s_nationkey where this is a filter condition");
+    let c_o_l_s_table = supplier_table.inner_join(
+        "s_suppkey",
+        "l_suppkey",
+        &c_o_l_table,
+        &mut mpc_exec_args,
+    )?;
+
+    let c_o_l_s_n_table = nation_table.inner_join(
+        "n_nationkey",
+        "s_nationkey",
+        &c_o_l_s_table,
+        &mut mpc_exec_args,
+    )?;
+
+    let mut final_table = region_table.inner_join(
+        "r_regionkey",
+        "n_regionkey",
+        &c_o_l_s_n_table,
+        &mut mpc_exec_args,
+    )?;
 
     let _ = final_table.filter_shared("c_nationkey", "s_nationkey", Predicate::Equal, &mut mpc_exec_args);
+
 
     
     tracing::info!("Computing revenue");

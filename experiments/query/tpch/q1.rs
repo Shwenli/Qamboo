@@ -143,10 +143,10 @@ fn main() -> Result<()> {
     )?;
     lineitem_table.delete_column("[l_shipdate]");
 
+    
     //* Need to compute before group by, because group by will delete the non unique key rows.
     tracing::info!("compute disc_price");
     
-
     let const_element = RingElement(100u64);
 
     let temp_result = -lineitem_table["l_discount"].clone() + (const_element, &party_id);

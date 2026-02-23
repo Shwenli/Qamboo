@@ -1,7 +1,4 @@
-//* 使用了安全的行数裁剪优化。
 /*
-  *
- * Equivalent SQL:
  *  select
  *      c_name,
  *      c_custkey,

@@ -135,11 +135,6 @@ fn main() -> Result<()> {
 
 
     tracing::info!("Projecting tables");
-    /* 
-    PartSupp.project({"[SuppKey]", "[PartKey]", "[SupplyCost]", "SupplyCost", "AvailQty"});
-    Supplier.project({"[SuppKey]", "[NationKey]"});
-    Nation.project({"[NationKey]", "[Name]"});
-    */
 
     let partsupp_col_names = vec!["ps_partkey", "ps_suppkey", "ps_supplycost", "ps_availqty", "valid"];
     let partsupp_table = partsupp_table.project(partsupp_col_names)?;

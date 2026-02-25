@@ -49,7 +49,7 @@ use net::tcp::{TcpNetwork, NetworkConfig};
 use protocols::protocols::rep3_ring::arithmetic::open;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
-use experiments::tpch_database_gen::{self, get_orders_table_size};
+use experiments::tpch_database_gen::{self};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project, Open};
 use table::column_operator::PrefixSum;
 use table::predicate::Predicate;
@@ -175,8 +175,10 @@ fn main() -> Result<()> {
         &mut mpc_exec_args,
     )?;
 
+    /* 
+    tracing::info!("secure cut lineitem table to orders table size")
     lineitem_table.head(get_orders_table_size(sf) as usize);
-
+    */
 
     tracing::info!("sum_quantity > [QUANTITY]");
     let _ = lineitem_table.filter_public(

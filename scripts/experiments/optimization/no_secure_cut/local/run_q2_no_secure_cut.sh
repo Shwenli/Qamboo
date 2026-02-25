@@ -1,6 +1,6 @@
-RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin q3_no_secure_cut --features tcp
+RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin q2_no_secure_cut --features tcp
 
-BIN_PATH=../../../../../target/release/q3_no_secure_cut
+BIN_PATH=../../../../../target/release/q2_no_secure_cut
 
 NUM_THREADS=${1:-6} #number of threads (default: 6)
 

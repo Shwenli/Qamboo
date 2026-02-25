@@ -146,6 +146,7 @@ fn main() -> Result<()> {
     
     tracing::info!("Projection completed");
 
+
     tracing::info!("Q10 start");
     let mut timer = timer::DebugTimer::new();
     
@@ -201,48 +202,33 @@ fn main() -> Result<()> {
     tracing::info!("Computing revenue completed");
 
 
-    tracing::info!("c_nationkey = n_nationkey");
+    tracing::info!("join: customer, orders, lineitem, nation");
 
-    let k_l_name = "n_nationkey";
-    let k_r_name = "c_nationkey";
-    
-    let nation_customer_table = nation_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &customer_table,
-        &mut mpc_exec_args,
-    )?;
-
-
-    tracing::info!("c_custkey = o_custkey");
-
-    let k_l_name = "c_custkey";
-    let k_r_name = "o_custkey";
-    
-    let nation_customer_orders_table = nation_customer_table.inner_join(
-        k_l_name,
-        k_r_name,
+    let c_o_table = customer_table.inner_join(
+        "c_custkey",
+        "o_custkey",
         &orders_table,
         &mut mpc_exec_args,
     )?;
 
-
-    tracing::info!("o_orderkey = l_orderkey");
-
-    let k_l_name = "o_orderkey";
-    let k_r_name = "l_orderkey";
-
-    let mut final_table = nation_customer_orders_table.inner_join(
-        k_l_name,
-        k_r_name,
+    let c_o_l_table = c_o_table.inner_join(
+        "o_orderkey",
+        "l_orderkey",
         &lineitem_table,
+        &mut mpc_exec_args,
+    )?;
+
+    let mut final_table = nation_table.inner_join(
+        "n_nationkey",
+        "c_nationkey",
+        &c_o_l_table,
         &mut mpc_exec_args,
     )?;
 
     timer.mark("join completed");
 
+    
     tracing::info!("group by c_custkey, c_name, c_acctbal, c_phone, n_name, c_address, c_comment");
-
     let group_by_col_names = vec!["o_custkey", "n_name"];
 
     let (e,perm,_) = final_table.group_by(
@@ -352,8 +338,8 @@ fn main() -> Result<()> {
 
         tracing::info!("rows of polars: {:?}", polars_o_custkey.len());
 
-        assert_eq!(mpc_o_custkey, &polars_o_custkey, "o_custkey column does not match");
-        assert_eq!(mpc_revenue, &polars_revenue, "revenue column does not match");
+        assert_eq!(mpc_o_custkey, &polars_o_custkey);
+        assert_eq!(mpc_revenue, &polars_revenue);
 
         tracing::info!("Q10: MPC result matches polars result !");
     }

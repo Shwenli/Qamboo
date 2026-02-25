@@ -214,8 +214,28 @@ name = "q21_no_secure_cut"
 path = "query/optimization/no_secure_cut/q21_no_secure_cut.rs"
 
 [[bin]]
+name = "q2_no_join_reorder"
+path = "query/optimization/no_join_reorder/q2_no_join_reorder.rs"
+
+[[bin]]
 name = "q5_no_join_reorder"
 path = "query/optimization/no_join_reorder/q5_no_join_reorder.rs"
+
+[[bin]]
+name = "q7_no_join_reorder"
+path = "query/optimization/no_join_reorder/q7_no_join_reorder.rs"
+
+[[bin]]
+name = "q8_no_join_reorder"
+path = "query/optimization/no_join_reorder/q8_no_join_reorder.rs"
+
+[[bin]]
+name = "q9_no_join_reorder"
+path = "query/optimization/no_join_reorder/q9_no_join_reorder.rs"
+
+[[bin]]
+name = "q10_no_join_reorder"
+path = "query/optimization/no_join_reorder/q10_no_join_reorder.rs"
 
 [[bin]]
 name = "q4_no_semi"

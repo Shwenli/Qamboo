@@ -178,6 +178,8 @@ fn main() -> Result<()> {
     let nation1_table = nation1_table.project(nation1_col_names)?;
     let mut nation2_table = nation2_table.project(nation2_col_names)?;
     nation2_table.update_column_name("n_name", "nation");
+    nation2_table.update_column_name("n_nationkey", "n2_nationkey");
+    nation2_table.update_column_name("n_regionkey", "n2_regionkey");
 
     let region_col_names = vec!["r_regionkey", "r_name", "valid"];
     let mut region_table = region_table.project(region_col_names)?;
@@ -241,104 +243,59 @@ fn main() -> Result<()> {
     lineitem_table.delete_column("l_extendedprice");
 
 
-    tracing::info!("join tree 1");
-    tracing::info!("n1.n_regionkey = r_regionkey");
+    tracing::info!("join: part, lineitem, supplier, orders, customer, nation n1, nation n2, region");
 
-    let k_l_name = "r_regionkey";
-    let k_r_name = "n_regionkey";
-
-    let nation1_region_table = region_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &nation1_table,
-        &mut mpc_exec_args,
-    )?;
-
-
-    tracing::info!("c_nationkey = n1.n_nationkey");
-
-    let k_l_name = "n_nationkey";
-    let k_r_name = "c_nationkey";
-
-    let nation1_region_customer_table = nation1_region_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &customer_table,
-        &mut mpc_exec_args,
-    )?;
-
-
-    tracing::info!("c_custkey = o_custkey");
-
-    let k_l_name = "c_custkey";
-    let k_r_name = "o_custkey";
-
-    let nation1_region_customer_orders_table = nation1_region_customer_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &orders_table,
-        &mut mpc_exec_args,
-    )?;
-
-
-    tracing::info!("join tree 2");
-    tracing::info!("s_nationkey = n2.n_nationkey");
-
-    let k_l_name = "n_nationkey";
-    let k_r_name = "s_nationkey";
-
-    let natio2_supplier_table = nation2_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &supplier_table,
-        &mut mpc_exec_args,
-    )?;
-
-
-    tracing::info!("p_partkey = l_partkey");
-
-    let k_l_name = "p_partkey";
-    let k_r_name = "l_partkey";
-
-    let part_lineitem_table =part_table.inner_join(
-        k_l_name,
-        k_r_name,
+    let p_s_table = part_table.inner_join(
+        "p_partkey",
+        "l_partkey",
         &lineitem_table,
         &mut mpc_exec_args,
     )?;
 
-
-    tracing::info!("s_suppkey = l_suppkey");
-
-    let k_l_name = "s_suppkey";
-    let k_r_name = "l_suppkey";
-
-    let nation2_supplier_part_lineitem_table = natio2_supplier_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &part_lineitem_table,
+    let p_s_l_table = supplier_table.inner_join(
+        "s_suppkey",
+        "l_suppkey",
+        &p_s_table,
         &mut mpc_exec_args,
     )?;
 
-
-    tracing::info!("final join merge join tree 1 2");
-    tracing::info!("l_orderkey = o_orderkey");
-
-    let nation1_region_customer_orders_table= nation1_region_customer_orders_table.project(vec!["o_orderdate", "o_orderkey", "valid"])?;
-    let nation2_supplier_part_lineitem_table= nation2_supplier_part_lineitem_table.project(vec!["l_orderkey", "l_volume", "nation", "valid"])?;
-
-    let k_l_name = "o_orderkey";
-    let k_r_name = "l_orderkey";
-
-    let final_table = nation1_region_customer_orders_table.inner_join(
-        k_l_name,
-        k_r_name,
-        &nation2_supplier_part_lineitem_table,
+    let p_s_l_o_table = orders_table.inner_join(
+        "o_orderkey",
+        "l_orderkey",
+        &p_s_l_table,
         &mut mpc_exec_args,
     )?;
+
+    let p_s_l_o_c_table = customer_table.inner_join(
+        "c_custkey",
+        "o_custkey",
+        &p_s_l_o_table,
+        &mut mpc_exec_args,
+    )?;
+
+    let p_s_l_o_c_n1_table = nation1_table.inner_join(
+        "n_nationkey",
+        "c_nationkey",
+        &p_s_l_o_c_table,
+        &mut mpc_exec_args,
+    )?;
+
+    let p_s_l_o_c_n1_r_table = region_table.inner_join(
+        "r_regionkey",
+        "n_regionkey",
+        &p_s_l_o_c_n1_table,
+        &mut mpc_exec_args,
+    )?;
+
+    let final_table = nation2_table.inner_join(
+        "n2_nationkey",
+        "s_nationkey",
+        &p_s_l_o_c_n1_r_table,
+        &mut mpc_exec_args,
+    )?;
+
 
     tracing::info!("final table project");
-    
     let mut final_table = final_table.project(vec!["o_orderdate", "l_volume", "nation", "valid"])?;
 
 

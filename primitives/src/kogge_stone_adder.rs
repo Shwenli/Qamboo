@@ -101,8 +101,7 @@ where
         let shift = 1 << i;
         let p_ = p.iter().map(|el| el << shift);
         let g_ = g.iter().map(|el| el << shift);
-        // TODO: Make and more communication efficient, ATM we send the full element for each level, even though they reduce in size
-        // maybe just input the mask into AND?
+    
         let (r1, r2) = and_twice_many_iter(p, g_, p_, net, state)?;
         for (p, r2) in izip!(p.iter_mut(), r2) {
             *p = r2;
@@ -155,29 +154,6 @@ where
             }
         }
     });
-
-    /* 
-    for i in 0..d {
-        let shift = 1 << i;
-
-        let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter()
-        .zip_eq(g.par_iter())
-        .with_min_len(1024)
-        .map(|(p_el, g_el)| (p_el << shift, g_el << shift))
-        .unzip();
-
-        // TODO: Make and more communication efficient, ATM we send the full element for each level, even though they reduce in size
-        // maybe just input the mask into AND?
-        let (r1, r2) = and_twice_many_multithreads(p, g_, p_, nets, states)?;
-        rayon::join(
-            || {
-                p.iter_mut().zip(r2.into_iter()).for_each(|(p, r2)| *p = r2);
-            },
-            || {
-                g.iter_mut().zip(r1.into_iter()).for_each(|(g, r1)| *g ^= r1);
-        });
-    }
-    */
 
     g.par_iter_mut()
     .zip_eq(s_.into_par_iter())
@@ -306,25 +282,7 @@ where
             }
         }
     });
-    /* 
-    for i in 0..d {
-        let shift = 1 << i;
-        let (p_, g_): (Vec<_>, Vec<_>) = p.par_iter()
-        .zip_eq(g.par_iter())
-        .with_min_len(1024)
-        .map(|(p_el, g_el)| (p_el << shift, g_el << shift))
-        .unzip();
-        
-        // TODO: Make and more communication efficient, ATM we send the full element for each level, even though they reduce in size
-        // maybe just input the mask into AND?
-        let (r1, r2) = and_twice_many_multithreads(&p, g_, p_, nets, states)?;
-        p = r2;
-        g.par_iter_mut()
-        .zip_eq(r1.par_iter())
-        .with_min_len(1024)
-        .for_each(|(g, r1)| *g ^= r1);
-    }
-    */
+    
     Ok(g)
 }
 

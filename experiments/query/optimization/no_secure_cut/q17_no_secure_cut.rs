@@ -239,12 +239,12 @@ fn main() -> Result<()> {
     let open_avg_yearly = open(avg_yearly, mpc_exec_args.nets[0])?;
 
     
-    tracing::info!("Q17 execution completed");
+    tracing::info!("Q17 no-secure-cut execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q17 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q17 no-secure-cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q17");
+    print_communication_stats(&mpc_exec_args, "Q17 no-secure-cut");
 
 
     

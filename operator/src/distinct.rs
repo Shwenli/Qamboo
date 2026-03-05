@@ -24,8 +24,8 @@ pub fn distinct_after_groupby_multithreads<T: IntRing2k, N: Network>(
 ) -> eyre::Result<Vec<Rep3RingShare<T>>>
 where
 Standard: Distribution<T>,{
-    //*mul(valid, result_cond)
-    //*result_cond = cond1 + (1-cond1) * cond2
+    //mul(valid, result_cond)
+    //result_cond = cond1 + (1-cond1) * cond2
 
     let e_1 = e[0..e.len()-1].to_vec();
     let e_2 = e[1..e.len()].to_vec();

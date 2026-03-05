@@ -290,12 +290,12 @@ fn main() -> Result<()> {
     let _ = final_table.agg_sum(to_agg_name, new_agg_name, &e, &perm, &mut mpc_exec_args);
 
 
-    tracing::info!("Q7 execution completed");
+    tracing::info!("Q7 no-join-reorder execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q7 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q7 no-join-reorder execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q7");
+    print_communication_stats(&mpc_exec_args, "Q7 no-join-reorder");
 
 
 //************* polars verification *************//

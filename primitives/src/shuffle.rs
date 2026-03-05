@@ -571,7 +571,7 @@ where
             result
         }
         PartyID::ID2 => {
-            // has p3, p2
+            // p3, p2
             let ((alpha_3,alpha_2), rngs) = if state_num > 1 {
                 let (state0, state1) = states.split_at_mut(state_num/2);
                 rayon::join(
@@ -601,13 +601,6 @@ where
                     *(ptr as *mut RingElement<T>).add(pi_2) = *beta_3 - alpha;
                 }
             });
-            /*
-            let mut shuffled_3 = vec![RingElement::zero(); len];
-            for (pi, (alpha, beta_3)) in pi.iter().zip(alpha_2.iter().zip(beta_3)) {
-                let pi_2 = pi.b.0 as usize;
-                shuffled_3[pi_2] = beta_3 - alpha;
-            }
-            */
 
             // second shuffle
             let mut shuffled_2 = alpha_2;
@@ -622,17 +615,9 @@ where
                     *(ptr as *mut RingElement<T>).add(pi_3) = src - alpha;
                 }
             });
-            /* 
-            let mut shuffled_2 = alpha_2;
-            for (src, (pi, alpha)) in shuffled_3.into_iter().zip(pi.iter().zip(alpha_3)) {
-                let pi_3 = pi.a.0 as usize;
-                shuffled_2[pi_3] = src - alpha;
-            }
-            */
 
             send_many_multinet(nets, PartyID::ID1, &shuffled_2)?;
 
-            // Opt Reshare
             let mut result = Vec::with_capacity(len);
             //let rngs = states[0].rngs.rand.random_elements_vec::<RingElement<T>>(len);
             for (a,b) in rngs.0.into_iter().zip(rngs.1) {

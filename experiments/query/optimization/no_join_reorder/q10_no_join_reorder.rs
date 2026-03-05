@@ -265,12 +265,12 @@ fn main() -> Result<()> {
     timer.mark("order by completed");
 
 
-    tracing::info!("Q10 execution completed");
+    tracing::info!("Q10 no-join-reorder execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q10 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q10 no-join-reorder execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q10");
+    print_communication_stats(&mpc_exec_args, "Q10 no-join-reorder");
 
     
     

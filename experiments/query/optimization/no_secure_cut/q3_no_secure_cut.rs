@@ -280,12 +280,12 @@ fn main() -> Result<()> {
     tracing::info!("Order by completed");
 
 
-    tracing::info!("Q3 execution completed");
+    tracing::info!("Q3 no-secure-cut execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q3_no_secure_cut execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q3 no-secure-cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q3_no_secure_cut");
+    print_communication_stats(&mpc_exec_args, "Q3 no-secure-cut");
     
     Ok(())
 }

@@ -301,12 +301,12 @@ fn main() -> Result<()> {
     )?;
 
 
-    tracing::info!("Q20 execution completed");
+    tracing::info!("Q20 no-secure-cut execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q20 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q20 no-secure-cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q20");
+    print_communication_stats(&mpc_exec_args, "Q20  no-secure-cut");
     
 
 

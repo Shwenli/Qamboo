@@ -305,7 +305,6 @@ Standard: Distribution<T>,{
 
     let y = permute::apply_inv(&perm_e, &x, net, state)?;
     println!("y: {:?}",arithmetic::open_vec(&y, net));
-    //以上测试均没有问题
 
     let mut s = y.clone();
     for i in 1..s.len(){

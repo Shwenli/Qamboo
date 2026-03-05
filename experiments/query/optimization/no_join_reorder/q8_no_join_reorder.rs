@@ -351,12 +351,12 @@ fn main() -> Result<()> {
     final_table.delete_column("sum_volume");
     
 
-    tracing::info!("Q8 execution completed");
+    tracing::info!("Q8 no-join-reorder execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q8 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q8 no-join-reorder execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q8");
+    print_communication_stats(&mpc_exec_args, "Q8 no-join-reorder");
 
 
 

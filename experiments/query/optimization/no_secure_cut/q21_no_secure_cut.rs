@@ -240,10 +240,10 @@ fn main() -> Result<()> {
     tracing::info!("Tree2: Count");
     let (e, perm, _) = l_nofilter_table.group_by(vec!["l_orderkey"], &mut mpc_exec_args)?;
     let _ = l_nofilter_table.agg_count("cnt_suppkey", &e, &perm, &mut mpc_exec_args)?;
-    
-    /* 
-    l_nofilter_table.head(get_orders_table_size(sf) as usize);
     l_nofilter_table.delete_column("l_suppkey");
+    /* 
+    tracing::info!("Secure Cutting Rows to Ordertable Cardinality");
+    l_nofilter_table.head(get_orders_table_size(sf) as usize);
     */
 
     tracing::info!("Merge Tree1, Tree2 and lineitem_table");
@@ -291,12 +291,12 @@ fn main() -> Result<()> {
     let _ = final_table.order_by("numwait", false, &mut mpc_exec_args)?;
 
 
-    tracing::info!("Q21 execution completed");
+    tracing::info!("Q21 no-secure-cut execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q21 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q21 no-secure-cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q21");
+    print_communication_stats(&mpc_exec_args, "Q21 no-secure-cut");
     
 
 

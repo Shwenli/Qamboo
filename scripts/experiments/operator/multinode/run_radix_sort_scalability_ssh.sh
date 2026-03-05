@@ -9,7 +9,7 @@ PROJECT_PATH="/root/Qamboo"  # Replace with the absolute path of the project on 
 BIN_PATH="./target/release/radix_sort_scalability"
 
 NUM_THREADS=${1:-6} # number of threads (default: 6)
-NUM=${2:-7}         # test number, 2^19(n=1) to 2^25(n=7) (default: 7)
+NUM=${2:-7}         # test number, 2^20(n=1) to 2^26(n=7) (default: 7)
 
 cd $PROJECT_PATH
 

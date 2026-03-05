@@ -267,12 +267,12 @@ fn main() -> Result<()> {
     let _ = final_table.order_by("nation", true, &mut mpc_exec_args);
     
 
-    tracing::info!("Q9 execution completed");
+    tracing::info!("Q9 no-join-reorder execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q9 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q9 no-join-reorder execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q9");
+    print_communication_stats(&mpc_exec_args, "Q9 no-join-reorder");
 
 
 //************* polars verification *************//

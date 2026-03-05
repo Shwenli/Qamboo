@@ -363,21 +363,18 @@ Standard: Distribution<T>,{
         new_vals_vec.push(new_v);
     }
 
-    //排keys
     let mut k_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in new_keys_vec{
         let k_g_i = permute::apply_inv(&perm, &k, net, state)?;
         k_g.push(k_g_i);
     }
     
-    //排vals
     let mut v_g_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for v in new_vals_vec{
         let v_g = permute::apply_inv(&perm, &v, net, state)?;
         v_g_vec.push(v_g);
     }
 
-    //排valid
     let valid = permute::apply_inv(&perm, valid, net, state)?;
 
     eprintln!("After sorting in muti_key_group_by_common:");
@@ -397,13 +394,11 @@ Standard: Distribution<T>,{
         
         let k_g_0 = &k_g[i][0..k_g[i].len()-1].to_vec();
         let k_g_1 = &k_g[i][1..].to_vec();
-
-        //这里可以之后增加更多线程和网络
         let f = eq_many(k_g_0, k_g_1, net, state)?;
 
         e = binary::and_vec_bit(&e, &f, net,state)?;
     }
-    //最后做一次1-e,因为只有全部键相等时,e才为1
+
     e = izip!(e).map(|e_i| binary::xor_public(&e_i, &bit_one, state.id)).collect::<Vec<_>>();
 
     let e_m = binary::promote_to_trivial_share(state.id,&RingElement(Bit::new(true)));
@@ -411,14 +406,11 @@ Standard: Distribution<T>,{
    
     let e_t_res: Vec<Rep3RingShare<T>> = transform::from_bit_to_arithmetic_t(&e, net, state)?;
 
-    //计算分组后的表的valid,如果不是一组的标识行，那么就是0。
     let new_valid_tmp = arithmetic::local_mul_vec(&e_t_res, &valid, state);
     let new_valid = arithmetic::reshare_vec(new_valid_tmp, net)?;
 
     let mut k_g_n_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     
-    //改完了，还没调试
-    //这里之后换成mux_if_then_share_vec
     for i in 0..k_g.len(){
         let k_g_n_true_tmp = arithmetic::local_mul_vec(&e_t_res, &k_g[i], state);
         let k_g_n_true = arithmetic::reshare_vec(k_g_n_true_tmp, net).unwrap_or_else(|e| panic!("Reshare failed: {:?}", e));
@@ -432,7 +424,6 @@ Standard: Distribution<T>,{
         k_g_n_vec.push(k_g_n);
     }
 
-    //这里获取e_t之后要对e_t去取反，因为:算法是按将1排到前面，0排到后面，还要求是稳定的，不能直接对按原e获得的perm逆置。取反后，靠前的1仍然靠前，是稳定的。
     let mut e_t= transform::from_bit_to_arithmetic_t::<u32,N>(&e, net, state)?;
     for p in e_t.iter_mut() {
         *p = arithmetic::add_public(-(*p), RingElement::one(), state.id);

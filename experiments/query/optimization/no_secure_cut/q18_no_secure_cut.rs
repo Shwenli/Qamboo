@@ -232,12 +232,12 @@ fn main() -> Result<()> {
     let _ = final_table.order_by("o_totalprice", false, &mut mpc_exec_args)?;
 
 
-    tracing::info!("Q18 execution completed");
+    tracing::info!("Q18 no-secure-cut execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q18_no_secure_cut execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q18 no-secure-cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q18_no_secure_cut");
+    print_communication_stats(&mpc_exec_args, "Q18 no-secure-cut");
 
 
 

@@ -324,12 +324,12 @@ fn main() -> Result<()> {
     let _ = final_table.order_by(sort_key_name, false, &mut mpc_exec_args);
     
 
-    tracing::info!("Q2 execution completed");
+    tracing::info!("Q2 no-secure-cut execution completed");
 
     if party_id == PartyID::ID0 {
-        tracing::info!("Total Q2 execution time: {:?}", tot_start.elapsed());
+        tracing::info!("Total Q2 no-secure-cut execution time: {:?}", tot_start.elapsed());
     }
-    print_communication_stats(&mpc_exec_args, "Q2");
+    print_communication_stats(&mpc_exec_args, "Q2 no-secure-cut");
 
 
 

@@ -3,7 +3,7 @@ use crate::share_table::ShareTable;
 use crate::share_column::{ShareColumn, ShareType};
 use crate::table_operator::Join;
 use algebra::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use net::Network;
 use operator::join::{
     anti_join_table_multithreads, 

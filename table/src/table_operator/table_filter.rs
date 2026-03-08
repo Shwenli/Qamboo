@@ -6,7 +6,7 @@ use primitives::transform::*;
 use primitives::mul::mul_share_vec;
 use primitives::compare::{self,and_vec_multithreads};
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use crate::share_table::ShareTable;
 use crate::table_operator::Filter;
 use crate::predicate::Predicate;

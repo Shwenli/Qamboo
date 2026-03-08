@@ -9,7 +9,7 @@ use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use random::rep3::Rep3State;
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
-use protocols::protocols::rep3_ring::{arithmetic,binary,Rep3RingShare};
+use protocols::rep3_ring::{arithmetic,binary,Rep3RingShare};
 use net::Network;
 use primitives::{transform, mux, permute};
 use primitives::compare::{eq_many, eq_many_multithreads, and_vec_bit_multithreads};

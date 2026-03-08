@@ -1,15 +1,15 @@
 
 
-use protocols::protocols::{rep3_ring::{arithmetic::{add_public, mul_assign_public, mul_public, open, open_vec}, conversion}};
+use protocols::{rep3_ring::{arithmetic::{add_public, mul_assign_public, mul_public, open, open_vec}, conversion}};
 use itertools::izip;
 use net::{Network};
 use rand::{distributions::Standard, prelude::Distribution, random};
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
-use protocols::protocols::rep3_ring::Rep3RingShare;
-//use protocols::protocols::rep3_ring::arithmetic::{open_bit};
-use protocols::protocols::rep3_ring::binary;
-use protocols::protocols::rep3_ring::detail;
-use protocols::protocols::rep3_ring::conversion::b2a;
+use protocols::rep3_ring::Rep3RingShare;
+//use protocols::rep3_ring::arithmetic::{open_bit};
+use protocols::rep3_ring::binary;
+use protocols::rep3_ring::detail;
+use protocols::rep3_ring::conversion::b2a;
 use communication::rep3::id::PartyID;
 use communication::rep3::net_impl::Rep3NetworkImpl;
 use communication::task::get_task_chunks;

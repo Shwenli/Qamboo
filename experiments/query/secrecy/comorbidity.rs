@@ -24,7 +24,7 @@ use color_eyre::{Result, eyre::Context};
 use random::rep3::Rep3State;
 use random::MpcState;
 use communication::rep3::id::PartyID;
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::secrecy_database_gen::{gen_cohort_table, gen_diagnosis_comorbidity_table};
 use experiments::net_statistics::install_tracing;

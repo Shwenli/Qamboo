@@ -56,7 +56,7 @@ use experiments::tpch_database_gen::{self};
 use random::rep3::Rep3State;
 use random::MpcState;
 use communication::rep3::id::PartyID;
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use table::table_operator::{Filter, Groupby, AggFunc, Join, Open, OrderBy, Project};

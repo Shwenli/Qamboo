@@ -8,7 +8,7 @@ use rayon::iter::IndexedParallelIterator;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
-use protocols::protocols::{rep3_ring::Rep3RingShare};
+use protocols::{rep3_ring::Rep3RingShare};
 use ark_ff::Zero;
 use net::Network;
 use rand::distributions::Standard;

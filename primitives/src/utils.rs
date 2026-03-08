@@ -3,8 +3,8 @@ use itertools::izip;
 use itertools::Itertools;
 use communication::rep3::id::PartyID;
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
-use protocols::protocols::{rep3_ring::Rep3RingShare};
-use protocols::protocols::rep3_ring::arithmetic::promote_to_trivial_share;
+use protocols::{rep3_ring::Rep3RingShare};
+use protocols::rep3_ring::arithmetic::promote_to_trivial_share;
 use net::Network;
 
 /// Performs the opening of a shared value and returns the equivalent public value.

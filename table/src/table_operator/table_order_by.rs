@@ -3,7 +3,7 @@ use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use random::rep3::Rep3State;
 use algebra::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::{Rep3RingShare};
+use protocols::rep3_ring::{Rep3RingShare};
 use net::Network;
 use operator::sort;
 use crate::share_table::ShareTable;

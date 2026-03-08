@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::Context};
 use operator::sort::{radix_sort,radix_sort_multithreads};
 use random::rep3::Rep3State;
 use communication::rep3::id::PartyID;
-use protocols::protocols::rep3_ring::arithmetic::open_vec;
+use protocols::rep3_ring::arithmetic::open_vec;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::net_statistics::{install_tracing, print_communication_stats_operator};
 use experiments::gen_rand_column_u64_ring;

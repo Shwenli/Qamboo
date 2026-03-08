@@ -1,6 +1,6 @@
 
 use communication::rep3::id::PartyID;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use net::Network;
 use table::share_table::ShareTable;
 use table::share_column::{ShareColumn, ShareType};

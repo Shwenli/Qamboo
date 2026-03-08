@@ -36,7 +36,7 @@ use random::rep3::Rep3State;
 use random::MpcState;
 use communication::rep3::id::PartyID;
 use algebra::ring::ring_impl::RingElement;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;

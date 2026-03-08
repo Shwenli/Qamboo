@@ -1,16 +1,9 @@
 pub mod share_column;
 pub mod share_table;
-pub mod column_basic_compute;
 pub mod predicate;
 pub mod table_operator;
-pub mod table_join;
-pub mod table_group_by;
-pub mod table_filter;
-pub mod table_order_by;
-pub mod table_project;
-pub mod table_utils;
 pub mod column_operator;
-pub mod column_operator_impl;
+
 
 
 

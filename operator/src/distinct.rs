@@ -3,7 +3,7 @@
 use itertools::izip;
 use num_traits::{One};
 use rand::{distributions::Standard, prelude::Distribution};
-use protocols::protocols::rep3_ring::{Rep3RingShare, binary::xor_public};
+use protocols::rep3_ring::{Rep3RingShare, binary::xor_public};
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use random::rep3::Rep3State;
 use net::Network;

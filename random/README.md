@@ -181,7 +181,7 @@ let random_values = random_elements_vec_multithreads::<u64>(
 ### Integration with Protocols
 
 ```rust
-use protocols::protocols::rep3_ring::arithmetic;
+use protocols::rep3_ring::arithmetic;
 
 // Secure multiplication uses correlated randomness for re-sharing
 let product = arithmetic::mul(&x, &y, net, &mut state)?;

@@ -1,5 +1,5 @@
 use random::rep3::Rep3State;
-use protocols::protocols::rep3_ring::{Rep3RingShare, arithmetic};
+use protocols::rep3_ring::{Rep3RingShare, arithmetic};
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use net::Network;
 use primitives::compare::*;

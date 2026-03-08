@@ -7,7 +7,7 @@ pub mod timer;
 use itertools::izip;
 use communication::rep3::id::PartyID;
 use communication::rep3::multinet_impl::{send_many_multinet, recv_many_multinet};
-use protocols::protocols::rep3_ring::{self, Rep3RingShare};
+use protocols::rep3_ring::{self, Rep3RingShare};
 use net::Network;
 use table::share_column::{ShareColumn, ShareType};
 use table::NetStateArgs;

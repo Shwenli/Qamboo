@@ -141,7 +141,7 @@ pub enum Predicate {
 
 ```rust
 use table::{share_table::ShareTable, NetStateArgs};
-use protocols::protocols::rep3_ring::share_ring_elements;
+use protocols::rep3_ring::share_ring_elements;
 
 // Each party loads their private data
 let my_data: Vec<u64> = load_local_data();

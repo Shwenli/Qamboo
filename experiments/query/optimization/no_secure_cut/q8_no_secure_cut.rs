@@ -58,7 +58,7 @@ use table::predicate::Predicate;
 use table::column_operator::{ColumnBooleanOperator, PrefixSum, TransformBetweenArithAndBinary};
 use table::NetStateArgs;
 use table::table_operator::Open;
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 
 use polars::prelude::*;
 

@@ -42,7 +42,7 @@ use random::MpcState;
 use communication::rep3::id::PartyID;
 use algebra::ring::ring_impl::RingElement;
 use net::tcp::{TcpNetwork, NetworkConfig};
-use protocols::protocols::rep3_ring::arithmetic::{open};
+use protocols::rep3_ring::arithmetic::{open};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, OrderBy, Project};
 use table::predicate::Predicate;
 use table::column_operator::PrefixSum;

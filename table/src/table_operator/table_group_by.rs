@@ -5,7 +5,7 @@ use crate::NetStateArgs;
 use operator::{group_by, agg_func};
 use itertools::izip;
 use random::rep3::Rep3State;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use algebra::ring::{bit::Bit, int_ring::IntRing2k};
 use net::Network;
 use primitives::permute::apply_perm_multithreads;

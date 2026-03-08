@@ -50,7 +50,7 @@ use random::MpcState;
 use communication::rep3::id::PartyID;
 use algebra::ring::ring_impl::RingElement;
 use net::tcp::{TcpNetwork, NetworkConfig};
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use experiments::tpch_database_gen::{self, get_partsupp_table_size};

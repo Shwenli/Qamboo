@@ -140,7 +140,7 @@ use table::{
     share_table::SharedTable,
     NetStateArgs,
 };
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use random::rep3::Rep3State;
 use net::fast_tcp::FastTcpNetwork;
 

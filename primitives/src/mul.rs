@@ -1,5 +1,5 @@
 use communication::rep3::multinet_impl::reshare_many_multinet;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use random::rep3::{Rep3State, rep3rng_rayon::masking_elements_vec_multithreads};
 use itertools::izip;
 use net::Network;

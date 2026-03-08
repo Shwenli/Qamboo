@@ -1,9 +1,9 @@
 use net::Network;
 
-use protocols::protocols::rep3_ring::id::PartyID;
-use protocols::protocols::rep3_ring::ring::int_ring::IntRing2k;
-use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::id::PartyID;
+use protocols::rep3_ring::ring::int_ring::IntRing2k;
+use protocols::rep3_ring::ring::ring_impl::RingElement;
+use protocols::rep3_ring::Rep3RingShare;
 
 type RingShare<T> = Rep3RingShare<T>;
 

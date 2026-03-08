@@ -1,10 +1,20 @@
+pub mod table_filter;
+pub mod table_group_by;
+pub mod table_join;
+pub mod table_utils;
+pub mod table_order_by;
+pub mod table_project;
+
+
 use random::rep3::Rep3State;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use algebra::ring::bit::Bit;
 use net::Network;
 use crate::predicate::Predicate;
 use crate::share_table::ShareTable;
 use crate::NetStateArgs;
+
+
 
 pub trait Open<T,U>{
 

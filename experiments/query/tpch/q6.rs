@@ -19,7 +19,7 @@ use color_eyre::{Result, eyre::Context};
 use random::rep3::Rep3State;
 use random::MpcState;
 use communication::rep3::id::PartyID;
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::tpch_database_gen;
 use experiments::net_statistics::install_tracing;

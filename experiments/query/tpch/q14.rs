@@ -18,7 +18,7 @@
 use std::path::PathBuf;
 use std::vec;
 use clap::Parser;
-use protocols::protocols::rep3_ring::arithmetic::{open};
+use protocols::rep3_ring::arithmetic::{open};
 use primitives::div::{div};
 use std::time::Instant;
 use color_eyre::{Result, eyre::Context};
@@ -30,7 +30,7 @@ use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::tpch_database_gen;
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use table::column_operator::TransformBetweenArithAndBinary;
 use table::table_operator::{Filter, Join, Project};
 use table::share_column::ShareColumn;

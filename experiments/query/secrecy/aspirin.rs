@@ -19,7 +19,7 @@ use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::secrecy_database_gen::{gen_diagnosis_table,gen_medication_table};
 use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 use table::table_operator::{Groupby, OrderBy, Join, AggFunc, Open};
 use table::column_operator::TransformBetweenArithAndBinary;
 use table::predicate::Predicate;

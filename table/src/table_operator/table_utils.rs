@@ -1,5 +1,5 @@
 use primitives::utils::open_vec_multinet;
-use protocols::protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::Rep3RingShare;
 use algebra::ring::{int_ring::IntRing2k};
 use net::Network;
 use rand::distributions::Standard;

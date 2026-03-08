@@ -1,7 +1,7 @@
 
 use random::rep3::Rep3State;
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
-use protocols::protocols::rep3_ring::{arithmetic,Rep3RingShare};
+use protocols::rep3_ring::{arithmetic,Rep3RingShare};
 use net::Network;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;

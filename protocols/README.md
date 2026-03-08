@@ -126,7 +126,7 @@ The REP3 protocol is secure against a single semi-honest adversary:
 ## Usage Example
 
 ```rust
-use protocols::protocols::rep3_ring::{
+use protocols::rep3_ring::{
     arithmetic, binary, conversion,
     Rep3RingShare, share_ring_element, combine_ring_element,
 };

@@ -40,7 +40,7 @@ use table::column_operator::{ColumnBooleanOperator, PrefixSum};
 use table::table_operator::{Filter, Groupby, AggFunc, Join, Open, OrderBy, Project};
 use table::predicate::Predicate;
 use table::NetStateArgs;
-use protocols::protocols::rep3_ring::arithmetic::open;
+use protocols::rep3_ring::arithmetic::open;
 use polars::prelude::*;
 
 

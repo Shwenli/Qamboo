@@ -4,7 +4,7 @@ use std::vec;
 use clap::Parser;
 use color_eyre::{Result, eyre::Context};
 use random::rep3::Rep3State;
-use protocols::protocols::rep3_ring::arithmetic::{promote_to_trivial_share,open_vec};
+use protocols::rep3_ring::arithmetic::{promote_to_trivial_share,open_vec};
 use algebra::ring::ring_impl::RingElement;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use experiments::net_statistics::install_tracing;

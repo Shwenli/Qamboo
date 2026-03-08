@@ -6,8 +6,7 @@
 
 
 
-pub mod protocols;
-pub mod serde_compat;
+pub mod rep3_ring;
 
 /// Re-exports
 pub type RngType = rand_chacha::ChaCha12Rng;

@@ -1,9 +1,9 @@
 mod rep3_ring_table_groupby{
 
     use itertools::izip;
-    use protocols::protocols::rep3_ring::Rep3State;
-    use protocols::protocols::rep3_ring;
-    use protocols::protocols::rep3_ring::ring::ring_impl::RingElement;
+    use protocols::rep3_ring::Rep3State;
+    use protocols::rep3_ring;
+    use protocols::rep3_ring::ring::ring_impl::RingElement;
     use rand::thread_rng;
     use rand::Rng;
     use std::sync::mpsc;

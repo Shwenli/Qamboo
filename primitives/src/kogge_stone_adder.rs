@@ -1,6 +1,6 @@
 //! Implementation of the low-depth binary addition
 //! This module provides functions for performing low-depth binary addition
-use protocols::protocols::rep3_ring::{Rep3RingShare, binary};
+use protocols::rep3_ring::{Rep3RingShare, binary};
 use algebra::ring::{bit::Bit, int_ring::IntRing2k, ring_impl::RingElement};
 use random::rep3::Rep3State;
 use itertools::izip;

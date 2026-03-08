@@ -1,4 +1,5 @@
 import os
+import argparse
 
 def generate_config(group_id, num_parties=3):
     base_port = 9000 + group_id * 1000
@@ -25,6 +26,12 @@ def generate_config(group_id, num_parties=3):
             f.write(content)
 
 if __name__ == "__main__":
-    # Generate for groups 0 to 9
-    for i in range(10):
+    parser = argparse.ArgumentParser(description="Generate local network config files.")
+    parser.add_argument("--num", type=int, nargs="?", default=10, help="Number of groups to generate (default: 10)")
+    args = parser.parse_args()
+
+    # Generate for groups 0 to num_groups-1
+    for i in range(args.num):
         generate_config(i)
+    
+    print(f"Generated {args.num} group configurations")

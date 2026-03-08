@@ -1,31 +1,35 @@
 #!/bin/bash
 
 # ==============================================================================
-# Script Name: setup_tcp.sh
+# Script Name: setup_connection.sh
 # Description:
 #   Sets up TCP network configurations by running generation scripts on multiple hosts.
 #   Supports generating for LAN (lan_net_gen) or Local (local_net_gen).
 # Usage:
-#   ./setup_tcp.sh -t <type> -h <host1>,<host2>...
+#   ./setup_connection.sh -t <type> -h <host1>,<host2>... -n <num_groups>
 #   Type: lan or local
+#   Num: number of groups (default: 10)
 # ==============================================================================
 
 set -e
 
 HOST_LIST=""
 NET_TYPE=""
+NUM_GROUPS=10
 
 usage() {
-    echo "Usage: $0 -t <type> -h <host1>,<host2>..."
-    echo "  -t <type>   : Network type ('lan' or 'local')."
-    echo "  -h <hosts>  : Comma-separated list of hosts (e.g., node0,node1,node2)."
+    echo "Usage: $0 -t <type> -h <host1>,<host2>... [-n <num_groups>]"
+    echo "  -t <type>       : Network type ('lan' or 'local')."
+    echo "  -h <hosts>      : Comma-separated list of hosts (e.g., node0,node1,node2)."
+    echo "  -n <num_groups> : Number of groups to generate (default: 10)."
     exit 1
 }
 
-while getopts "h:t:" opt; do
+while getopts "h:t:n:" opt; do
     case $opt in
         h) HOST_LIST="$OPTARG" ;;
         t) NET_TYPE="$OPTARG" ;;
+        n) NUM_GROUPS="$OPTARG" ;;
         *) usage ;;
     esac
 done
@@ -49,6 +53,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 echo "Project Root: $PROJECT_ROOT"
 echo "Target Hosts: $HOST_LIST"
 echo "Network Type: $NET_TYPE"
+echo "Num Groups: $NUM_GROUPS"
 echo "============================================================"
 
 # Convert comma-separated hosts to space-separated for python script args
@@ -66,11 +71,11 @@ for host in "${HOSTS[@]}"; do
     CMD="cd \"$PROJECT_ROOT/scripts/setup/net\""
     
     if [ "$NET_TYPE" == "lan" ]; then
-        # For LAN, pass all IPs
-        CMD="$CMD && python3 lan_net_gen.py --ip $HOSTS_SPACE"
+        # For LAN, pass all IPs and num groups
+        CMD="$CMD && python3 lan_net_gen.py --num $NUM_GROUPS --ip $HOSTS_SPACE"
     else
-        # For Local, just run script
-        CMD="$CMD && python3 local_net_gen.py"
+        # For Local, pass num groups
+        CMD="$CMD && python3 local_net_gen.py --num $NUM_GROUPS"
     fi
 
     

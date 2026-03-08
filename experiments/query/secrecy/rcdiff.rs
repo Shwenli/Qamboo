@@ -39,6 +39,7 @@ use experiments::net_statistics::install_tracing;
 use experiments::net_statistics::print_communication_stats;
 use protocols::protocols::rep3_ring::arithmetic::open;
 use table::table_operator::{Groupby, OrderBy, Project, Open};
+use table::column_operator::TransformBetweenArithAndBinary;
 use table::predicate::Predicate;
 use polars::prelude::*;
 
@@ -110,12 +111,17 @@ fn main() -> Result<()> {
     let (mut rcd_table, rcd_polars) = gen_diagnosis_table(sf, &mut mpc_exec_args)?;
     tracing::info!("Diagnosis table generated with {} rows", rcd_table.num_rows());
 
+    tracing::info!("converting some columns to binary");
+    let rcd_diag_binary = rcd_table["diag"].add_new_col_from_arithmetic_to_binary(&mut mpc_exec_args)?;
+    rcd_table.insert_column("[diag]".to_string(), rcd_diag_binary);
+
 
     tracing::info!("Rcdiff query start");
     let tot_start = Instant::now();
 
     tracing::info!("Filtering rcd table for CDIFF diagnosis");
-    let _ = rcd_table.filter_public("diag", Predicate::EqualBinary, &CDIFF_DIAG, &mut mpc_exec_args);
+    let _ = rcd_table.filter_public("[diag]", Predicate::EqualBinary, &CDIFF_DIAG, &mut mpc_exec_args);
+    rcd_table.delete_column("[diag]");
 
 
     tracing::info!("Sorting rcd table by pid and time");
@@ -170,39 +176,26 @@ fn main() -> Result<()> {
 
         let diagnosis = rcd_polars.unwrap();
         
-        // WITH rcd AS (SELECT pid, time, row_no FROM diagnosis WHERE diag=cdiff)
-        // Add row number (1-indexed like SQL)
-        let rcd = diagnosis.lazy()
+        let rcd_result = diagnosis.lazy()
             .filter(col("diag").eq(lit(CDIFF_DIAG)))
-            .with_column(col("pid").alias("r1_pid"))
-            .with_column(col("time").alias("r1_time"))
-            .with_row_index("r1_row_no", Some(0u32))  // 0-indexed
-            .with_column((col("r1_row_no") + lit(1u32)).cast(DataType::UInt64).alias("r1_row_no"))  // convert to 1-indexed
-            .select([col("r1_pid"), col("r1_time"), col("r1_row_no")])
-            .collect()?;
-        
-        // Self join: r1 JOIN r2 ON r1.pid = r2.pid
-        // Then apply conditions: r2.time - r1.time BETWEEN 15 AND 56
-        // AND r2.row_no = r1.row_no + 1
-        let rcd_result = rcd.clone().lazy()
-            .join(
-                rcd.clone().lazy().rename(
-                    ["r1_pid".to_string(), "r1_time".to_string(), "r1_row_no".to_string()],
-                    ["r2_pid".to_string(), "r2_time".to_string(), "r2_row_no".to_string()],
-                    true
-                ),
-                [col("r1_pid")],
-                [col("r2_pid")],
-                JoinArgs::new(JoinType::Inner)
+            .sort(
+                ["pid", "time"], 
+                SortMultipleOptions::default().with_order_descending_multi([false, false])
+            )
+            .with_column(
+                col("time").shift(lit(-1)).over([col("pid")]).alias("next_time")
+            )
+            .filter(col("next_time").is_not_null())
+            .with_column(
+                (col("next_time") - col("time")).alias("time_diff")
             )
             .filter(
-                (col("r2_time") - col("r1_time")).gt_eq(lit(TIME_MIN))
-                    .and((col("r2_time") - col("r1_time")).lt_eq(lit(TIME_MAX)))
-                    .and(col("r2_row_no").eq(col("r1_row_no") + lit(1u64)))
+                col("time_diff").gt_eq(lit(TIME_MIN))
+                .and(col("time_diff").lt_eq(lit(TIME_MAX)))
             )
-            .select([col("r1_pid").alias("pid")])  // SELECT r1.pid (equivalent to r2.pid)
-            .unique(None, UniqueKeepStrategy::First)  // DISTINCT
-            .sort(["pid"], SortMultipleOptions::default())
+            .select([col("pid")])
+            .unique(None, UniqueKeepStrategy::First) // 模拟最后的 group_by(vec!["pid"])
+            .sort(["pid"], SortMultipleOptions::default()) // 升序保证断言通过
             .collect()?;
 
         tracing::info!("Polars distinct pid count: {}", rcd_result.height());

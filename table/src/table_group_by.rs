@@ -22,7 +22,6 @@ where
         state: &mut Rep3State,
     ) -> eyre::Result<(Vec<Rep3RingShare<T>>, Vec<Rep3RingShare<u32>>)> {
         
-        //这里两个引号会有问题吗
         let group_keys = izip!(&group_key_names).map(|name| self[*name].get_data()).collect::<Vec<_>>();
         let vals: Vec<_> = self.schema.values()
                 .filter(|c| !group_key_names.contains(&c.get_name()) && c.get_name() != "valid")
@@ -42,21 +41,13 @@ where
                 state,
             )?;
 
-        //更新分组后的列
-        //eprintln!("group_key_names len: {:?}", group_key_names.len());
-        //这样做是不行的，因为移除了一个之后，索引会改变
         let k_g_iter = k_out_vec.into_iter();
         let mut v_g_iter = v_g_vec.into_iter();
 
-        // 更新分组后的列 (Group Keys)
-        // 使用 zip 同时遍历 列名 和 对应的数据，避免索引访问问题
         for (name, data) in group_key_names.iter().zip(k_g_iter) {
             self[*name].update_data(data);
         }
 
-        // 更新非分组列 (Values)
-        // 修复逻辑：不再使用 remove(i)，而是使用迭代器按顺序取出数据 (next())
-        // 这样保证了取出的数据顺序与 filter 过滤出的列顺序一致
         for col in self.schema.values_mut()
             .filter(|c| !group_key_names.contains(&c.get_name()) && c.get_name() != "valid") {
             
@@ -66,7 +57,6 @@ where
         }
 
         self["valid"].update_data(new_valid);
-        //插入e_t列
 
         Ok((e_t_res, perm_e))
     }
@@ -152,7 +142,7 @@ where
 
         let valid = self["valid"].get_data();
 
-        let (_, _v_g, e_t_res, e_bit, _, perm_e, k_out, v_out, _old_valid, new_valid) =
+        let (_, _v_g, e, e_bit, _, perm_e, k_out, v_out, _old_valid, new_valid) =
             group_by::table_group_by_common_multithreads(
                 group_keys,
                 vals,
@@ -181,7 +171,7 @@ where
 
         self["valid"].update_data(new_valid);
 
-        Ok((e_t_res, perm_e, e_bit))
+        Ok((e, perm_e, e_bit))
     }
 
     fn group_by_retain_valid<N: Network>(

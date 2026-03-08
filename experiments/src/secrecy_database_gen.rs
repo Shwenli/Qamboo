@@ -2,9 +2,9 @@ use communication::rep3::id::PartyID;
 use protocols::protocols::rep3_ring::Rep3RingShare;
 use net::Network;
 use table::share_table::ShareTable;
-use table::share_column::{ShareColumn, ShareType};
+use table::share_column::ShareType;
 use table::NetStateArgs;
-use crate::{gen_rand_column_u64_ring, gen_valid_column_u64_ring};
+use crate::{gen_rand_column_pk_u64_ring, gen_rand_column_u64_ring, gen_valid_column_u64_ring};
 use polars::prelude::*;
 
 // Scale factor definitions for secrecy tables
@@ -144,36 +144,17 @@ pub fn gen_cohort_table<N: Network>(
     table.key_name = Some("pid".to_string());
     let mut columns: Vec<Column> = Vec::new();
 
-    // pid column: sequential 0, 1, 2, ..., num_rows-1
-    let pid_data: Vec<u64> = (0..num_rows as u64).collect();
-    let pid_data_clone = pid_data.clone();
-    
-    let pid_col = match partyid {
-        PartyID::ID0 => {
-            use rand::thread_rng;
-            use protocols::protocols::rep3_ring;
-            use algebra::ring::ring_impl::RingElement;
-            
-            let data_ring: Vec<_> = pid_data.into_iter().map(RingElement).collect();
-            let data_ring_share = rep3_ring::share_ring_elements(&data_ring, &mut thread_rng());
-            
-            use communication::rep3::multinet_impl::send_many_multinet;
-            let _ = send_many_multinet(nets, PartyID::ID1, &data_ring_share[1]);
-            let _ = send_many_multinet(nets, PartyID::ID2, &data_ring_share[2]);
-            
-            ShareColumn::new(data_ring_share[0].clone(), ShareType::Arithmetic, "pid".to_string())
-        }
-        PartyID::ID1 | PartyID::ID2 => {
-            use communication::rep3::multinet_impl::recv_many_multinet;
-            let data_ring_share: Vec<Rep3RingShare<u64>> = recv_many_multinet(nets, PartyID::ID0)
-                .unwrap_or_else(|e| panic!("gen_cohort_table: Recv failed: {:?}", e));
-            ShareColumn::new(data_ring_share, ShareType::Arithmetic, "pid".to_string())
-        }
-    };
+    let (pid_col, plain_pid) = gen_rand_column_pk_u64_ring(
+        num_rows, 
+        "pid".to_string(), 
+        ShareType::Arithmetic,
+        nets, 
+        partyid
+    );
     
     table.insert_column("pid".to_string(), pid_col);
-    if partyid == PartyID::ID0 {
-        columns.push(Column::new("pid".into(), pid_data_clone));
+    if let Some(data) = plain_pid {
+        columns.push(Column::new("pid".into(), data));
     }
 
     let valid = gen_valid_column_u64_ring(num_rows, "valid".to_string(), ShareType::Arithmetic, nets, partyid);

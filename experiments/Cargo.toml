@@ -260,3 +260,15 @@ path = "query/secrecy/comorbidity.rs"
 [[bin]]
 name = "rcdiff"
 path = "query/secrecy/rcdiff.rs"
+
+[[bin]]
+name = "aspirin"
+path = "query/secrecy/aspirin.rs"
+
+[[bin]]
+name = "pwd"
+path = "query/secrecy/pwd.rs"
+
+[[bin]]
+name = "credit"
+path = "query/secrecy/credit.rs"

@@ -1,7 +1,5 @@
 
-/* Comorbidity Query from the Secrecy paper
- *
- * SQL:
+/*
  *   SELECT
  *       diag, COUNT(*) cnt
  *   FROM
@@ -12,7 +10,6 @@
  *       diag
  *   ORDER BY
  *       cnt DESC
- *   LIMIT 10
  *
  * SCHEMA:
  *   - cohort: [pid]
@@ -94,6 +91,7 @@ fn main() -> Result<()> {
     
     tracing::info!("Network setup completed");
 
+
     tracing::info!("Generating tables");
     let (cohort_table, cohort_polars) = gen_cohort_table(sf, &mut mpc_exec_args)?;
     let (diagnosis_table, diagnosis_polars) = gen_diagnosis_comorbidity_table(sf, &mut mpc_exec_args)?;
@@ -101,38 +99,23 @@ fn main() -> Result<()> {
     tracing::info!("Cohort table generated with {} rows", cohort_table.num_rows());
     tracing::info!("Diagnosis table generated with {} rows", diagnosis_table.num_rows());
 
+
     tracing::info!("Comorbidity query start");
     let tot_start = Instant::now();
 
-    // [SQL] WHERE pid IN cohort
-    // Semi-join: filter diagnosis where pid exists in cohort
-    // Note: semi_join modifies diagnosis_table in place
+
     tracing::info!("Semi-join: diagnosis WHERE pid IN cohort");
-    let mut filtered_diagnosis = diagnosis_table;
-    filtered_diagnosis.semi_join("pid", "pid", &cohort_table, &mut mpc_exec_args)?;
+    let mut final_table = cohort_table.inner_join("pid", "pid", &diagnosis_table, &mut mpc_exec_args)?;
 
-    tracing::info!("Semi-join completed");
 
-    // [SQL] GROUP BY diag, COUNT(*)
     tracing::info!("GROUP BY diag, COUNT(*)");
-    
-    let group_by_cols = vec!["diag"];
-    let (e, perm, _) = filtered_diagnosis.group_by(group_by_cols, &mut mpc_exec_args)?;
+    let (e, perm, _) = final_table.group_by(vec!["diag"], &mut mpc_exec_args)?;
+    let _ = final_table.agg_count("cnt", &e, &perm, &mut mpc_exec_args)?;
 
-    // Add count column
-    let _ = filtered_diagnosis.agg_count("cnt", &e, &perm, &mut mpc_exec_args)?;
 
-    tracing::info!("Aggregation completed");
-
-    // [SQL] ORDER BY cnt DESC
     tracing::info!("ORDER BY cnt DESC");
-    let _ = filtered_diagnosis.order_by("cnt", false, &mut mpc_exec_args)?;
+    let _ = final_table.order_by("cnt", false, &mut mpc_exec_args)?;
 
-    tracing::info!("Sort completed");
-
-    // [SQL] LIMIT 10
-    tracing::info!("LIMIT 10");
-    filtered_diagnosis.head(10);
 
     tracing::info!("Comorbidity query execution completed");
 
@@ -141,12 +124,19 @@ fn main() -> Result<()> {
     }
     print_communication_stats(&mpc_exec_args, "Comorbidity");
 
-    // Open results
-    let mut result_table = filtered_diagnosis.project(vec!["diag", "cnt", "valid"])?;
+
+
+
+//************* polars verification *************//
+
+    
+    let mut result_table = final_table.project(vec!["diag", "cnt", "valid"])?;
+    let _ = result_table.order_by("valid", false, &mut mpc_exec_args);
     
     let sum_valid = result_table["valid"].prefix_sum();
     let open_valid = open(sum_valid, mpc_exec_args.nets[0])?.0;
-    tracing::info!("open valid: {}", open_valid);
+    
+    result_table.head(open_valid as usize);
 
     let mpc_result = result_table.open(&mut mpc_exec_args)?;
 
@@ -167,12 +157,10 @@ fn main() -> Result<()> {
             .group_by([col("diag")])
             .agg([len().alias("cnt")])
             .sort(
-                ["cnt"],
-                SortMultipleOptions::default().with_maintain_order(true).with_order_descending(true)
+                ["cnt", "diag"],
+                SortMultipleOptions::default().with_maintain_order(true).with_order_descending_multi([true, false])
             )
-            .limit(10)
-            .collect()
-            .unwrap();
+            .collect()?;
 
         let mpc_diag = mpc_result["diag"].get_data();
         let mpc_cnt = mpc_result["cnt"].get_data();
@@ -180,15 +168,10 @@ fn main() -> Result<()> {
         let polars_diag = comorbidity_result.column("diag")?.u64()?.into_no_null_iter().collect::<Vec<_>>();
         let polars_cnt = comorbidity_result.column("cnt")?.cast(&DataType::UInt64)?.u64()?.into_no_null_iter().collect::<Vec<_>>();
 
-        tracing::info!("MPC result: diag={:?}, cnt={:?}", mpc_diag, mpc_cnt);
-        tracing::info!("Polars result: diag={:?}, cnt={:?}", polars_diag, polars_cnt);
 
-        assert_eq!(mpc_diag.len(), polars_diag.len(), "Result row count mismatch");
-        
-        // Note: Due to semi-join and sorting being performed on secret-shared data,
-        // the exact order of rows with equal counts may differ from plaintext.
-        // We verify that the counts match (sorted in descending order).
-        assert_eq!(mpc_cnt, &polars_cnt, "Count mismatch: MPC {:?} vs Polars {:?}", mpc_cnt, polars_cnt);
+        assert_eq!(open_valid as usize, comorbidity_result.height(), "Result row count mismatch");
+        assert_eq!(mpc_cnt, &polars_cnt, "cnt mismatch");
+        assert_eq!(mpc_diag, &polars_diag, "diag mismatch");
 
         tracing::info!("Verification passed!");
     }

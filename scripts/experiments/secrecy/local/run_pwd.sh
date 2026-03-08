@@ -1,6 +1,6 @@
-RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin rcdiff --features tcp
+RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin pwd --features tcp
 
-BIN_PATH=../../../../target/release/rcdiff
+BIN_PATH=../../../../target/release/pwd
 
 NUM_THREADS=${1:-4} #number of threads (default: 6)
 

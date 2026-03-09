@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # ==============================================================================
-# Usage: ./run_multinode_rdma_exp.sh [NUM_THREADS] [SF] [QUERIES]
+# Usage: ./run_multinode_rdma_exp.sh [NUM_COMMTHREADS] [SF] [QUERIES] [-h1 HOST1] [-h2 HOST2]
 # Examples:
-#   ./run_multinode_rdma_exp.sh 4 0.01 "aspirin,credit"     -> Run aspirin and credit
-#   ./run_multinode_rdma_exp.sh 4 0.1 "all"                 -> Run all queries
-#   ./run_multinode_rdma_exp.sh 6 1 "comorbidity"           -> Run comorbidity only
+#   ./run_multinode_rdma_exp.sh 4 0.01 "aspirin,credit"         -> Run aspirin and credit
+#   ./run_multinode_rdma_exp.sh 4 0.1 "all"                     -> Run all queries
+#   ./run_multinode_rdma_exp.sh 6 1 "comorbidity" -h1 nodeA -h2 nodeB -> Run comorbidity with custom hosts
 # ==============================================================================
 
 # This script is used to run Secrecy queries on multiple machines using SSH and RDMA.
@@ -13,22 +13,47 @@
 # Enable pipefail so that the exit status of the command in the pipeline is preserved
 set -o pipefail
 
-# Check if all required arguments are provided
+# Default values for hosts
+HOST1="node1"
+HOST2="node2"
+
+# Parse arguments: first 3 are positional, then optional -h1/-h2
 if [ "$#" -lt 3 ]; then
     echo "Error: Missing required arguments."
-    echo "Usage: $0 <NUM_THREADS> <SF> <QUERIES>"
-    echo "  <NUM_THREADS> : Number of communication threads (e.g. 4)"
+    echo "Usage: $0 <NUM_COMMTHREADS> <SF> <QUERIES> [-h1 HOST1] [-h2 HOST2]"
+    echo "  <NUM_COMMTHREADS> : Number of communication threads (e.g. 4)"
     echo "  <SF>          : Scale Factor (e.g. 0.01 or 0.1)"
     echo "  <QUERIES>     : Queries to run (e.g. \"aspirin,credit\" or \"all\")"
+    echo "  -h1 HOST1     : First remote host (default: node1)"
+    echo "  -h2 HOST2     : Second remote host (default: node2)"
     echo "  Available queries: aspirin, comorbidity, credit, pwd, rcdiff"
-    echo "Example: $0 4 0.01 \"aspirin,credit\""
+    echo "Example: $0 4 0.01 \"aspirin,credit\" -h1 192.168.1.11 -h2 192.168.1.12"
     exit 1
 fi
 
-# 1. Set values from arguments
-NUM_THREADS=$1
+# 1. Set values from positional arguments
+NUM_COMMTHREADS=$1
 SF=$2
 QUERY_INPUT=$3
+shift 3
+
+# Parse optional -h1 and -h2 arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h1)
+            HOST1="$2"
+            shift 2
+            ;;
+        -h2)
+            HOST2="$2"
+            shift 2
+            ;;
+        *)
+            echo "Warning: Unknown option $1"
+            shift
+            ;;
+    esac
+done
 
 # Use absolute path for safety
 CURRENT_DIR=$(pwd)
@@ -65,8 +90,9 @@ fi
 
 echo "============================================================"
 echo "Starting Secrecy Multinode RDMA Experiments"
-echo "Comm Threads: $NUM_THREADS | Scale Factor: $SF"
+echo "Comm Threads: $NUM_COMMTHREADS | Scale Factor: $SF"
 echo "Queries: ${QUERY_LIST[*]}"
+echo "Host1: $HOST1 | Host2: $HOST2"
 echo "============================================================"
 
 # 2. Loop through queries
@@ -81,8 +107,8 @@ for query in "${QUERY_LIST[@]}"; do
         # Grant execution permission (optional)
         chmod +x "$SCRIPT_PATH"
         
-        # Execute script with Threads ($1) and SF ($2)
-        (cd "$MULTINODE_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_THREADS" "$SF") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+        # Execute script with Threads, SF, and hosts
+        (cd "$MULTINODE_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_COMMTHREADS" "$SF" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
         
         if [ $? -eq 0 ]; then
             echo ">>> Query '$query' Finished Successfully."

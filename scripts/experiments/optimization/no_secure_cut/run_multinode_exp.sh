@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# Usage: ./run_multinode_exp.sh [NUM_THREADS] [SF] [QUERIES]
+# Usage: ./run_multinode_exp.sh [NUM_COMMTHREADS] [SF] [QUERIES]
 # Examples:
 #   ./run_multinode_exp.sh 6 1 "2,3,5"        -> Run Q2, Q3, Q5
 #   ./run_multinode_exp.sh 6 0.1 "2..21"      -> Run all available queries
@@ -16,8 +16,8 @@ set -o pipefail
 # Check if all required arguments are provided
 if [ "$#" -lt 3 ]; then
     echo "Error: Missing required arguments."
-    echo "Usage: $0 <NUM_THREADS> <SF> <QUERIES>"
-    echo "  <NUM_THREADS> : Number of communication threads (e.g. 6)"
+    echo "Usage: $0 <NUM_COMMTHREADS> <SF> <QUERIES>"
+    echo "  <NUM_COMMTHREADS> : Number of communication threads (e.g. 6)"
     echo "  <SF>          : Scale Factor (e.g. 0.1 or 1)"
     echo "  <QUERIES>     : Queries to run (e.g. \"2,3,5\" or \"2..21\")"
     echo "  Available queries: 2, 3, 5, 8, 13, 17, 18, 20, 21"
@@ -26,7 +26,7 @@ if [ "$#" -lt 3 ]; then
 fi
 
 # 1. Set values from arguments
-NUM_THREADS=$1
+NUM_COMMTHREADS=$1
 SF=$2
 QUERY_INPUT=$3
 
@@ -52,7 +52,7 @@ fi
 
 echo "============================================================"
 echo "Starting No Secure Cut Multinode SSH Experiments"
-echo "Comm Threads: $NUM_THREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
+echo "Comm Threads: $NUM_COMMTHREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
 echo "============================================================"
 
 # 2. Parse Query input (supports comma: "2,3,5" and range: "2..21")
@@ -88,7 +88,7 @@ for q in "${QUERY_LIST[@]}"; do
         chmod +x "$SCRIPT_PATH"
         
         # Execute script with Threads ($1) and SF ($2)
-        (cd "$MULTINODE_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_THREADS" "$SF") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+        (cd "$MULTINODE_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_COMMTHREADS" "$SF") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
         
         if [ $? -eq 0 ]; then
             echo ">>> Query $q Finished Successfully."

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# Usage: ./run_local_exp.sh [NUM_THREADS] [SF] [QUERIES]
+# Usage: ./run_local_exp.sh [NUM_COMMTHREADS] [SF] [QUERIES]
 # Examples:
 #   ./run_local_exp.sh 6 1 "1,3,4"        -> Run Q1, Q3, Q4
 #   ./run_local_exp.sh 6 0.1 "1..8"       -> Run Q1 to Q8
@@ -16,8 +16,8 @@ set -o pipefail
 # Check if all required arguments are provided
 if [ "$#" -lt 3 ]; then
     echo "Error: Missing required arguments."
-    echo "Usage: $0 <NUM_THREADS> <SF> <QUERIES>"
-    echo "  <NUM_THREADS> : Number of threads (e.g. 6)"
+    echo "Usage: $0 <NUM_COMMTHREADS> <SF> <QUERIES>"
+    echo "  <NUM_COMMTHREADS> : Number of threads (e.g. 6)"
     echo "  <SF>          : Scale Factor (e.g. 0.1 or 1)"
     echo "  <QUERIES>     : Queries to run (e.g. \"1,3,4\" or \"1..8\")"
     echo "Example: $0 6 1 \"1,3,4\""
@@ -25,7 +25,7 @@ if [ "$#" -lt 3 ]; then
 fi
 
 # 1. Set values from arguments
-NUM_THREADS=$1
+NUM_COMMTHREADS=$1
 SF=$2
 QUERY_INPUT=$3
 
@@ -50,7 +50,7 @@ fi
 
 echo "============================================================"
 echo "Starting Local Experiments"
-echo "Threads: $NUM_THREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
+echo "Threads: $NUM_COMMTHREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
 echo "============================================================"
 
 # 2. Parse Query input (supports comma: "1,3,4" and range: "1..5")
@@ -86,8 +86,8 @@ for q in "${QUERY_LIST[@]}"; do
         chmod +x "$SCRIPT_PATH"
         
         # Execute script with Threads ($1) and SF ($2)
-        # Note: The local/run_q*.sh scripts expect $1=NUM_THREADS and $2=SF
-        (cd "$LOCAL_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_THREADS" "$SF") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+        # Note: The local/run_q*.sh scripts expect $1=NUM_COMMTHREADS and $2=SF
+        (cd "$LOCAL_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_COMMTHREADS" "$SF") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
         
         if [ $? -eq 0 ]; then
             echo ">>> Query $q Finished Successfully."

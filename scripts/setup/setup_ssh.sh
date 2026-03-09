@@ -14,6 +14,29 @@
 #   ./setup_ssh.sh -h 192.168.1.11,192.168.1.12
 # ==============================================================================
 
+# Parse command line arguments
+while getopts "h:" opt; do
+  case $opt in
+    h)
+      HOST_LIST="$OPTARG"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Check if HOST_LIST is provided
+if [ -z "$HOST_LIST" ]; then
+    echo "Error: No hosts specified. Use -h option to specify hosts."
+    echo "Usage: $0 -h <host0>,<host1>,..."
+    exit 1
+fi
 
 # 1. SSH Key Generation
 echo "run setup_ssh.sh"

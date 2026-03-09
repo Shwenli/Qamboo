@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # ==============================================================================
-# Usage: ./run_multinode_rdma_exp.sh [NUM_THREADS] [SF] [QUERIES]
+# Usage: ./run_multinode_rdma_exp.sh [NUM_COMMTHREADS] [SF] [QUERIES] [-h1 HOST1] [-h2 HOST2]
 # Examples:
-#   ./run_multinode_rdma_exp.sh 6 1 "1,3,4"        -> Run Q1, Q3, Q4
-#   ./run_multinode_rdma_exp.sh 6 0.1 "1..8"       -> Run Q1 to Q8
-#   ./run_multinode_rdma_exp.sh 12 1 "3"           -> Run Q3 only
+#   ./run_multinode_rdma_exp.sh 6 1 "1,3,4"                -> Run Q1, Q3, Q4
+#   ./run_multinode_rdma_exp.sh 6 0.1 "1..8"               -> Run Q1 to Q8
+#   ./run_multinode_rdma_exp.sh 12 1 "3" -h1 nodeA -h2 nodeB  -> Run Q3 with custom hosts
 # ==============================================================================
 
 # This script is used to run TPC-H queries on multiple machines using SSH and RDMA.
@@ -13,21 +13,46 @@
 # Enable pipefail so that the exit status of the command in the pipeline is preserved
 set -o pipefail
 
-# Check if all required arguments are provided
+# Default values for hosts
+HOST1="node1"
+HOST2="node2"
+
+# Parse arguments: first 3 are positional, then optional -h1/-h2
 if [ "$#" -lt 3 ]; then
     echo "Error: Missing required arguments."
-    echo "Usage: $0 <NUM_THREADS> <SF> <QUERIES>"
-    echo "  <NUM_THREADS> : Number of threads (e.g. 6)"
+    echo "Usage: $0 <NUM_COMMTHREADS> <SF> <QUERIES> [-h1 HOST1] [-h2 HOST2]"
+    echo "  <NUM_COMMTHREADS> : Number of threads (e.g. 6)"
     echo "  <SF>          : Scale Factor (e.g. 0.1 or 1)"
     echo "  <QUERIES>     : Queries to run (e.g. \"1,3,4\" or \"1..8\")"
-    echo "Example: $0 6 1 \"1,3,4\""
+    echo "  -h1 HOST1     : First remote host (default: node1)"
+    echo "  -h2 HOST2     : Second remote host (default: node2)"
+    echo "Example: $0 6 1 \"1,3,4\" -h1 192.168.1.11 -h2 192.168.1.12"
     exit 1
 fi
 
-# 1. Set values from arguments
-NUM_THREADS=$1
+# 1. Set values from positional arguments
+NUM_COMMTHREADS=$1
 SF=$2
 QUERY_INPUT=$3
+shift 3
+
+# Parse optional -h1 and -h2 arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h1)
+            HOST1="$2"
+            shift 2
+            ;;
+        -h2)
+            HOST2="$2"
+            shift 2
+            ;;
+        *)
+            echo "Warning: Unknown option $1"
+            shift
+            ;;
+    esac
+done
 
 # Use absolute path for safety
 CURRENT_DIR=$(pwd)
@@ -51,7 +76,8 @@ fi
 
 echo "============================================================"
 echo "Starting Multinode RDMA Experiments"
-echo "Threads: $NUM_THREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
+echo "Threads: $NUM_COMMTHREADS | Scale Factor: $SF | Queries: $QUERY_INPUT"
+echo "Host1: $HOST1 | Host2: $HOST2"
 echo "============================================================"
 
 # 2. Parse Query input (supports comma: "1,3,4" and range: "1..5")
@@ -86,9 +112,9 @@ for q in "${QUERY_LIST[@]}"; do
         # Grant execution permission (optional)
         chmod +x "$SCRIPT_PATH"
         
-        # Execute script with Threads ($1) and SF ($2)
-        # Note: The multinode scripts now also accept arguments
-        (cd "$MULTINODE_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_THREADS" "$SF") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+        # Execute script with Threads, SF, and hosts
+        # Note: The multinode scripts now also accept host arguments
+        (cd "$MULTINODE_SCRIPT_DIR" && ./$SCRIPT_NAME "$NUM_COMMTHREADS" "$SF" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
         
         if [ $? -eq 0 ]; then
             echo ">>> Query $q Finished Successfully."

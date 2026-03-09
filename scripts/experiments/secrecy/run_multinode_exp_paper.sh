@@ -5,7 +5,7 @@
 # ==============================================================================
 # This script runs Secrecy and TPCH queries with the exact scale factors used in the paper.
 # 
-# Usage: ./run_multinode_exp_paper.sh
+# Usage: ./run_multinode_exp_paper.sh [-h1 HOST1] [-h2 HOST2]
 # 
 # Query configurations:
 # Secrecy Queries:
@@ -54,8 +54,30 @@
 
 set -o pipefail
 
+# Default values for hosts
+HOST1="node1"
+HOST2="node2"
+
+# Parse optional -h1 and -h2 arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h1)
+            HOST1="$2"
+            shift 2
+            ;;
+        -h2)
+            HOST2="$2"
+            shift 2
+            ;;
+        *)
+            echo "Warning: Unknown option $1"
+            shift
+            ;;
+    esac
+done
+
 # Fixed parameters
-NUM_THREADS=16
+NUM_COMMTHREADS=16
 MULTINODE_SCRIPT_DIR="./multinode"
 
 # Use absolute path for safety
@@ -73,7 +95,8 @@ fi
 
 echo "============================================================"
 echo "Secrecy Paper Experiments - Multinode"
-echo "Threads: $NUM_THREADS (fixed)"
+echo "Threads: $NUM_COMMTHREADS (fixed)"
+echo "Host1: $HOST1 | Host2: $HOST2"
 echo "============================================================"
 
 # ==============================================================================
@@ -85,7 +108,7 @@ echo ">>> Running Comorbidity (exp_q1) - SF=1 ..."
 SCRIPT_PATH="$MULTINODE_SCRIPT_DIR/run_comorbidity_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "$MULTINODE_SCRIPT_DIR" && ./run_comorbidity_ssh.sh "$NUM_THREADS" "1") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "$MULTINODE_SCRIPT_DIR" && ./run_comorbidity_ssh.sh "$NUM_COMMTHREADS" "1" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> Comorbidity Finished Successfully."
     else
@@ -105,7 +128,7 @@ echo ">>> Running Aspirin (exp_q3) - SF=0.016384 ..."
 SCRIPT_PATH="$MULTINODE_SCRIPT_DIR/run_aspirin_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "$MULTINODE_SCRIPT_DIR" && ./run_aspirin_ssh.sh "$NUM_THREADS" "0.016384") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "$MULTINODE_SCRIPT_DIR" && ./run_aspirin_ssh.sh "$NUM_COMMTHREADS" "0.016384" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> Aspirin Finished Successfully."
     else
@@ -125,7 +148,7 @@ echo ">>> Running Rcdiff (exp_q2) - SF=0.69905067 ..."
 SCRIPT_PATH="$MULTINODE_SCRIPT_DIR/run_rcdiff_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "$MULTINODE_SCRIPT_DIR" && ./run_rcdiff_ssh.sh "$NUM_THREADS" "0.69905067") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "$MULTINODE_SCRIPT_DIR" && ./run_rcdiff_ssh.sh "$NUM_COMMTHREADS" "0.69905067" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> Rcdiff Finished Successfully."
     else
@@ -145,7 +168,7 @@ echo ">>> Running Credit (exp_qcredit) - SF=0.4194304 ..."
 SCRIPT_PATH="$MULTINODE_SCRIPT_DIR/run_credit_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "$MULTINODE_SCRIPT_DIR" && ./run_credit_ssh.sh "$NUM_THREADS" "0.4194304") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "$MULTINODE_SCRIPT_DIR" && ./run_credit_ssh.sh "$NUM_COMMTHREADS" "0.4194304" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> Credit Finished Successfully."
     else
@@ -165,7 +188,7 @@ echo ">>> Running Password (exp_qpwd) - SF=0.4194304 ..."
 SCRIPT_PATH="$MULTINODE_SCRIPT_DIR/run_pwd_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "$MULTINODE_SCRIPT_DIR" && ./run_pwd_ssh.sh "$NUM_THREADS" "0.4194304") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "$MULTINODE_SCRIPT_DIR" && ./run_pwd_ssh.sh "$NUM_COMMTHREADS" "0.4194304" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> Password Finished Successfully."
     else
@@ -186,7 +209,7 @@ echo ">>> Running TPCH Q13 (exp_tpch_q13) - SF=0.17476267 ..."
 SCRIPT_PATH="../tpch/multinode/run_q13_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "../tpch/multinode" && ./run_q13_ssh.sh "$NUM_THREADS" "0.17476267") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "../tpch/multinode" && ./run_q13_ssh.sh "$NUM_COMMTHREADS" "0.17476267" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> TPCH Q13 Finished Successfully."
     else
@@ -207,7 +230,7 @@ echo ">>> Running TPCH Q4 (exp_tpch_q4) - SF=0.02184533 ..."
 SCRIPT_PATH="../tpch/multinode/run_q4_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "../tpch/multinode" && ./run_q4_ssh.sh "$NUM_THREADS" "0.02184533") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "../tpch/multinode" && ./run_q4_ssh.sh "$NUM_COMMTHREADS" "0.02184533" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> TPCH Q4 Finished Successfully."
     else
@@ -227,7 +250,7 @@ echo ">>> Running TPCH Q6 (exp_tpch_q6) - SF=1.39810133 ..."
 SCRIPT_PATH="../tpch/multinode/run_q6_ssh.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     chmod +x "$SCRIPT_PATH"
-    (cd "../tpch/multinode" && ./run_q6_ssh.sh "$NUM_THREADS" "1.39810133") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+    (cd "../tpch/multinode" && ./run_q6_ssh.sh "$NUM_COMMTHREADS" "1.39810133" "$HOST1" "$HOST2") 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
     if [ $? -eq 0 ]; then
         echo ">>> TPCH Q6 Finished Successfully."
     else

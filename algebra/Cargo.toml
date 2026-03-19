@@ -17,7 +17,6 @@ dangerous = []
 
 [dependencies]
 tracing.workspace = true
-ark-ec = { workspace = true }
 ark-ff = { workspace = true }
 ark-serialize = { workspace = true }
 eyre = { workspace = true }

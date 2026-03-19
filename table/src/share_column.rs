@@ -42,6 +42,10 @@ impl<T> ShareColumn<T> {
     pub fn get_name(&self) -> &str {
         &self.name
     }
+
+    pub fn get_sharetype(&self) -> &ShareType {
+        &self.datatype
+    }
     
     pub fn get_data_mut(&mut self) -> &mut Vec<T> {
         &mut self.data

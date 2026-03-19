@@ -170,7 +170,7 @@ fn main() -> Result<()> {
     orders_table.delete_column("[o_orderdate]");
 
     
-    tracing::info!("semi join ");
+    tracing::info!("semi join");
 
     let k_l_name = "l_orderkey";
     let k_r_name = "o_orderkey";

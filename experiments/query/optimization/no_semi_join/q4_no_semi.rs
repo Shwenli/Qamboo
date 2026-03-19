@@ -178,7 +178,7 @@ fn main() -> Result<()> {
     )?;
 
     tracing::info!("inner join time: {:?}", start.elapsed());
-
+    
 
     tracing::info!("table group by");
     let start = Instant::now();

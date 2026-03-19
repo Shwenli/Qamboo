@@ -23,7 +23,6 @@ publish = false
 readme = "./README.md"
 
 [workspace.dependencies]
-ark-ec = { version = "^0.5.0", default-features = false }
 ark-ff = "^0.5.0"
 ark-serialize = { version = "^0.5.0", features = ["derive", "std"] }
 ark-std = { version = "^0.5.0", features = ["std"] }
@@ -68,6 +67,7 @@ overflow-checks = false
 # [profile.ci-dev.build-override]
 # opt-level = 3
 
+#This comment must be removed when build.
 #[profile.release]
 #lto = "thin"
 #codegen-units = 1

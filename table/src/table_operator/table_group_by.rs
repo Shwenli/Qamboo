@@ -8,7 +8,7 @@ use random::rep3::Rep3State;
 use protocols::rep3_ring::Rep3RingShare;
 use algebra::ring::{bit::Bit, int_ring::IntRing2k};
 use net::Network;
-use primitives::permute::apply_perm_multithreads;
+use primitives::permute::apply_inv_multithreads;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 
@@ -295,7 +295,7 @@ where
         
         //* get v_g from v_out by applying inverse permutation. 
         let v_out = self[to_agg_name].get_data();
-            let v_g = apply_perm_multithreads(perm, v_out, nets, states)?;
+            let v_g = apply_inv_multithreads(perm, v_out, nets, states)?;
 
         let agg_res = agg_func::table_agg_sum_multithreads(
             &v_g,
@@ -324,7 +324,7 @@ where
         let (nets, states) = netstate_args.split();
 
         let v_out = self[to_agg_name].get_data();
-        let v_g = apply_perm_multithreads(perm, v_out, nets, states)?;
+        let v_g = apply_inv_multithreads(perm, v_out, nets, states)?;
 
         let agg_res = agg_func::table_agg_max_multithreads(
             &v_g,
@@ -354,7 +354,7 @@ where
         let (nets, states) = netstate_args.split();
 
         let v_out = self[to_agg_name].get_data();
-        let v_g = apply_perm_multithreads(perm, v_out, nets, states)?;
+        let v_g = apply_inv_multithreads(perm, v_out, nets, states)?;
 
         let agg_res = agg_func::table_agg_min_multithreads(
             &v_g,

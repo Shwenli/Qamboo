@@ -57,7 +57,7 @@ A specialized single-bit type optimized for binary secret sharing and boolean ci
 
 ## Architecture
 
-```
+```text
 algebra/
 ├── src/
 │   ├── lib.rs              # Module exports

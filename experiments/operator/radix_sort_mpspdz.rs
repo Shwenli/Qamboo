@@ -26,10 +26,6 @@ struct Args {
     /// The number of communication threads
     #[clap(short = 't', long, value_name = "THREADS", default_value = "6")]
     threads: usize,
-
-    /// Test input number, 2^19(n=1), 2^20(n=2), ..., 2^25(n=6)
-    #[clap(short = 'n', long, value_name = "NUMBER", default_value = "20")]
-    number: u64,
 }
 
 
@@ -87,7 +83,7 @@ fn main() -> Result<()> {
         let duration = start.elapsed();
 
         if party_id == PartyID::ID0 {
-            tracing::info!("Multithreads Radix Sort with 64-bit keys on {} rows took: {:?}", rows, duration);
+            tracing::info!("Radix Sort with 64-bit keys on {} rows took: {:?}", rows, duration);
         }
 
         let start = Instant::now();
@@ -95,7 +91,7 @@ fn main() -> Result<()> {
         let duration = start.elapsed();
 
         if party_id == PartyID::ID0 {
-            tracing::info!("Multithreads Radix Sort with 32-bit keys on {} rows took: {:?}", rows, duration);
+            tracing::info!("Radix Sort with 32-bit keys on {} rows took: {:?}", rows, duration);
         }
     }
     

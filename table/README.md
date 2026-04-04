@@ -266,7 +266,7 @@ pub trait ColumnOperator<T> {
 
 ## Architecture
 
-```
+```text
 table/
 ├── src/
 │   ├── lib.rs                   # Module exports, NetStateArgs
@@ -292,7 +292,7 @@ table/
 
 ## Integration with Lower Layers
 
-```
+```text
 Application Code
        ↓
    table (SQL-like interface)

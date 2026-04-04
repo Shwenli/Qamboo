@@ -48,7 +48,7 @@ pub fn gen_perm_multithreads<T, N>(
 ) -> Result<Vec<Rep3RingShare<PermRing>>>
 
 // Apply permutation to data
-pub fn apply_perm_multithreads<T, N>(
+pub fn apply_inv_multithreads<T, N>(
     perm: &[Rep3RingShare<PermRing>],
     input: &[Rep3RingShare<T>],
     nets: &[&N],
@@ -56,7 +56,7 @@ pub fn apply_perm_multithreads<T, N>(
 ) -> Result<Vec<Rep3RingShare<T>>>
 
 // Apply inverse permutation
-pub fn apply_inv_multithreads<T, N>(...)
+pub fn apply_perm_multithreads<T, N>(...)
 
 // Compose two permutations
 pub fn compose_perm_multithreads<T, N>(...)
@@ -164,7 +164,7 @@ pub fn prefix_sum_sequential<T>(input: &[Rep3RingShare<T>]) -> Result<Vec<Rep3Ri
 
 ## Architecture
 
-```
+```text
 primitives/
 ├── src/
 │   ├── lib.rs                   # Module exports
@@ -194,7 +194,7 @@ primitives/
 ```rust
 use primitives::{
     compare::unsigned_ge_const_lhs_many_multithreads,
-    permute::{gen_perm_multithreads, apply_perm_multithreads},
+    permute::{gen_perm_multithreads, apply_inv_multithreads},
     shuffle::shuffle_multithreads,
 };
 
@@ -208,7 +208,7 @@ let comparison_bits = unsigned_ge_const_lhs_many_multithreads(
 let perm = gen_perm_multithreads(&key_bits, true, 64, nets, states)?;
 
 // Apply permutation to sort data
-let sorted_data = apply_perm_multithreads(&perm, &data, nets, states)?;
+let sorted_data = apply_inv_multithreads(&perm, &data, nets, states)?;
 
 // Shuffle data
 let shuffled = shuffle_multithreads(&perm, &sorted_data, nets, states)?;

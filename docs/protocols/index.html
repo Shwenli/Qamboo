@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Protocols Module"><title>protocols - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="protocols" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../protocols/index.html">protocols</a><span class="version">0.9.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#protocols-module" title="Protocols Module">Protocols Module</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#replicated-secret-sharing-rep3" title="Replicated Secret Sharing (REP3)">Replicated Secret Sharing (REP3)</a></li><li><a href="#module-structure" title="Module Structure">Module Structure</a></li><li><a href="#core-operations" title="Core Operations">Core Operations</a></li><li><a href="#security-properties" title="Security Properties">Security Properties</a></li><li><a href="#usage-example" title="Usage Example">Usage Example</a></li><li><a href="#multi-threading-support" title="Multi-Threading Support">Multi-Threading Support</a></li><li><a href="#references" title="References">References</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>protocols</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/protocols/lib.rs.html#1-41">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="protocols-module"><a class="doc-anchor" href="#protocols-module">§</a>Protocols Module</h2><h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The <code>protocols</code> module implements the core Multi-Party Computation (MPC) protocols for the Qamboo framework. Currently, it provides semi-honest secure 3-party replicated secret sharing (REP3) over rings Z_{2^k}.</p>
+<h3 id="replicated-secret-sharing-rep3"><a class="doc-anchor" href="#replicated-secret-sharing-rep3">§</a>Replicated Secret Sharing (REP3)</h3>
+<p>REP3 is a 3-party secret sharing scheme where each party holds two additive shares of the secret. This design enables efficient computation with minimal communication overhead.</p>
+<h4 id="share-structure"><a class="doc-anchor" href="#share-structure">§</a>Share Structure</h4>
+<p>For a secret value <code>x</code>, the sharing is:</p>
+<div class="example-wrap"><pre class="language-text"><code>x = a + b + c  (arithmetic sharing)
+x = a ⊕ b ⊕ c  (binary sharing)</code></pre></div>
+<p>Each party holds:</p>
+<ul>
+<li><strong>Party 0</strong>: (a, c)</li>
+<li><strong>Party 1</strong>: (b, a)</li>
+<li><strong>Party 2</strong>: (c, b)</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>Rep3RingShare&lt;T: IntRing2k&gt; {
+    <span class="kw">pub </span>a: RingElement&lt;T&gt;,  <span class="comment">// First share component
+    </span><span class="kw">pub </span>b: RingElement&lt;T&gt;,  <span class="comment">// Second share component
+</span>}</code></pre></div>
+<h3 id="module-structure"><a class="doc-anchor" href="#module-structure">§</a>Module Structure</h3><div class="example-wrap"><pre class="language-text"><code>protocols/
+├── src/
+│   ├── lib.rs                 # Module exports and MpcState trait
+│   ├── serde_compat.rs        # Serialization compatibility
+│   ├── protocols.rs           # Protocol module interface
+│   └── protocols/
+│       └── rep3_ring/
+│           ├── mod.rs         # Share/combine operations
+│           ├── arithmetic.rs  # Arithmetic operations (+, -, *, public)
+│           ├── binary.rs      # Binary operations (⊕, ∧, NOT)
+│           ├── conversion.rs  # A2B/B2A conversions
+│           └── detail.rs      # Implementation details</code></pre></div><h3 id="core-operations"><a class="doc-anchor" href="#core-operations">§</a>Core Operations</h3><h4 id="1-arithmetic-operations-arithmeticrs"><a class="doc-anchor" href="#1-arithmetic-operations-arithmeticrs">§</a>1. Arithmetic Operations (<code>arithmetic.rs</code>)</h4>
+<p>Implements secure arithmetic over shared values:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Addition (local operation)
+</span><span class="kw">pub fn </span>add&lt;T&gt;(x: Rep3RingShare&lt;T&gt;, y: Rep3RingShare&lt;T&gt;) -&gt; Rep3RingShare&lt;T&gt;
+
+<span class="comment">// Subtraction (local operation)
+</span><span class="kw">pub fn </span>sub&lt;T&gt;(x: Rep3RingShare&lt;T&gt;, y: Rep3RingShare&lt;T&gt;) -&gt; Rep3RingShare&lt;T&gt;
+
+<span class="comment">// Multiplication (requires 1 round of communication)
+</span><span class="kw">pub fn </span>mul&lt;T, N: Network&gt;(
+    x: <span class="kw-2">&amp;</span>Rep3RingShare&lt;T&gt;,
+    y: <span class="kw-2">&amp;</span>Rep3RingShare&lt;T&gt;,
+    net: <span class="kw-2">&amp;</span>N,
+    state: <span class="kw-2">&amp;mut </span>Rep3State,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Rep3RingShare&lt;T&gt;&gt;
+
+<span class="comment">// Public operations (mixed secret/public)
+</span><span class="kw">pub fn </span>add_public&lt;T&gt;(x: Rep3RingShare&lt;T&gt;, public: RingElement&lt;T&gt;, id: PartyID) -&gt; Rep3RingShare&lt;T&gt;
+<span class="kw">pub fn </span>mul_public&lt;T&gt;(x: Rep3RingShare&lt;T&gt;, public: RingElement&lt;T&gt;) -&gt; Rep3RingShare&lt;T&gt;</code></pre></div>
+<h4 id="2-binary-operations-binaryrs"><a class="doc-anchor" href="#2-binary-operations-binaryrs">§</a>2. Binary Operations (<code>binary.rs</code>)</h4>
+<p>Implements secure boolean circuits:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// XOR (local operation)
+</span><span class="kw">pub fn </span>xor&lt;T&gt;(x: Rep3RingShare&lt;T&gt;, y: Rep3RingShare&lt;T&gt;) -&gt; Rep3RingShare&lt;T&gt;
+
+<span class="comment">// AND (requires 1 round of communication)
+</span><span class="kw">pub fn </span>and&lt;T, N: Network&gt;(...)
+
+<span class="comment">// NOT (local operation)
+</span><span class="kw">pub fn </span>not&lt;T&gt;(x: Rep3RingShare&lt;T&gt;) -&gt; Rep3RingShare&lt;T&gt;</code></pre></div>
+<h4 id="3-arithmetic-to-binary-conversion-conversionrs"><a class="doc-anchor" href="#3-arithmetic-to-binary-conversion-conversionrs">§</a>3. Arithmetic-to-Binary Conversion (<code>conversion.rs</code>)</h4>
+<p>Converts between arithmetic and binary representations:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// A2B: Arithmetic sharing → Binary sharing
+</span><span class="kw">pub fn </span>a2b_many&lt;T, N&gt;(
+    x: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],
+    net: <span class="kw-2">&amp;</span>N,
+    state: <span class="kw-2">&amp;mut </span>Rep3State,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Rep3RingShare&lt;T&gt;&gt;&gt;
+
+<span class="comment">// B2A: Binary sharing → Arithmetic sharing
+</span><span class="kw">pub fn </span>b2a_many&lt;T, N&gt;(...)</code></pre></div>
+<p>These conversions are essential for comparison operations and mixed-mode circuits.</p>
+<h3 id="security-properties"><a class="doc-anchor" href="#security-properties">§</a>Security Properties</h3><h4 id="semi-honest-security"><a class="doc-anchor" href="#semi-honest-security">§</a>Semi-Honest Security</h4>
+<p>The REP3 protocol is secure against a single semi-honest adversary:</p>
+<ul>
+<li><strong>Privacy</strong>: No single party can learn the secret value</li>
+<li><strong>Correctness</strong>: Protocol output is correct if all parties follow the protocol</li>
+<li><strong>Collusion Resistance</strong>: Tolerates collusion of up to 1 party</li>
+</ul>
+<h4 id="communication-complexity"><a class="doc-anchor" href="#communication-complexity">§</a>Communication Complexity</h4><div><table><thead><tr><th>Operation</th><th>Communication (per element)</th><th>Rounds</th></tr></thead><tbody>
+<tr><td>Add/Sub</td><td>0</td><td>0</td></tr>
+<tr><td>Mul</td><td>2 field elements</td><td>1</td></tr>
+<tr><td>A2B/B2A</td><td>O(k) bits</td><td>O(log k)</td></tr>
+</tbody></table>
+</div><h3 id="usage-example"><a class="doc-anchor" href="#usage-example">§</a>Usage Example</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>protocols::rep3_ring::{
+    arithmetic, binary, conversion,
+    Rep3RingShare, share_ring_element, combine_ring_element,
+};
+<span class="kw">use </span>random::rep3::Rep3State;
+<span class="kw">use </span>net::Network;
+
+<span class="comment">// Share a secret value
+</span><span class="kw">let </span>secret = RingElement(<span class="number">42u64</span>);
+<span class="kw">let </span>[share0, share1, share2] = share_ring_element(secret, <span class="kw-2">&amp;mut </span>rng);
+
+<span class="comment">// Party 0 computes:
+</span><span class="kw">let </span>sum = arithmetic::add(share0, other_share0);
+
+<span class="comment">// Secure multiplication (requires network)
+</span><span class="kw">let </span>product = arithmetic::mul(<span class="kw-2">&amp;</span>share0, <span class="kw-2">&amp;</span>other_share0, net, state)<span class="question-mark">?</span>;
+
+<span class="comment">// Reconstruct the result
+</span><span class="kw">let </span>result = combine_ring_element(share0, share1, share2);</code></pre></div>
+<h3 id="multi-threading-support"><a class="doc-anchor" href="#multi-threading-support">§</a>Multi-Threading Support</h3>
+<p>All operations support multi-threaded execution for improved performance:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Multi-threaded vector operations
+</span><span class="kw">pub fn </span>add_vec_many_multithreads&lt;T&gt;(...)
+<span class="kw">pub fn </span>mul_vec_many_multithreads&lt;T, N&gt;(...)</code></pre></div>
+<h3 id="references"><a class="doc-anchor" href="#references">§</a>References</h3>
+<ul>
+<li><a href="https://eprint.iacr.org/2018/403.pdf">Astra: High Throughput 3PC over Rings</a> - Original REP3 protocol</li>
+<li><a href="https://www.iacr.org/archive/crypto2007/46220565/46220565.pdf">Shamir Secret Sharing</a> - Alternative sharing scheme</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="rep3_ring/index.html" title="mod protocols::rep3_ring">rep3_<wbr>ring</a></dt><dd>REP3 Ring</dd></dl><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><dl class="item-table"><dt><a class="constant" href="constant.SEED_SIZE.html" title="constant protocols::SEED_SIZE">SEED_<wbr>SIZE</a></dt><dd>The size of the seed for the random number generator used in the protocols.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.MpcState.html" title="trait protocols::MpcState">MpcState</a></dt><dd>Trait for MPC protocol states</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.RngType.html" title="type protocols::RngType">RngType</a></dt><dd>Re-exports</dd></dl><script type="text/json" id="notable-traits-data">{"&[u8]":"<h3>Notable traits for <code>&amp;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u8.html\">u8</a>]</code></h3><pre><code><div class=\"where\">impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/std/io/trait.Read.html\" title=\"trait std::io::Read\">Read</a> for &amp;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u8.html\">u8</a>]</div>"}</script></section></div></main></body></html>

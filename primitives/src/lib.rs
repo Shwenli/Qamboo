@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 pub mod compare;
 pub mod permute;
 pub mod shuffle;

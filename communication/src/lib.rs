@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! # Naming convention
 //!
 //! - **`_zc` suffix**: zero-copy methods for types implementing [`ZeroCopy`].

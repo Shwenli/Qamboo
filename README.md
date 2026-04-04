@@ -25,7 +25,7 @@ Qamboo is a high-performance Secure Multi-Party Computation (MPC) framework desi
 
 ## System Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Qamboo Framework                          │
 ├─────────────────────────────────────────────────────────────────┤
@@ -163,7 +163,7 @@ let output = result.open(&args)?;
 
 ## Repository Structure
 
-```
+```text
 qamboo/
 ├── Cargo.toml           # Workspace configuration
 ├── LICENSE              # Dual MIT/Apache-2.0 license

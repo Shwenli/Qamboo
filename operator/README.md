@@ -131,7 +131,7 @@ Used internally by join and aggregation operators.
 
 ## Architecture
 
-```
+```text
 operator/
 ├── src/
 │   ├── lib.rs              # Module exports

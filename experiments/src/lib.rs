@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 pub mod tpch_database_gen;
 pub mod secrecy_database_gen;
 pub mod net_statistics;

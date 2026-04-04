@@ -7,7 +7,7 @@ RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --b
 BIN_PATH=../../../../target/release/radix_sort_scalability
 
 NUM_COMMTHREADS=${1:-6} # number of threads (default: 6)
-NUM=${2:-7}         # test number, 2^19(n=1) to 2^25(n=7) (default: 7)
+NUM=${2:-7}         # test number, 2^20(n=1) to 2^26(n=7) (default: 7)
 
 $BIN_PATH -c ../../../../experiments/net/local/ -p 0 -t $NUM_COMMTHREADS -n $NUM &
 $BIN_PATH -c ../../../../experiments/net/local/ -p 1 -t $NUM_COMMTHREADS -n $NUM &

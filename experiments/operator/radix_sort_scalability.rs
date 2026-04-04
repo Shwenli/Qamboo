@@ -7,7 +7,7 @@ use random::MpcState;
 use communication::rep3::id::PartyID;
 use net::tcp::{TcpNetwork, NetworkConfig};
 use operator::sort::radix_sort_multithreads;
-use experiments::net_statistics::install_tracing;
+use experiments::net_statistics::{install_tracing, print_communication_stats_operator};
 use experiments::gen_rand_column_u64_ring;
 use table::share_column::ShareType;
 
@@ -69,7 +69,7 @@ fn main() -> Result<()> {
 
 
     for i in 0..args.number {
-        let rows = 1 << (20 + i);
+        let rows = 1 << (21 + i);
         let input = gen_rand_column_u64_ring(
             rows,
             "test".to_string(), 
@@ -87,16 +87,19 @@ fn main() -> Result<()> {
         let duration = start.elapsed();
 
         if party_id == PartyID::ID0 {
-            tracing::info!("Multithreads Radix Sort with 64-bit keys on {} rows took: {:?}", rows, duration);
+            tracing::info!("Radix Sort with 64-bit keys on {} rows took: {:?}", rows, duration);
         }
+        print_communication_stats_operator(&nets, party_id, "Radix Sort 64-bit");
 
         let start = Instant::now();
         let _sorted_32bit = radix_sort_multithreads(input_clone, true, 32, &nets, &mut states)?;
         let duration = start.elapsed();
 
         if party_id == PartyID::ID0 {
-            tracing::info!("Multithreads Radix Sort with 32-bit keys on {} rows took: {:?}", rows, duration);
+            tracing::info!("Radix Sort with 32-bit keys on {} rows took: {:?}", rows, duration);
         }
+
+        print_communication_stats_operator(&nets, party_id, "Radix Sort 32-bit");
     }
     
     Ok(())

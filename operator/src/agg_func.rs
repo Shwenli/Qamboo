@@ -41,7 +41,7 @@ Standard: Distribution<T>,{
         x.push(x_i);
     }
     
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
+    let y = permute::apply_perm_multithreads(&perm_e, &x, nets, states)?;
 
     let mut s = y.clone();
     for i in 1..s.len(){
@@ -63,7 +63,7 @@ Standard: Distribution<T>,{
 
     let x = utils::prefix_sum_sequential(old_valid)?;
     
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
+    let y = permute::apply_perm_multithreads(&perm_e, &x, nets, states)?;
 
     let mut s = y.clone();
 
@@ -97,7 +97,7 @@ Standard: Distribution<T>,{
     let x = mux::mux_if_then_share_vec_multithreads(&e, &w, &w_m, nets, states)?;
     //println!("x: {:?}",arithmetic::open_vec(&x, net0));
 
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
+    let y = permute::apply_perm_multithreads(&perm_e, &x, nets, states)?;
     //println!("y: {:?}",arithmetic::open_vec(&y, net0));
 
     let mut s = y.clone();
@@ -146,7 +146,7 @@ Standard: Distribution<T>,{
     let g_t = transform::from_bit_to_arithmetic_t_multithreads::<u32,N>(&g, nets, states)?;
     let perm_g = permute::gen_bit_perm_multithreads(g_t, nets, states)?;
 
-    let y = permute::apply_inv_multithreads(&perm_g, &x, nets, states)?;
+    let y = permute::apply_perm_multithreads(&perm_g, &x, nets, states)?;
 
     Ok(y)
 }
@@ -167,7 +167,7 @@ Standard: Distribution<T>,{
     let zero = RingElement(T::zero());
     let x = mux::mux_if_share_then_public_vec_multithreads(&e, &v_g, &zero, nets, states)?;
 
-    let y = permute::apply_inv_multithreads(&perm_e, &x, nets, states)?;
+    let y = permute::apply_perm_multithreads(&perm_e, &x, nets, states)?;
 
     Ok(y)
 }
@@ -202,7 +202,7 @@ Standard: Distribution<T>,{
     let x = mux::mux_if_then_share_vec(&e, &w, &w_m, net, state)?;
     //println!("x: {:?}",arithmetic::open_vec(&x, net0));
 
-    let y = permute::apply_inv(&perm_e, &x, net, state)?;
+    let y = permute::apply_perm(&perm_e, &x, net, state)?;
     //println!("y: {:?}",arithmetic::open_vec(&y, net0));
 
     //以上测试均没有问题
@@ -243,7 +243,7 @@ Standard: Distribution<T>,{
     
     eprintln!("x: {:?}",arithmetic::open_vec(&x, net));
 
-    let y = permute::apply_inv(&perm_e, &x, net, state)?;
+    let y = permute::apply_perm(&perm_e, &x, net, state)?;
 
     let mut s = y.clone();
     for i in 1..s.len(){
@@ -267,7 +267,7 @@ Standard: Distribution<T>,{
 
     let x = utils::prefix_sum_sequential(old_valid)?;
     
-    let y = permute::apply_inv(&perm_e, &x, net, state)?;
+    let y = permute::apply_perm(&perm_e, &x, net, state)?;
 
     let mut s = y.clone();
 
@@ -303,7 +303,7 @@ Standard: Distribution<T>,{
     let x = mux::mux_if_then_share_vec(&e, &w, &w_m, net, state)?;
     println!("x: {:?}",arithmetic::open_vec(&x, net));
 
-    let y = permute::apply_inv(&perm_e, &x, net, state)?;
+    let y = permute::apply_perm(&perm_e, &x, net, state)?;
     println!("y: {:?}",arithmetic::open_vec(&y, net));
 
     let mut s = y.clone();

@@ -30,7 +30,7 @@ where
         states,
     )?;
 
-    let result = permute::apply_inv_multithreads(&perm, &inputs, net,  states)?;
+    let result = permute::apply_perm_multithreads(&perm, &inputs, net,  states)?;
 
     Ok(result)
 }
@@ -54,7 +54,7 @@ where
     )?;
 
     for inp in inputs {
-        permute::apply_inv_in_place_multithreads(&perm, inp, nets, states)?;
+        permute::apply_perm_in_place_multithreads(&perm, inp, nets, states)?;
     }
 
     Ok(())
@@ -85,7 +85,7 @@ where
         state,
     )?;
 
-    let result = permute::apply_inv(&perm, &inputs, net, state)?;
+    let result = permute::apply_perm(&perm, &inputs, net, state)?;
 
     Ok(result)
 }
@@ -110,7 +110,7 @@ where
     )?;
 
     for inp in inputs {
-        permute::apply_inv_in_place(&perm, inp, net, state)?;
+        permute::apply_perm_in_place(&perm, inp, net, state)?;
     }
 
     Ok(())

@@ -16,7 +16,7 @@ This eliminates the need for online communication to generate random values.
 
 ## Architecture
 
-```
+```text
 random/
 ├── src/
 │   ├── lib.rs              # Module exports and MpcState trait

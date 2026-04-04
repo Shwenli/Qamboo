@@ -111,7 +111,7 @@ impl PartyID {
 
 ## Architecture
 
-```
+```text
 communication/
 ├── src/
 │   ├── lib.rs                   # Module exports and naming convention docs

@@ -102,7 +102,7 @@ Supports both static IP addresses and DNS hostnames for cloud deployments.
 
 For 3-party protocols, the network maintains 2 connections per party:
 
-```
+```text
 Party 0:  <---> Party 1
     ↑         ↓
     └----> Party 2
@@ -231,7 +231,7 @@ let msg = network.recv(2)?;
 
 ## Architecture
 
-```
+```text
 net/
 ├── src/
 │   ├── lib.rs           # Network trait and utilities

@@ -1,0 +1,187 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Operator Module"><title>operator - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="operator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../operator/index.html">operator</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#operator-module" title="Operator Module">Operator Module</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#supported-operators" title="Supported Operators">Supported Operators</a></li><li><a href="#architecture" title="Architecture">Architecture</a></li><li><a href="#sql-operator-mapping" title="SQL Operator Mapping">SQL Operator Mapping</a></li><li><a href="#multi-key-groupby" title="Multi-Key GroupBy">Multi-Key GroupBy</a></li><li><a href="#aggregation-pipeline" title="Aggregation Pipeline">Aggregation Pipeline</a></li><li><a href="#performance-considerations" title="Performance Considerations">Performance Considerations</a></li><li><a href="#integration-with-table-module" title="Integration with Table Module">Integration with Table Module</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>operator</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/operator/lib.rs.html#1-8">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="operator-module"><a class="doc-anchor" href="#operator-module">§</a>Operator Module</h2><h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The <code>operator</code> module implements privacy-preserving relational database operators for secure multi-party computation. These operators form the computational foundation for SQL query execution on secretly shared data, enabling complex analytics without revealing underlying values.</p>
+<h3 id="supported-operators"><a class="doc-anchor" href="#supported-operators">§</a>Supported Operators</h3><h4 id="1-join-joinrs"><a class="doc-anchor" href="#1-join-joinrs">§</a>1. Join (<code>join.rs</code>)</h4>
+<p>Secure equi-join between two relations on shared key columns.</p>
+<p><strong>Algorithm:</strong> Sort-Merge Join with Permutation Networks</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>join_on_multithreads&lt;T, N&gt;(
+    keys_m: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],      <span class="comment">// Keys from first relation
+    </span>keys_n: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],      <span class="comment">// Keys from second relation
+    </span>vals_m: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],      <span class="comment">// Values from first relation
+    </span>vals_n: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],      <span class="comment">// Values from second relation
+    </span>nets: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>N],
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Rep3RingShare&lt;T&gt;&gt;, Vec&lt;Rep3RingShare&lt;T&gt;&gt;)&gt;</code></pre></div>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Generate sorting permutation for combined keys</li>
+<li>Apply permutation to both relations</li>
+<li>Compute join indicator using prefix sums</li>
+<li>Filter and output joined tuples</li>
+</ol>
+<p><strong>Complexity:</strong> O((m+n) log(m+n)) communication</p>
+<h4 id="2-groupby-group_byrs"><a class="doc-anchor" href="#2-groupby-group_byrs">§</a>2. GroupBy (<code>group_by.rs</code>)</h4>
+<p>Secure grouping and aggregation with multiple group keys.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>table_group_by_common_multithreads&lt;T, N&gt;(
+    keys: Vec&lt;<span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;]&gt;,   <span class="comment">// Group key columns
+    </span>vals: Vec&lt;<span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;]&gt;,   <span class="comment">// Value columns
+    </span>valid: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],        <span class="comment">// Valid row indicator
+    </span>order: bool,                       <span class="comment">// ASC (true) or DESC (false)
+    </span>sort_bitsize: usize,               <span class="comment">// Bit size for sorting
+    </span>nets: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>N],
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+) -&gt; <span class="prelude-ty">Result</span>&lt;GroupByOutput&lt;T&gt;&gt;</code></pre></div>
+<p><strong>Output:</strong></p>
+<ul>
+<li>Grouped keys</li>
+<li>Aggregation values</li>
+<li>Permutation for aggregation</li>
+<li>Equality bits for group boundaries</li>
+</ul>
+<p><strong>Algorithm:</strong></p>
+<ol>
+<li>Sort by composite group key</li>
+<li>Compute group boundary indicators</li>
+<li>Apply prefix sums for aggregation</li>
+</ol>
+<h4 id="3-aggregation-functions-agg_funcrs"><a class="doc-anchor" href="#3-aggregation-functions-agg_funcrs">§</a>3. Aggregation Functions (<code>agg_func.rs</code>)</h4>
+<p>Implements SQL aggregation operations on grouped data.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// COUNT(*) - Count rows per group
+</span><span class="kw">pub fn </span>table_agg_count_multithreads&lt;T, N&gt;(...)
+
+<span class="comment">// COUNT(DISTINCT) - Count distinct values
+</span><span class="kw">pub fn </span>table_agg_count_by_valid_multithreads&lt;T, N&gt;(...)
+
+<span class="comment">// SUM - Sum values per group
+</span><span class="kw">pub fn </span>table_agg_sum_multithreads&lt;T, N&gt;(...)
+
+<span class="comment">// AVG - Average (SUM / COUNT)
+</span><span class="kw">pub fn </span>table_agg_avg_multithreads&lt;T, N&gt;(...)
+
+<span class="comment">// MIN/MAX - Using comparison primitives
+</span><span class="kw">pub fn </span>table_agg_min_max_multithreads&lt;T, N&gt;(...)</code></pre></div>
+<h4 id="4-sort-sortrs"><a class="doc-anchor" href="#4-sort-sortrs">§</a>4. Sort (<code>sort.rs</code>)</h4>
+<p>Secure sorting of shared values.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>radix_sort_multithreads&lt;T, N&gt;(
+    keys: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],
+    order: bool,           <span class="comment">// ASC or DESC
+    </span>bitsize: usize,        <span class="comment">// Sort by most significant bits
+    </span>nets: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>N],
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Rep3RingShare&lt;u32&gt;&gt;&gt;  <span class="comment">// Returns permutation</span></code></pre></div>
+<p><strong>Algorithm:</strong> Bitwise radix sort using permutation networks</p>
+<h4 id="5-distinct-distinctrs"><a class="doc-anchor" href="#5-distinct-distinctrs">§</a>5. Distinct (<code>distinct.rs</code>)</h4>
+<p>Removes duplicate rows from a relation.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>distinct_multithreads&lt;T, N&gt;(
+    keys: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],
+    nets: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>N],
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Rep3RingShare&lt;T&gt;&gt;, Vec&lt;Rep3RingShare&lt;Bit&gt;&gt;)&gt;</code></pre></div>
+<p><strong>Algorithm:</strong> Sort + deduplication using comparison</p>
+<h4 id="6-left-to-right-copy-from_l_to_rrs"><a class="doc-anchor" href="#6-left-to-right-copy-from_l_to_rrs">§</a>6. Left-to-Right Copy (<code>from_l_to_r.rs</code>)</h4>
+<p>Copies values from left relation to right based on join condition.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>from_l_to_r_other_multithreads&lt;T, N&gt;(
+    len_m: usize,
+    len_n: usize,
+    perm: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;PermRing&gt;],
+    l: <span class="kw-2">&amp;</span>[Rep3RingShare&lt;T&gt;],
+    nets: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>N],
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Rep3RingShare&lt;T&gt;&gt;&gt;</code></pre></div>
+<p>Used internally by join and aggregation operators.</p>
+<h3 id="architecture"><a class="doc-anchor" href="#architecture">§</a>Architecture</h3><div class="example-wrap"><pre class="language-text"><code>operator/
+├── src/
+│   ├── lib.rs              # Module exports
+│   ├── join.rs             # Secure equi-join
+│   ├── group_by.rs         # GroupBy operator
+│   ├── agg_func.rs         # Aggregation functions
+│   ├── sort.rs             # Secure sorting
+│   ├── distinct.rs         # Distinct/Deduplication
+│   └── from_l_to_r.rs      # L-to-R value copying</code></pre></div><h3 id="sql-operator-mapping"><a class="doc-anchor" href="#sql-operator-mapping">§</a>SQL Operator Mapping</h3><div><table><thead><tr><th>SQL Operator</th><th>Module Function</th><th>Complexity</th></tr></thead><tbody>
+<tr><td><code>JOIN</code></td><td><code>join_on_multithreads</code></td><td>O(n log n)</td></tr>
+<tr><td><code>GROUP BY</code></td><td><code>table_group_by_common_multithreads</code></td><td>O(n log n)</td></tr>
+<tr><td><code>COUNT(*)</code></td><td><code>table_agg_count_multithreads</code></td><td>O(n)</td></tr>
+<tr><td><code>SUM()</code></td><td><code>table_agg_sum_multithreads</code></td><td>O(n)</td></tr>
+<tr><td><code>AVG()</code></td><td><code>table_agg_avg_multithreads</code></td><td>O(n)</td></tr>
+<tr><td><code>ORDER BY</code></td><td><code>radix_sort_multithreads</code></td><td>O(n log n)</td></tr>
+<tr><td><code>DISTINCT</code></td><td><code>distinct_multithreads</code></td><td>O(n log n)</td></tr>
+</tbody></table>
+</div><h3 id="multi-key-groupby"><a class="doc-anchor" href="#multi-key-groupby">§</a>Multi-Key GroupBy</h3>
+<p>For queries with multiple group keys:</p>
+<div class="example-wrap"><pre class="language-sql"><code>SELECT region, year, SUM(sales)
+FROM transactions
+GROUP BY region, year</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Create composite key from multiple columns
+</span><span class="kw">let </span>keys = <span class="macro">vec!</span>[
+    region_column.as_slice(),
+    year_column.as_slice(),
+];
+
+<span class="comment">// Perform multi-key groupby
+</span><span class="kw">let </span>(grouped_keys, <span class="kw">_</span>, perm, eq_bits, ...) = 
+    table_group_by_common_multithreads(
+        keys,
+        <span class="macro">vec!</span>[sales_column.as_slice()],
+        <span class="kw-2">&amp;</span>valid_column,
+        <span class="bool-val">true</span>,    <span class="comment">// ASC order
+        </span><span class="number">64</span>,      <span class="comment">// bit size
+        </span>nets,
+        states,
+    )<span class="question-mark">?</span>;
+
+<span class="comment">// Compute SUM aggregation
+</span><span class="kw">let </span>sum_result = table_agg_sum_multithreads(
+    <span class="kw-2">&amp;</span>sales_column,
+    <span class="kw-2">&amp;</span>eq_bits,
+    <span class="kw-2">&amp;</span>perm,
+    nets,
+    states,
+)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="aggregation-pipeline"><a class="doc-anchor" href="#aggregation-pipeline">§</a>Aggregation Pipeline</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Complete aggregation workflow
+</span><span class="kw">let </span>(k_out, v_out, e, perm_e, eq_bits, k_sorted, perm_k, ...) = 
+    table_group_by_common_multithreads(keys, vals, valid, <span class="bool-val">true</span>, <span class="number">64</span>, nets, states)<span class="question-mark">?</span>;
+
+<span class="comment">// Apply different aggregations
+</span><span class="kw">let </span>count = table_agg_count_multithreads(<span class="kw-2">&amp;</span>e, <span class="kw-2">&amp;</span>perm_e, nets, states)<span class="question-mark">?</span>;
+<span class="kw">let </span>sum = table_agg_sum_multithreads(<span class="kw-2">&amp;</span>v_sorted, <span class="kw-2">&amp;</span>e, <span class="kw-2">&amp;</span>perm_e, nets, states)<span class="question-mark">?</span>;
+<span class="kw">let </span>avg = table_agg_avg_multithreads(<span class="kw-2">&amp;</span>v_sorted, <span class="kw-2">&amp;</span>e, <span class="kw-2">&amp;</span>perm_e, nets, states)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="performance-considerations"><a class="doc-anchor" href="#performance-considerations">§</a>Performance Considerations</h3><h4 id="batch-processing"><a class="doc-anchor" href="#batch-processing">§</a>Batch Processing</h4>
+<p>All operators support batch processing for better communication efficiency:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Process 1000 rows at a time
+</span><span class="kw">for </span>chunk <span class="kw">in </span>data.chunks(<span class="number">1000</span>) {
+    <span class="kw">let </span>result = join_on_multithreads(...)<span class="question-mark">?</span>;
+}</code></pre></div>
+<h4 id="multi-threading"><a class="doc-anchor" href="#multi-threading">§</a>Multi-Threading</h4>
+<p>Use multiple threads for CPU-intensive operations:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Fork states for parallel processing
+</span><span class="kw">let </span><span class="kw-2">mut </span>forked = state.fork(<span class="number">4</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>states_refs: Vec&lt;<span class="kw">_</span>&gt; = forked.iter_mut().collect();
+
+<span class="comment">// Execute with multiple threads
+</span><span class="kw">let </span>result = join_on_multithreads(..., <span class="kw-2">&amp;</span>states_refs)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="memory-usage"><a class="doc-anchor" href="#memory-usage">§</a>Memory Usage</h4>
+<p>Operators use O(n) additional memory for permutations and intermediate results.</p>
+<h3 id="integration-with-table-module"><a class="doc-anchor" href="#integration-with-table-module">§</a>Integration with Table Module</h3>
+<p>The <code>operator</code> module is designed to be used by the higher-level <code>table</code> module:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// In table module
+</span><span class="kw">trait </span>Join&lt;T&gt; {
+    <span class="kw">fn </span>join&lt;N: Network&gt;(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        other: <span class="kw-2">&amp;</span>ShareTable&lt;T&gt;,
+        left_key: <span class="kw-2">&amp;</span>str,
+        right_key: <span class="kw-2">&amp;</span>str,
+        netstate_args: <span class="kw-2">&amp;mut </span>NetStateArgs&lt;N&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;ShareTable&lt;T&gt;&gt; {
+        <span class="comment">// Calls operator::join::join_on_multithreads internally
+    </span>}
+}</code></pre></div>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="agg_func/index.html" title="mod operator::agg_func">agg_<wbr>func</a></dt><dt><a class="mod" href="distinct/index.html" title="mod operator::distinct">distinct</a></dt><dt><a class="mod" href="from_l_to_r/index.html" title="mod operator::from_l_to_r">from_<wbr>l_<wbr>to_<wbr>r</a></dt><dd>Join</dd><dt><a class="mod" href="group_by/index.html" title="mod operator::group_by">group_<wbr>by</a></dt><dt><a class="mod" href="join/index.html" title="mod operator::join">join</a></dt><dt><a class="mod" href="sort/index.html" title="mod operator::sort">sort</a></dt></dl></section></div></main></body></html>

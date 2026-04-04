@@ -60,9 +60,9 @@ Standard: Distribution<T>,{
     let mut perm = permute::gen_perm_multithreads(&keys_binary_0, order, bitsize, nets, states)?;
     
     for i in (0..len-1).rev(){
-        let new_k = permute::apply_inv_multithreads(&perm, keys[i], nets, states)?;
+        let new_k = permute::apply_perm_multithreads(&perm, keys[i], nets, states)?;
         let keys_binary = transform::bit_decompose_many_multithreads(&new_k, bitsize, nets, states)?;
-        let perm_i = permute::gen_perm_multithreads(&keys_binary, order, bitsize, nets, states)?;//这里做完之后需要apply_inv吗
+        let perm_i = permute::gen_perm_multithreads(&keys_binary, order, bitsize, nets, states)?;//这里做完之后需要apply_perm吗
         
         perm = permute::compose_perm_multithreads(perm, perm_i, nets, states)?;
     }
@@ -102,17 +102,17 @@ Standard: Distribution<T>,{
 
     let mut k_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in new_keys_vec{
-        let k_g_i = permute::apply_inv_multithreads(&perm, &k, nets, states)?;
+        let k_g_i = permute::apply_perm_multithreads(&perm, &k, nets, states)?;
         k_g.push(k_g_i);
     }
     
     let mut v_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for v in new_vals_vec{
-        let v_g_i = permute::apply_inv_multithreads(&perm, &v, nets, states)?;
+        let v_g_i = permute::apply_perm_multithreads(&perm, &v, nets, states)?;
         v_g.push(v_g_i);
     }
 
-    let valid = permute::apply_inv_multithreads(&perm, valid, nets, states)?;
+    let valid = permute::apply_perm_multithreads(&perm, valid, nets, states)?;
 
     eprintln!("After sorting in muti_key_group_by_common:");
 
@@ -166,17 +166,17 @@ Standard: Distribution<T>,{
     
     let mut k_out: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for i in 0..k_g_n.len(){
-        let k_out_i= permute::apply_inv_multithreads(&perm_e, &k_g_n[i], nets, states)?;
+        let k_out_i= permute::apply_perm_multithreads(&perm_e, &k_g_n[i], nets, states)?;
         k_out.push(k_out_i);
     }
 
     let mut v_out: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for i in 0..v_g.len(){
-        let v_out_i= permute::apply_inv_multithreads(&perm_e, &v_g[i], nets, states)?;
+        let v_out_i= permute::apply_perm_multithreads(&perm_e, &v_g[i], nets, states)?;
         v_out.push(v_out_i);
     }
 
-    let valid_out = permute::apply_inv_multithreads(&perm_e, &new_valid, nets, states)?;
+    let valid_out = permute::apply_perm_multithreads(&perm_e, &new_valid, nets, states)?;
 
     Ok((k_g, v_g, e_t_res, e, k_g_n, perm_e, k_out, v_out, valid.to_vec(), valid_out))
     // [[kG]], [[vG]], [[e]], [[e_bit]], [[kGN]], [[πGNtoOUT]], [[kOUT]], [[vOUT]](目前没有使用), [[old_valid]], [[new_valid]]
@@ -206,7 +206,7 @@ Standard: Distribution<T>,{
     let mut perm = permute::gen_perm(&keys_binary_0, order, bitsize, net, state)?;
     
     for i in (0..len-1).rev(){
-        let new_k = permute::apply_inv(&perm, keys[i], net, state)?;
+        let new_k = permute::apply_perm(&perm, keys[i], net, state)?;
         let keys_binary = transform::bit_decompose_many(&new_k, bitsize, net, state)?;
         let perm_i = permute::gen_perm(&keys_binary, order, bitsize, net, state)?;
         
@@ -258,13 +258,13 @@ Standard: Distribution<T>,{
 
     let mut k_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in new_keys_vec{
-        let k_g_i = permute::apply_inv(&perm, &k, net, state)?;
+        let k_g_i = permute::apply_perm(&perm, &k, net, state)?;
         k_g.push(k_g_i);
     }
 
-    let v_g = permute::apply_inv(&perm, &vals, net, state)?;
+    let v_g = permute::apply_perm(&perm, &vals, net, state)?;
 
-    let valid = permute::apply_inv(&perm, valid, net, state)?;
+    let valid = permute::apply_perm(&perm, valid, net, state)?;
 
     eprintln!("After sorting in muti_key_group_by_common:");
 
@@ -327,11 +327,11 @@ Standard: Distribution<T>,{
     
     let mut k_out_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for i in 0..k_g_n_vec.len(){
-        let k_out= permute::apply_inv(&perm_e, &k_g_n_vec[i], net, state)?;
+        let k_out= permute::apply_perm(&perm_e, &k_g_n_vec[i], net, state)?;
         k_out_vec.push(k_out);
     }
 
-    let valid_out = permute::apply_inv(&perm_e, &new_valid, net, state)?;
+    let valid_out = permute::apply_perm(&perm_e, &new_valid, net, state)?;
 
     Ok((k_g, v_g, e_t_res, k_g_n_vec, perm_e, k_out_vec, valid.to_vec(), valid_out))
 }
@@ -365,17 +365,17 @@ Standard: Distribution<T>,{
 
     let mut k_g: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for k in new_keys_vec{
-        let k_g_i = permute::apply_inv(&perm, &k, net, state)?;
+        let k_g_i = permute::apply_perm(&perm, &k, net, state)?;
         k_g.push(k_g_i);
     }
     
     let mut v_g_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for v in new_vals_vec{
-        let v_g = permute::apply_inv(&perm, &v, net, state)?;
+        let v_g = permute::apply_perm(&perm, &v, net, state)?;
         v_g_vec.push(v_g);
     }
 
-    let valid = permute::apply_inv(&perm, valid, net, state)?;
+    let valid = permute::apply_perm(&perm, valid, net, state)?;
 
     eprintln!("After sorting in muti_key_group_by_common:");
 
@@ -432,7 +432,7 @@ Standard: Distribution<T>,{
     
     let mut k_out_vec: Vec<Vec<Rep3RingShare<T>>> = Vec::new();
     for i in 0..k_g_n_vec.len(){
-        let k_out= permute::apply_inv(&perm_e, &k_g_n_vec[i], net, state)?;
+        let k_out= permute::apply_perm(&perm_e, &k_g_n_vec[i], net, state)?;
         k_out_vec.push(k_out);
     }
 

@@ -6,7 +6,7 @@ use net::Network;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use primitives::mux;
-use primitives::permute::{apply_inv, apply_inv_multithreads, apply_perm, apply_perm_multithreads};
+use primitives::permute::{apply_perm, apply_perm_multithreads, apply_inv, apply_inv_multithreads};
 use primitives::utils::prefix_sum_sequential;
 use primitives::mul::mul_share_vec;
 use crate::from_l_to_r;
@@ -130,7 +130,7 @@ where
     let f = [vec_one_1, vec_zero, vec_one_2].concat();
 
     //set g to be a vector by applying perm to f
-    let g = apply_inv_multithreads(&perm, &f, nets, states)?;
+    let g = apply_perm_multithreads(&perm, &f, nets, states)?;
 
     // compute prefix sum of g
     let h = prefix_sum_sequential(&g)?;
@@ -142,7 +142,7 @@ where
     p.push(h[2*m+n-1].clone()); //添加最后一个元素
 
     // compute f_res
-    let f_res = apply_perm_multithreads(&perm, &p, nets, states)?;
+    let f_res = apply_inv_multithreads(&perm, &p, nets, states)?;
     
     Ok(f_res[..m].to_vec())
 }
@@ -221,8 +221,8 @@ where
     /*
     let test_k = [k_l[0].clone(), k_r[0].clone(), k_l[0].clone()].concat();
     let test_k_2 = [k_l[1].clone(), k_r[1].clone(), k_l[1].clone()].concat();
-    let test_k_perm = apply_inv_multithreads(&perm, &test_k, nets, state0, state1)?;
-    let test_k_perm_2 = apply_inv_multithreads(&perm, &test_k_2, nets, state0, state1)?;
+    let test_k_perm = apply_perm_multithreads(&perm, &test_k, nets, state0, state1)?;
+    let test_k_perm_2 = apply_perm_multithreads(&perm, &test_k_2, nets, state0, state1)?;
     let open_test_k_perm = open_vec(&test_k_perm, nets[0])?;
     let open_test_k_perm_2 = open_vec(&test_k_perm_2, nets[0])?;
     println!("open_test_k_perm: {:?}", open_test_k_perm);
@@ -455,7 +455,7 @@ where
     let f = [vec_one_1, vec_zero, vec_one_2].concat();
 
     //set g to be a vector by applying perm to f
-    let g = apply_inv(&perm, &f, net, state)?;
+    let g = apply_perm(&perm, &f, net, state)?;
 
     //compute prefix sum of g
     let h = prefix_sum_sequential(&g)?;
@@ -467,7 +467,7 @@ where
     p.push(h[2*m+n-1].clone()); //添加最后一个元素
 
     //compute f_res
-    let f_res = apply_perm(&perm, &p, net, state)?;
+    let f_res = apply_inv(&perm, &p, net, state)?;
     
     Ok(f_res[..m].to_vec())
 }

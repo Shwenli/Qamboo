@@ -22,9 +22,13 @@ pub fn print_communication_stats<N: Network>(args: &NetStateArgs<N>, query: &str
     for net in args.nets {
         collect_stats(*net);
     }
+    /* 
     if args.states[0].id == PartyID::ID0{
         tracing::info!("Total {query} Communication Sent {:.4} MB, Recv {:.4} MB", total_sent as f64 / 1024.0 / 1024.0, total_recv as f64 / 1024.0 / 1024.0);
     }
+    */
+    let party_id = args.states[0].id;
+    tracing::info!("Total Party{party_id} {query} Communication Sent {:.4} MB, Recv {:.4} MB", total_sent as f64 / 1024.0 / 1024.0, total_recv as f64 / 1024.0 / 1024.0);
     
 }
 
@@ -44,9 +48,12 @@ pub fn print_communication_stats_operator<N: Network>(nets:&[&N], id:PartyID, op
     for net in nets {
         collect_stats(*net);
     }
+    /* 
     if id == PartyID::ID0{
         tracing::info!("Total {operator_name} Communication Sent {:.4} MB, Recv {:.4} MB", total_sent as f64 / 1024.0 / 1024.0, total_recv as f64 / 1024.0 / 1024.0);
     }
+    */
+    tracing::info!("Party{id} {operator_name} Communication Sent {:.4} MB, Recv {:.4} MB", total_sent as f64 / 1024.0 / 1024.0, total_recv as f64 / 1024.0 / 1024.0);
     
 }
 

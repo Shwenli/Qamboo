@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["table_filter","table_group_by","table_join","table_order_by","table_project","table_utils"],"trait":["AggFunc","Filter","GroupBySinge","Groupby","Join","Open","OrderBy","OrderBySingle","Project"]};

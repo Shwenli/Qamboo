@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["column_basic_compute","column_operator_impl"],"trait":["ColumnBooleanOperator","Distinct","PrefixSum","TransformBetweenArithAndBinary"]};

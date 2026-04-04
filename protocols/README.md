@@ -12,7 +12,7 @@ REP3 is a 3-party secret sharing scheme where each party holds two additive shar
 
 For a secret value `x`, the sharing is:
 
-```
+```text
 x = a + b + c  (arithmetic sharing)
 x = a ⊕ b ⊕ c  (binary sharing)
 ```
@@ -31,7 +31,7 @@ pub struct Rep3RingShare<T: IntRing2k> {
 
 ## Module Structure
 
-```
+```text
 protocols/
 ├── src/
 │   ├── lib.rs                 # Module exports and MpcState trait

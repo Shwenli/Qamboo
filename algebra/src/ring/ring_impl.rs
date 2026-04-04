@@ -1,6 +1,7 @@
 //! RingImpl
 //!
-//! This type is a wrapper for all datatypes implementing the [`IntRing2k`] trait. The purpose is explicitly allowing wrapping arithmetic opearations.
+//! This type is a wrapper for all datatypes implementing the [`IntRing2k`] trait. 
+//! The purpose is explicitly allowing wrapping arithmetic opearations.
 
 use super::int_ring::IntRing2k;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, Valid};

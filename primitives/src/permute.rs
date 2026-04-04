@@ -41,7 +41,7 @@ pub fn gen_perm_multithreads<T: IntRing2k, N: Network>(
             for i in 1..bitsize {
                 let bit_i = inject_bit_multithreads(&bits, i, nets, states)?;
                 
-                let bit_i_aperm = apply_inv_multithreads(&perm, &bit_i, nets, states)?;
+                let bit_i_aperm = apply_perm_multithreads(&perm, &bit_i, nets, states)?;
                 
                 let perm_i = gen_bit_perm_multithreads(bit_i_aperm, nets, states)?;
                 
@@ -65,7 +65,7 @@ pub fn gen_perm_multithreads<T: IntRing2k, N: Network>(
             for i in 1..bitsize {
                 let bit_i = inject_bit_multithreads(&bits, i, nets, states)?;
                 
-                let mut bit_i_aperm = apply_inv_multithreads(&perm, &bit_i, nets, states)?;
+                let mut bit_i_aperm = apply_perm_multithreads(&perm, &bit_i, nets, states)?;
 
                 for p in bit_i_aperm.iter_mut() {
                     *p = arithmetic::add_public(-(*p), RingElement::one(), party_id);
@@ -133,7 +133,7 @@ pub fn gen_bit_perm_multithreads<N: Network>(
 }
 
 
-pub fn apply_perm_multithreads<T: IntRing2k, N: Network>(
+pub fn apply_inv_multithreads<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &[Rep3RingShare<T>],
     nets: &[&N],
@@ -181,7 +181,7 @@ where
 }
 
 
-pub fn apply_inv_multithreads<T: IntRing2k, N: Network>(
+pub fn apply_perm_multithreads<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &[Rep3RingShare<T>],
     nets: &[&N],
@@ -236,7 +236,7 @@ where
 
 
 /// in place version to save memory
-pub fn apply_inv_in_place_multithreads<T: IntRing2k, N: Network>(
+pub fn apply_perm_in_place_multithreads<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &mut [Rep3RingShare<T>],
     nets: &[&N],
@@ -354,7 +354,7 @@ pub fn gen_perm<T: IntRing2k, N: Network>(
             for i in 1..bitsize {
                 let bit_i = inject_bit(&bits, i, net, state)?;
                 
-                let bit_i_aperm = apply_inv(&perm, &bit_i, net, state)?;
+                let bit_i_aperm = apply_perm(&perm, &bit_i, net, state)?;
                 
                 let perm_i = gen_bit_perm(bit_i_aperm, net, state)?;
                 perm = compose(perm, perm_i, net, state)?;
@@ -375,7 +375,7 @@ pub fn gen_perm<T: IntRing2k, N: Network>(
             for i in 1..bitsize {
                 let bit_i = inject_bit(&bits, i, net, state)?;
                 
-                let mut bit_i_aperm = apply_inv(&perm, &bit_i, net, state)?;
+                let mut bit_i_aperm = apply_perm(&perm, &bit_i, net, state)?;
                 
                 let party_id = state.id;
                 for p in bit_i_aperm.iter_mut() {
@@ -433,7 +433,7 @@ pub fn gen_bit_perm<N: Network>(
 }
 
 
-pub fn apply_perm<T: IntRing2k, N: Network>(
+pub fn apply_inv<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &[Rep3RingShare<T>],
     net: &N,
@@ -455,7 +455,7 @@ where
 
     let opened = shuffle_reveal::<PermRing, _>(&perm, rho, net, state);
     
-    // apply_perm 标准实现：
+    // apply_inv 标准实现：
     // 步骤2-3: shuffle_reveal 得到 ρ = π ∘ π_rand⁻¹ (opened)
     // 步骤4: shuffle 得到 [[π_rand(v)]] (bits_shuffled)
     // 步骤5: 本地应用公开排列 ρ，得到 [[ρ(π_rand(v))]] = [[π(v)]]
@@ -473,7 +473,7 @@ where
 }
 
 
-pub fn apply_inv<T: IntRing2k, N: Network>(
+pub fn apply_perm<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &[Rep3RingShare<T>],
     net: &N,
@@ -511,7 +511,7 @@ where
 
 
 /// in place version to save memory
-pub fn apply_inv_in_place<T: IntRing2k, N: Network>(
+pub fn apply_perm_in_place<T: IntRing2k, N: Network>(
     rho: &[Rep3RingShare<PermRing>],
     bits: &mut [Rep3RingShare<T>],
     net: &N,

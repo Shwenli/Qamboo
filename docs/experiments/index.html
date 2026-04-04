@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Experiments Benchmark"><title>experiments - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="experiments" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../experiments/index.html">experiments</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#experiments-benchmark" title="Experiments Benchmark">Experiments Benchmark</a><ul><li><a href="#directory-structure" title="Directory Structure">Directory Structure</a></li><li><a href="#tpc-h-benchmark" title="TPC-H Benchmark">TPC-H Benchmark</a></li><li><a href="#optimization-comparison-experiments" title="Optimization Comparison Experiments">Optimization Comparison Experiments</a></li><li><a href="#operator-level-benchmarks" title="Operator-Level Benchmarks">Operator-Level Benchmarks</a></li><li><a href="#privacy-preserving-application-experiments" title="Privacy-Preserving Application Experiments">Privacy-Preserving Application Experiments</a></li><li><a href="#binary-targets" title="Binary Targets">Binary Targets</a></li><li><a href="#network-configuration" title="Network Configuration">Network Configuration</a></li><li><a href="#data-generation" title="Data Generation">Data Generation</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>experiments</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/experiments/lib.rs.html#1-189">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="experiments-benchmark"><a class="doc-anchor" href="#experiments-benchmark">§</a>Experiments Benchmark</h2>
+<p>This directory contains benchmark experiments for the Qamboo framework, primarily used to evaluate the performance of MPC (Secure Multi-Party Computation) queries.</p>
+<h3 id="directory-structure"><a class="doc-anchor" href="#directory-structure">§</a>Directory Structure</h3><div class="example-wrap"><pre class="language-text"><code>experiments/
+├── query/
+│   ├── tpch/              # TPC-H benchmarks (Q1-Q22)
+│   ├── optimization/      # Optimization comparison experiments
+│   └── secrecy/           # Privacy-preserving application experiments
+├── operator/              # Operator-level benchmarks
+├── net/                   # Network configuration files
+│   ├── local/             # Local test configurations
+│   └── multinode/         # Multi-node test configurations
+├── result/                # Experiment results
+└── src/                   # Shared library code
+    ├── tpch_database_gen.rs    # TPC-H data generator
+    ├── secrecy_database_gen.rs # Privacy data generator
+    ├── net_statistics.rs       # Network statistics utilities
+    └── timer.rs                # Timer utilities</code></pre></div><h3 id="tpc-h-benchmark"><a class="doc-anchor" href="#tpc-h-benchmark">§</a>TPC-H Benchmark</h3><h4 id="dataset-scale"><a class="doc-anchor" href="#dataset-scale">§</a>Dataset Scale</h4>
+<p>Dataset size calculation based on Scale Factor (SF):</p>
+<div><table><thead><tr><th style="text-align: left">Table Name</th><th style="text-align: left">Row Count Formula</th><th style="text-align: left">Rows (SF=0.1)</th><th style="text-align: left">Rows (SF=1)</th></tr></thead><tbody>
+<tr><td style="text-align: left"><strong>lineitem</strong></td><td style="text-align: left">sf × 6,000,000</td><td style="text-align: left">600,000</td><td style="text-align: left">6,000,000</td></tr>
+<tr><td style="text-align: left"><strong>orders</strong></td><td style="text-align: left">sf × 1,500,000</td><td style="text-align: left">150,000</td><td style="text-align: left">1,500,000</td></tr>
+<tr><td style="text-align: left"><strong>customer</strong></td><td style="text-align: left">sf × 150,000</td><td style="text-align: left">15,000</td><td style="text-align: left">150,000</td></tr>
+<tr><td style="text-align: left"><strong>part</strong></td><td style="text-align: left">sf × 200,000</td><td style="text-align: left">20,000</td><td style="text-align: left">200,000</td></tr>
+<tr><td style="text-align: left"><strong>supplier</strong></td><td style="text-align: left">sf × 10,000</td><td style="text-align: left">1,000</td><td style="text-align: left">10,000</td></tr>
+<tr><td style="text-align: left"><strong>partsupp</strong></td><td style="text-align: left">sf × 800,000</td><td style="text-align: left">80,000</td><td style="text-align: left">800,000</td></tr>
+<tr><td style="text-align: left"><strong>nation</strong></td><td style="text-align: left">25</td><td style="text-align: left">25</td><td style="text-align: left">25</td></tr>
+<tr><td style="text-align: left"><strong>region</strong></td><td style="text-align: left">5</td><td style="text-align: left">5</td><td style="text-align: left">5</td></tr>
+</tbody></table>
+</div><h4 id="tpc-h-query-table-statistics"><a class="doc-anchor" href="#tpc-h-query-table-statistics">§</a>TPC-H Query Table Statistics</h4>
+<p>The following table lists the initial tables used by each TPC-H query and their total row counts (SF=1):</p>
+<div><table><thead><tr><th style="text-align: left">Query</th><th style="text-align: left">Tables Involved</th><th style="text-align: left">Total Initial Rows (SF=1)</th></tr></thead><tbody>
+<tr><td style="text-align: left"><strong>Q1</strong></td><td style="text-align: left">lineitem</td><td style="text-align: left">6,000,000</td></tr>
+<tr><td style="text-align: left"><strong>Q2</strong></td><td style="text-align: left">part, supplier, partsupp, nation, region</td><td style="text-align: left">1,010,030</td></tr>
+<tr><td style="text-align: left"><strong>Q3</strong></td><td style="text-align: left">customer, orders, lineitem</td><td style="text-align: left">7,650,000</td></tr>
+<tr><td style="text-align: left"><strong>Q4</strong></td><td style="text-align: left">orders, lineitem</td><td style="text-align: left">7,500,000</td></tr>
+<tr><td style="text-align: left"><strong>Q5</strong></td><td style="text-align: left">customer, orders, lineitem, supplier, nation, region</td><td style="text-align: left">7,660,030</td></tr>
+<tr><td style="text-align: left"><strong>Q6</strong></td><td style="text-align: left">lineitem</td><td style="text-align: left">6,000,000</td></tr>
+<tr><td style="text-align: left"><strong>Q7</strong></td><td style="text-align: left">supplier, lineitem, orders, customer, nation(n1), nation(n2)</td><td style="text-align: left">7,660,025</td></tr>
+<tr><td style="text-align: left"><strong>Q8</strong></td><td style="text-align: left">part, supplier, lineitem, orders, customer, nation(n1), nation(n2), region</td><td style="text-align: left">7,860,030</td></tr>
+<tr><td style="text-align: left"><strong>Q9</strong></td><td style="text-align: left">part, supplier, lineitem, partsupp, orders, nation</td><td style="text-align: left">8,510,025</td></tr>
+<tr><td style="text-align: left"><strong>Q10</strong></td><td style="text-align: left">customer, orders, lineitem, nation</td><td style="text-align: left">7,650,025</td></tr>
+<tr><td style="text-align: left"><strong>Q11</strong></td><td style="text-align: left">partsupp, supplier, nation</td><td style="text-align: left">810,025</td></tr>
+<tr><td style="text-align: left"><strong>Q12</strong></td><td style="text-align: left">orders, lineitem</td><td style="text-align: left">7,500,000</td></tr>
+<tr><td style="text-align: left"><strong>Q13</strong></td><td style="text-align: left">customer, orders</td><td style="text-align: left">1,650,000</td></tr>
+<tr><td style="text-align: left"><strong>Q14</strong></td><td style="text-align: left">lineitem, part</td><td style="text-align: left">6,200,000</td></tr>
+<tr><td style="text-align: left"><strong>Q15</strong></td><td style="text-align: left">lineitem, supplier</td><td style="text-align: left">6,010,000</td></tr>
+<tr><td style="text-align: left"><strong>Q16</strong></td><td style="text-align: left">partsupp, part, supplier</td><td style="text-align: left">1,010,000</td></tr>
+<tr><td style="text-align: left"><strong>Q17</strong></td><td style="text-align: left">lineitem, part</td><td style="text-align: left">6,200,000</td></tr>
+<tr><td style="text-align: left"><strong>Q18</strong></td><td style="text-align: left">customer, orders, lineitem</td><td style="text-align: left">7,650,000</td></tr>
+<tr><td style="text-align: left"><strong>Q19</strong></td><td style="text-align: left">lineitem, part</td><td style="text-align: left">6,200,000</td></tr>
+<tr><td style="text-align: left"><strong>Q20</strong></td><td style="text-align: left">supplier, nation, partsupp, part, lineitem</td><td style="text-align: left">7,010,025</td></tr>
+<tr><td style="text-align: left"><strong>Q21</strong></td><td style="text-align: left">supplier, lineitem(l1,l2,l3), orders, nation</td><td style="text-align: left">7,510,025</td></tr>
+<tr><td style="text-align: left"><strong>Q22</strong></td><td style="text-align: left">customer, orders</td><td style="text-align: left">1,650,000</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>Notes</strong>:</p>
+<ul>
+<li>In Q7 and Q8, the nation table appears as two aliases (n1 and n2), but represents the same logical table, so counted only once (25 rows)</li>
+<li>In Q21, lineitem appears as three aliases (l1, l2, l3), but represents the same logical table, so counted only once (6,000,000 rows)</li>
+<li>Total row counts do not include intermediate result tables generated during query execution</li>
+</ul>
+</blockquote>
+<h3 id="optimization-comparison-experiments"><a class="doc-anchor" href="#optimization-comparison-experiments">§</a>Optimization Comparison Experiments</h3><h4 id="secure-group-cutting-optimization-comparison"><a class="doc-anchor" href="#secure-group-cutting-optimization-comparison">§</a>Secure Group cutting Optimization Comparison</h4>
+<p>Compare performance impact of enabling/disabling secure cut optimization:</p>
+<div><table><thead><tr><th style="text-align: left">Query</th><th style="text-align: left">Optimized Version</th><th style="text-align: left">Unoptimized Version</th></tr></thead><tbody>
+<tr><td style="text-align: left">Q2</td><td style="text-align: left"><code>q2</code></td><td style="text-align: left"><code>q2_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q3</td><td style="text-align: left"><code>q3</code></td><td style="text-align: left"><code>q3_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q5</td><td style="text-align: left"><code>q5</code></td><td style="text-align: left"><code>q5_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q8</td><td style="text-align: left"><code>q8</code></td><td style="text-align: left"><code>q8_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q13</td><td style="text-align: left"><code>q13</code></td><td style="text-align: left"><code>q13_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q17</td><td style="text-align: left"><code>q17</code></td><td style="text-align: left"><code>q17_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q18</td><td style="text-align: left"><code>q18</code></td><td style="text-align: left"><code>q18_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q20</td><td style="text-align: left"><code>q20</code></td><td style="text-align: left"><code>q20_no_secure_cut</code></td></tr>
+<tr><td style="text-align: left">Q21</td><td style="text-align: left"><code>q21</code></td><td style="text-align: left"><code>q21_no_secure_cut</code></td></tr>
+</tbody></table>
+</div><h4 id="join-reorder-optimization-comparison"><a class="doc-anchor" href="#join-reorder-optimization-comparison">§</a>Join Reorder Optimization Comparison</h4>
+<p>Compare performance impact of enabling/disabling join reorder optimization:</p>
+<div><table><thead><tr><th style="text-align: left">Query</th><th style="text-align: left">Optimized Version</th><th style="text-align: left">Unoptimized Version</th></tr></thead><tbody>
+<tr><td style="text-align: left">Q2</td><td style="text-align: left"><code>q2</code></td><td style="text-align: left"><code>q2_no_join_reorder</code></td></tr>
+<tr><td style="text-align: left">Q5</td><td style="text-align: left"><code>q5</code></td><td style="text-align: left"><code>q5_no_join_reorder</code></td></tr>
+<tr><td style="text-align: left">Q7</td><td style="text-align: left"><code>q7</code></td><td style="text-align: left"><code>q7_no_join_reorder</code></td></tr>
+<tr><td style="text-align: left">Q8</td><td style="text-align: left"><code>q8</code></td><td style="text-align: left"><code>q8_no_join_reorder</code></td></tr>
+<tr><td style="text-align: left">Q9</td><td style="text-align: left"><code>q9</code></td><td style="text-align: left"><code>q9_no_join_reorder</code></td></tr>
+<tr><td style="text-align: left">Q10</td><td style="text-align: left"><code>q10</code></td><td style="text-align: left"><code>q10_no_join_reorder</code></td></tr>
+</tbody></table>
+</div><h4 id="semi-join-optimization-comparison"><a class="doc-anchor" href="#semi-join-optimization-comparison">§</a>Semi-Join Optimization Comparison</h4><div><table><thead><tr><th style="text-align: left">Query</th><th style="text-align: left">Optimized Version</th><th style="text-align: left">Unoptimized Version</th></tr></thead><tbody>
+<tr><td style="text-align: left">Q4</td><td style="text-align: left"><code>q4</code></td><td style="text-align: left"><code>q4_no_semi</code></td></tr>
+</tbody></table>
+</div><h3 id="operator-level-benchmarks"><a class="doc-anchor" href="#operator-level-benchmarks">§</a>Operator-Level Benchmarks</h3><div><table><thead><tr><th style="text-align: left">Test Name</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>multi_keys_join</code></td><td style="text-align: left">Multi-key join performance test</td></tr>
+<tr><td style="text-align: left"><code>radix_sort</code></td><td style="text-align: left">Radix sort performance test</td></tr>
+<tr><td style="text-align: left"><code>radix_sort_scalability</code></td><td style="text-align: left">Radix sort scalability test</td></tr>
+<tr><td style="text-align: left"><code>radix_sort_mpspdz</code></td><td style="text-align: left">Radix sort baseline comparison (MP-SPDZ)</td></tr>
+</tbody></table>
+</div><h3 id="privacy-preserving-application-experiments"><a class="doc-anchor" href="#privacy-preserving-application-experiments">§</a>Privacy-Preserving Application Experiments</h3><div><table><thead><tr><th style="text-align: left">Test Name</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>comorbidity</code></td><td style="text-align: left">Comorbidity analysis (medical data)</td></tr>
+<tr><td style="text-align: left"><code>aspirin</code></td><td style="text-align: left">Aspirin treatment analysis (medical data)</td></tr>
+<tr><td style="text-align: left"><code>credit</code></td><td style="text-align: left">Credit score change analysis (financial data)</td></tr>
+<tr><td style="text-align: left"><code>pwd</code></td><td style="text-align: left">Duplicate password detection</td></tr>
+<tr><td style="text-align: left"><code>rcdiff</code></td><td style="text-align: left">Differential privacy related experiments</td></tr>
+</tbody></table>
+</div><h3 id="binary-targets"><a class="doc-anchor" href="#binary-targets">§</a>Binary Targets</h3>
+<p>The <code>experiments</code> crate defines the following executable binaries for running benchmarks:</p>
+<h4 id="tpc-h-queries"><a class="doc-anchor" href="#tpc-h-queries">§</a>TPC-H Queries</h4><div><table><thead><tr><th style="text-align: left">Binary</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>q1</code> – <code>q22</code></td><td style="text-align: left">Full TPC-H benchmark suite (Q1–Q22)</td></tr>
+</tbody></table>
+</div><h4 id="optimization-ablations"><a class="doc-anchor" href="#optimization-ablations">§</a>Optimization Ablations</h4><div><table><thead><tr><th style="text-align: left">Binary</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>q2_no_secure_cut</code> – <code>q21_no_secure_cut</code></td><td style="text-align: left">Secure group cutting disabled variants</td></tr>
+<tr><td style="text-align: left"><code>q2_no_join_reorder</code> – <code>q10_no_join_reorder</code></td><td style="text-align: left">Join reorder disabled variants</td></tr>
+<tr><td style="text-align: left"><code>q4_no_semi</code></td><td style="text-align: left">Semi-join optimization disabled variant</td></tr>
+</tbody></table>
+</div><h4 id="operator-micro-benchmarks"><a class="doc-anchor" href="#operator-micro-benchmarks">§</a>Operator Micro-Benchmarks</h4><div><table><thead><tr><th style="text-align: left">Binary</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>multi_keys_join</code></td><td style="text-align: left">Multi-key join performance test</td></tr>
+<tr><td style="text-align: left"><code>radix_sort</code></td><td style="text-align: left">Radix sort performance test</td></tr>
+<tr><td style="text-align: left"><code>radix_sort_scalability</code></td><td style="text-align: left">Radix sort scalability sweep</td></tr>
+<tr><td style="text-align: left"><code>radix_sort_mpspdz</code></td><td style="text-align: left">Radix sort baseline (MP-SPDZ)</td></tr>
+</tbody></table>
+</div><h4 id="privacy-preserving-applications"><a class="doc-anchor" href="#privacy-preserving-applications">§</a>Privacy-Preserving Applications</h4><div><table><thead><tr><th style="text-align: left">Binary</th><th style="text-align: left">Description</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>comorbidity</code></td><td style="text-align: left">Medical comorbidity analysis</td></tr>
+<tr><td style="text-align: left"><code>aspirin</code></td><td style="text-align: left">Aspirin treatment analysis</td></tr>
+<tr><td style="text-align: left"><code>credit</code></td><td style="text-align: left">Credit score change analysis</td></tr>
+<tr><td style="text-align: left"><code>pwd</code></td><td style="text-align: left">Duplicate password detection</td></tr>
+<tr><td style="text-align: left"><code>rcdiff</code></td><td style="text-align: left">Differential privacy experiments</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>Note:</strong> When generated with <code>cargo doc</code>, rustdoc creates a standalone documentation page for each binary under <code>target/doc/&lt;binary_name&gt;/</code>. The table above serves as a unified index within the <code>experiments</code> crate documentation.</p>
+</blockquote>
+<h3 id="network-configuration"><a class="doc-anchor" href="#network-configuration">§</a>Network Configuration</h3>
+<ul>
+<li><code>net/local/</code>: Local single-machine multi-process test configurations (10 groups: 0-9)</li>
+<li><code>net/multinode/</code>: Multi-machine distributed test configurations (16 groups: 0-15)</li>
+</ul>
+<p>Each configuration group contains TOML config files for 3 parties:</p>
+<ul>
+<li><code>config_party0.toml</code></li>
+<li><code>config_party1.toml</code></li>
+<li><code>config_party2.toml</code></li>
+</ul>
+<h3 id="data-generation"><a class="doc-anchor" href="#data-generation">§</a>Data Generation</h3>
+<p>All benchmark data is generated dynamically at runtime in secret-shared form. Party 0 (<code>ID0</code>) optionally retains plaintext copies for verification.</p>
+<h4 id="tpc-h-data"><a class="doc-anchor" href="#tpc-h-data">§</a>TPC-H Data</h4>
+<p>Generated by <code>src/tpch_database_gen.rs</code> according to the TPC-H scale factor (SF):</p>
+<div><table><thead><tr><th style="text-align: left">Table</th><th style="text-align: left">Row Count Formula</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>lineitem</code></td><td style="text-align: left">SF × 6,000,000</td></tr>
+<tr><td style="text-align: left"><code>orders</code></td><td style="text-align: left">SF × 1,500,000</td></tr>
+<tr><td style="text-align: left"><code>customer</code></td><td style="text-align: left">SF × 150,000</td></tr>
+<tr><td style="text-align: left"><code>part</code></td><td style="text-align: left">SF × 200,000</td></tr>
+<tr><td style="text-align: left"><code>supplier</code></td><td style="text-align: left">SF × 10,000</td></tr>
+<tr><td style="text-align: left"><code>partsupp</code></td><td style="text-align: left">SF × 800,000</td></tr>
+<tr><td style="text-align: left"><code>nation</code></td><td style="text-align: left">25 (fixed)</td></tr>
+<tr><td style="text-align: left"><code>region</code></td><td style="text-align: left">5 (fixed)</td></tr>
+</tbody></table>
+</div><h4 id="privacy-preserving-application-data"><a class="doc-anchor" href="#privacy-preserving-application-data">§</a>Privacy-Preserving Application Data</h4>
+<p>Generated by <code>src/secrecy_database_gen.rs</code> according to an application-specific scale factor (SF):</p>
+<div><table><thead><tr><th style="text-align: left">Table</th><th style="text-align: left">Row Count Formula</th><th style="text-align: left">Used By</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>SecrecyR</code></td><td style="text-align: left">SF × 2,000,000</td><td style="text-align: left"><code>rcdiff</code></td></tr>
+<tr><td style="text-align: left"><code>SecrecyS</code></td><td style="text-align: left">SF × 3,000,000</td><td style="text-align: left"><code>rcdiff</code></td></tr>
+<tr><td style="text-align: left"><code>SecrecyT1</code></td><td style="text-align: left">SF × 2,000,000</td><td style="text-align: left"><code>rcdiff</code></td></tr>
+<tr><td style="text-align: left"><code>SecrecyT2</code></td><td style="text-align: left">SF × 1,000,000</td><td style="text-align: left"><code>rcdiff</code></td></tr>
+<tr><td style="text-align: left"><code>SecrecyT3</code></td><td style="text-align: left">SF × 1,000,000</td><td style="text-align: left"><code>rcdiff</code></td></tr>
+<tr><td style="text-align: left"><code>Cohort</code></td><td style="text-align: left">SF × 500,000</td><td style="text-align: left"><code>comorbidity</code></td></tr>
+<tr><td style="text-align: left"><code>DiagnosisComorbidity</code></td><td style="text-align: left">SF × 5,000,000</td><td style="text-align: left"><code>comorbidity</code></td></tr>
+<tr><td style="text-align: left"><code>Diagnosis</code></td><td style="text-align: left">SF × 3,000,000</td><td style="text-align: left"><code>aspirin</code></td></tr>
+<tr><td style="text-align: left"><code>Medication</code></td><td style="text-align: left">SF × 2,000,000</td><td style="text-align: left"><code>aspirin</code></td></tr>
+<tr><td style="text-align: left"><code>Password</code></td><td style="text-align: left">SF × 5,000,000</td><td style="text-align: left"><code>pwd</code></td></tr>
+<tr><td style="text-align: left"><code>Taxi</code></td><td style="text-align: left">SF × 5,000,000</td><td style="text-align: left"><code>rcdiff</code></td></tr>
+<tr><td style="text-align: left"><code>CreditScore</code></td><td style="text-align: left">SF × 5,000,000</td><td style="text-align: left"><code>credit</code></td></tr>
+</tbody></table>
+</div></div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="net_statistics/index.html" title="mod experiments::net_statistics">net_<wbr>statistics</a></dt><dt><a class="mod" href="secrecy_database_gen/index.html" title="mod experiments::secrecy_database_gen">secrecy_<wbr>database_<wbr>gen</a></dt><dt><a class="mod" href="timer/index.html" title="mod experiments::timer">timer</a></dt><dt><a class="mod" href="tpch_database_gen/index.html" title="mod experiments::tpch_database_gen">tpch_<wbr>database_<wbr>gen</a></dt></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.convert_binary_from_arithmetic.html" title="fn experiments::convert_binary_from_arithmetic">convert_<wbr>binary_<wbr>from_<wbr>arithmetic</a></dt><dt><a class="fn" href="fn.gen_rand_column_data_pk_u64.html" title="fn experiments::gen_rand_column_data_pk_u64">gen_<wbr>rand_<wbr>column_<wbr>data_<wbr>pk_<wbr>u64</a></dt><dd>Generate a column of 1, 2, …, num_rows as u64 values for primary key column.</dd><dt><a class="fn" href="fn.gen_rand_column_data_u64.html" title="fn experiments::gen_rand_column_data_u64">gen_<wbr>rand_<wbr>column_<wbr>data_<wbr>u64</a></dt><dd>Generate a column of random u64 values in the range [min_val, max_val)</dd><dt><a class="fn" href="fn.gen_rand_column_pk_u64_ring.html" title="fn experiments::gen_rand_column_pk_u64_ring">gen_<wbr>rand_<wbr>column_<wbr>pk_<wbr>u64_<wbr>ring</a></dt><dt><a class="fn" href="fn.gen_rand_column_u64_ring.html" title="fn experiments::gen_rand_column_u64_ring">gen_<wbr>rand_<wbr>column_<wbr>u64_<wbr>ring</a></dt><dt><a class="fn" href="fn.gen_valid_column_data_u64.html" title="fn experiments::gen_valid_column_data_u64">gen_<wbr>valid_<wbr>column_<wbr>data_<wbr>u64</a></dt><dt><a class="fn" href="fn.gen_valid_column_u64_ring.html" title="fn experiments::gen_valid_column_u64_ring">gen_<wbr>valid_<wbr>column_<wbr>u64_<wbr>ring</a></dt></dl></section></div></main></body></html>

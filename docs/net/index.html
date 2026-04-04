@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Net Module"><title>net - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="net" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../net/index.html">net</a><span class="version">0.4.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#net-module" title="Net Module">Net Module</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#network-implementations" title="Network Implementations">Network Implementations</a></li><li><a href="#core-network-trait" title="Core Network Trait">Core Network Trait</a></li><li><a href="#configuration" title="Configuration">Configuration</a></li><li><a href="#connection-management" title="Connection Management">Connection Management</a></li><li><a href="#performance-features" title="Performance Features">Performance Features</a></li><li><a href="#connection-statistics" title="Connection Statistics">Connection Statistics</a></li><li><a href="#parallel-network-operations" title="Parallel Network Operations">Parallel Network Operations</a></li><li><a href="#usage-example" title="Usage Example">Usage Example</a></li><li><a href="#architecture" title="Architecture">Architecture</a></li><li><a href="#feature-flags" title="Feature Flags">Feature Flags</a></li><li><a href="#performance-tuning-guide" title="Performance Tuning Guide">Performance Tuning Guide</a></li><li><a href="#troubleshooting" title="Troubleshooting">Troubleshooting</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>net</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/net/lib.rs.html#1-187">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="net-module"><a class="doc-anchor" href="#net-module">§</a>Net Module</h2><h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The <code>net</code> module provides high-performance network abstractions for MPC protocols. It implements optimized TCP networking with features like connection pooling, vectored I/O, and userspace buffering, specifically designed for the communication patterns of multi-party computation.</p>
+<h3 id="network-implementations"><a class="doc-anchor" href="#network-implementations">§</a>Network Implementations</h3><h4 id="1-fasttcpnetwork-fast_tcprs--recommended"><a class="doc-anchor" href="#1-fasttcpnetwork-fast_tcprs--recommended">§</a>1. FastTcpNetwork (<code>fast_tcp.rs</code>) — Recommended</h4>
+<p>A high-performance TCP implementation optimized for MPC workloads:</p>
+<p><strong>Key Optimizations:</strong></p>
+<ul>
+<li><strong>Write buffering</strong>: 2MB <code>BufWriter</code> per connection to coalesce small writes</li>
+<li><strong>Vectored I/O</strong>: <code>write_vectored</code> merges length prefix + payload in one syscall</li>
+<li><strong>Read buffering</strong>: 2MB <code>BufReader</code> to reduce read syscalls</li>
+<li><strong>Large socket buffers</strong>: 8MB kernel buffers for high-bandwidth links</li>
+<li><strong>High-capacity channels</strong>: 4096-slot crossbeam channels</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>net::fast_tcp::{FastTcpNetwork, NetworkConfig, NetworkParty};
+
+<span class="kw">let </span>config = NetworkConfig::new(
+    my_id,
+    bind_addr,
+    <span class="macro">vec!</span>[party0, party1, party2],
+    <span class="prelude-val">Some</span>(Duration::from_secs(<span class="number">60</span>)),
+    <span class="prelude-val">Some</span>(<span class="number">128 </span>* <span class="number">1024 </span>* <span class="number">1024</span>), <span class="comment">// 128MB max frame
+</span>);
+
+<span class="kw">let </span>network = FastTcpNetwork::new(config)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="2-tcpnetwork-tcprs--basic"><a class="doc-anchor" href="#2-tcpnetwork-tcprs--basic">§</a>2. TcpNetwork (<code>tcp.rs</code>) — Basic</h4>
+<p>Standard TCP implementation without userspace buffering. Suitable for:</p>
+<ul>
+<li>Simple deployments</li>
+<li>Low-latency LAN environments</li>
+<li>Debugging and testing</li>
+</ul>
+<h3 id="core-network-trait"><a class="doc-anchor" href="#core-network-trait">§</a>Core Network Trait</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="doccomment">/// The core network abstraction for MPC protocols
+</span><span class="kw">pub trait </span>Network: Send + Sync {
+    <span class="doccomment">/// Party ID (0-based)
+    </span><span class="kw">fn </span>id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize;
+    
+    <span class="doccomment">/// Send data to another party
+    </span><span class="kw">fn </span>send(<span class="kw-2">&amp;</span><span class="self">self</span>, to: usize, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    
+    <span class="doccomment">/// Receive data from another party
+    </span><span class="kw">fn </span>recv(<span class="kw-2">&amp;</span><span class="self">self</span>, from: usize) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;&gt;;
+    
+    <span class="doccomment">/// Get connection statistics
+    </span><span class="kw">fn </span>get_connection_stats(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ConnectionStats;
+    
+    <span class="doccomment">/// Buffered send (for implementations with buffering)
+    </span><span class="kw">fn </span>send_buffered(<span class="kw-2">&amp;</span><span class="self">self</span>, to: usize, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    
+    <span class="doccomment">/// Flush buffered data to specific party
+    </span><span class="kw">fn </span>flush_to(<span class="kw-2">&amp;</span><span class="self">self</span>, to: usize) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    
+    <span class="doccomment">/// Flush all buffered data
+    </span><span class="kw">fn </span>flush_all(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+}</code></pre></div>
+<h3 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h3><h4 id="networkconfig"><a class="doc-anchor" href="#networkconfig">§</a>NetworkConfig</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>NetworkConfig {
+    <span class="kw">pub </span>parties: Vec&lt;NetworkParty&gt;,    <span class="comment">// All parties in the network
+    </span><span class="kw">pub </span>my_id: usize,                   <span class="comment">// This party's ID
+    </span><span class="kw">pub </span>bind_addr: SocketAddr,          <span class="comment">// Local bind address
+    </span><span class="kw">pub </span>timeout: <span class="prelude-ty">Option</span>&lt;Duration&gt;,      <span class="comment">// Connection timeout
+    </span><span class="kw">pub </span>max_frame_length: <span class="prelude-ty">Option</span>&lt;usize&gt;, <span class="comment">// Max message size
+</span>}
+
+<span class="kw">pub struct </span>NetworkParty {
+    <span class="kw">pub </span>id: usize,
+    <span class="kw">pub </span>dns_name: Address,  <span class="comment">// Supports IP or hostname
+</span>}</code></pre></div>
+<h4 id="address-resolution"><a class="doc-anchor" href="#address-resolution">§</a>Address Resolution</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub enum </span>Address {
+    IpAddr(SocketAddr),
+    DnsName { host: String, port: u16 },
+}</code></pre></div>
+<p>Supports both static IP addresses and DNS hostnames for cloud deployments.</p>
+<h3 id="connection-management"><a class="doc-anchor" href="#connection-management">§</a>Connection Management</h3><h4 id="topology"><a class="doc-anchor" href="#topology">§</a>Topology</h4>
+<p>For 3-party protocols, the network maintains 2 connections per party:</p>
+<div class="example-wrap"><pre class="language-text"><code>Party 0:  &lt;---&gt; Party 1
+    ↑         ↓
+    └----&gt; Party 2</code></pre></div>
+<p>Each party connects to all other parties in a full mesh topology.</p>
+<h4 id="connection-establishment"><a class="doc-anchor" href="#connection-establishment">§</a>Connection Establishment</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// All parties bind to their addresses simultaneously
+</span><span class="kw">let </span>listener = TcpListener::bind(bind_addr)<span class="question-mark">?</span>;
+
+<span class="comment">// Connect to parties with lower IDs
+</span><span class="kw">for </span>party <span class="kw">in </span>parties_with_lower_id {
+    <span class="kw">let </span>stream = TcpStream::connect(party.dns_name)<span class="question-mark">?</span>;
+}
+
+<span class="comment">// Accept connections from parties with higher IDs
+</span><span class="kw">for </span>party <span class="kw">in </span>parties_with_higher_id {
+    <span class="kw">let </span>(stream, <span class="kw">_</span>) = listener.accept()<span class="question-mark">?</span>;
+}</code></pre></div>
+<p>This ensures deterministic connection establishment without deadlocks.</p>
+<h3 id="performance-features"><a class="doc-anchor" href="#performance-features">§</a>Performance Features</h3><h4 id="socket-tuning"><a class="doc-anchor" href="#socket-tuning">§</a>Socket Tuning</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Large kernel buffers for high-bandwidth networks
+</span>socket.set_send_buffer_size(<span class="number">8 </span>* <span class="number">1024 </span>* <span class="number">1024</span>)<span class="question-mark">?</span>;
+socket.set_recv_buffer_size(<span class="number">8 </span>* <span class="number">1024 </span>* <span class="number">1024</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// TCP_NODELAY disabled for batching
+</span>socket.set_nodelay(<span class="bool-val">false</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Keep-alive for long-running protocols
+</span>socket.set_keepalive(<span class="prelude-val">Some</span>(Duration::from_secs(<span class="number">60</span>)))<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="vectored-io"><a class="doc-anchor" href="#vectored-io">§</a>Vectored I/O</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Write length prefix and payload in single syscall
+</span><span class="kw">let </span>len_bytes = (data.len() <span class="kw">as </span>u64).to_be_bytes();
+<span class="kw">let </span>iovec = [
+    IoSlice::new(<span class="kw-2">&amp;</span>len_bytes),
+    IoSlice::new(data),
+];
+writer.write_vectored(<span class="kw-2">&amp;</span>iovec)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="userspace-buffering"><a class="doc-anchor" href="#userspace-buffering">§</a>Userspace Buffering</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// FastTcpNetwork uses BufWriter for coalescing
+</span><span class="kw">pub struct </span>FastTcpNetwork {
+    writers: Vec&lt;Mutex&lt;BufWriter&lt;TcpStream&gt;&gt;&gt;, <span class="comment">// 2MB buffers
+    </span>readers: Vec&lt;Mutex&lt;BufReader&lt;TcpStream&gt;&gt;&gt;, <span class="comment">// 2MB buffers
+</span>}</code></pre></div>
+<h3 id="connection-statistics"><a class="doc-anchor" href="#connection-statistics">§</a>Connection Statistics</h3>
+<p>Monitor network usage for performance analysis:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>stats = network.get_connection_stats();
+<span class="macro">println!</span>(<span class="string">"{}"</span>, stats);
+<span class="comment">// Output:
+// Party 0 &lt;-&gt; 1: SENT 1048576 bytes, RECV 524288 bytes
+// Party 0 &lt;-&gt; 2: SENT 524288 bytes, RECV 1048576 bytes</span></code></pre></div>
+<h3 id="parallel-network-operations"><a class="doc-anchor" href="#parallel-network-operations">§</a>Parallel Network Operations</h3>
+<p>The module provides utilities for concurrent network operations:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>net::{join, join_all};
+
+<span class="comment">// Run two network operations in parallel
+</span><span class="kw">let </span>(result1, result2) = join(
+    || network.send(<span class="number">1</span>, <span class="kw-2">&amp;</span>data1),
+    || network.recv(<span class="number">2</span>),
+);
+
+<span class="comment">// Run multiple operations in parallel
+</span><span class="kw">let </span>results: Vec&lt;<span class="kw">_</span>&gt; = join_all([
+    || network.send(<span class="number">1</span>, <span class="kw-2">&amp;</span>data1),
+    || network.send(<span class="number">2</span>, <span class="kw-2">&amp;</span>data2),
+    || network.recv(<span class="number">1</span>),
+    || network.recv(<span class="number">2</span>),
+]);</code></pre></div>
+<h3 id="usage-example"><a class="doc-anchor" href="#usage-example">§</a>Usage Example</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>net::fast_tcp::{FastTcpNetwork, NetworkConfig, NetworkParty, Address};
+<span class="kw">use </span>std::net::SocketAddr;
+
+<span class="comment">// Define parties
+</span><span class="kw">let </span>parties = <span class="macro">vec!</span>[
+    NetworkParty::new(<span class="number">0</span>, Address::IpAddr(<span class="string">"10.0.0.1:9000"</span>.parse()<span class="question-mark">?</span>)),
+    NetworkParty::new(<span class="number">1</span>, Address::IpAddr(<span class="string">"10.0.0.2:9000"</span>.parse()<span class="question-mark">?</span>)),
+    NetworkParty::new(<span class="number">2</span>, Address::IpAddr(<span class="string">"10.0.0.3:9000"</span>.parse()<span class="question-mark">?</span>)),
+];
+
+<span class="comment">// Create network
+</span><span class="kw">let </span>config = NetworkConfig::new(
+    <span class="number">0</span>,  <span class="comment">// My ID
+    </span><span class="string">"0.0.0.0:9000"</span>.parse()<span class="question-mark">?</span>,  <span class="comment">// Bind address
+    </span>parties,
+    <span class="prelude-val">Some</span>(Duration::from_secs(<span class="number">60</span>)),
+    <span class="prelude-val">None</span>,
+);
+<span class="kw">let </span>network = FastTcpNetwork::new(config)<span class="question-mark">?</span>;
+
+<span class="comment">// Send/receive data
+</span>network.send(<span class="number">1</span>, <span class="string">b"Hello Party 1"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>msg = network.recv(<span class="number">2</span>)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="architecture"><a class="doc-anchor" href="#architecture">§</a>Architecture</h3><div class="example-wrap"><pre class="language-text"><code>net/
+├── src/
+│   ├── lib.rs           # Network trait and utilities
+│   ├── config.rs        # Configuration types
+│   ├── fast_tcp.rs      # High-performance TCP implementation
+│   └── tcp.rs           # Basic TCP implementation
+└── examples/
+    └── three_party_tcp.rs  # Example 3-party network</code></pre></div><h3 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature Flags</h3><div><table><thead><tr><th>Feature</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>fast_tcp</code></td><td>High-performance TCP with buffering</td><td>Yes</td></tr>
+<tr><td><code>tcp</code></td><td>Basic TCP implementation</td><td>No</td></tr>
+</tbody></table>
+</div><h3 id="performance-tuning-guide"><a class="doc-anchor" href="#performance-tuning-guide">§</a>Performance Tuning Guide</h3><h4 id="for-high-latency-networks-cloudwan"><a class="doc-anchor" href="#for-high-latency-networks-cloudwan">§</a>For High-Latency Networks (Cloud/WAN)</h4>
+<ol>
+<li>Increase socket buffers: 8MB+ recommended</li>
+<li>Enable write buffering: Critical for small messages</li>
+<li>Batch operations: Send multiple shares in one message</li>
+<li>Use vectored I/O: Reduces syscalls</li>
+</ol>
+<h4 id="for-low-latency-networks-lanrdma"><a class="doc-anchor" href="#for-low-latency-networks-lanrdma">§</a>For Low-Latency Networks (LAN/RDMA)</h4>
+<ol>
+<li>Smaller buffers may be sufficient (1-2MB)</li>
+<li>Consider <code>tcp</code> implementation for simplicity</li>
+<li>Reduce max frame size if messages are small</li>
+</ol>
+<h3 id="troubleshooting"><a class="doc-anchor" href="#troubleshooting">§</a>Troubleshooting</h3><h4 id="connection-timeouts"><a class="doc-anchor" href="#connection-timeouts">§</a>Connection Timeouts</h4>
+<ul>
+<li>Check firewall rules between parties</li>
+<li>Verify all parties start within timeout window</li>
+<li>Increase <code>timeout</code> in NetworkConfig</li>
+</ul>
+<h4 id="high-latency"><a class="doc-anchor" href="#high-latency">§</a>High Latency</h4>
+<ul>
+<li>Enable <code>fast_tcp</code> feature for buffering</li>
+<li>Check socket buffer sizes (use <code>ss -tmnp</code>)</li>
+<li>Consider network topology (avoid NAT when possible)</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="config/index.html" title="mod net::config">config</a></dt><dd>Data structures and helpers for the network configuration.</dd><dt><a class="mod" href="tcp/index.html" title="mod net::tcp">tcp</a></dt><dd>TCP MPC network</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.ConnectionStats.html" title="struct net::ConnectionStats">Connection<wbr>Stats</a></dt><dd>Statistics about the number of bytes sent over the network.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Network.html" title="trait net::Network">Network</a></dt><dd>A MPC network that can be used to send and receive data to and from other parties</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.join.html" title="fn net::join">join</a></dt><dd>Run 2 network closures</dd><dt><a class="fn" href="fn.join_all.html" title="fn net::join_all">join_<wbr>all</a></dt><dd>Run a variable number of network closures</dd></dl></section></div></main></body></html>

@@ -73,19 +73,19 @@ where
     )?;
 
     // Step 3: Apply inverse permutation to values
-    let values_apply_perm = permute::apply_inv(&perm, &values, net, state)?;
-    let opened_g = arithmetic::open_vec(&values_apply_perm, net)?;
+    let values_apply_inv = permute::apply_perm(&perm, &values, net, state)?;
+    let opened_g = arithmetic::open_vec(&values_apply_inv, net)?;
     println!("After ApplyPerm: {:?}", opened_g);
 
     // Step 4: Compute prefix sum on sorted values
-    let prefix_sum_values = prefix_sum_sequential(&values_apply_perm)?;
+    let prefix_sum_values = prefix_sum_sequential(&values_apply_inv)?;
     //let opened_h = arithmetic::open_vec(&prefix_sum_values, net0)?;
     //println!("After PrefixSum: {:?}", opened_h);
 
 
     //Step 5: Apply inverse permutation to restore R's original order
-    let values_apply_perm_inv = permute::apply_perm(&perm, &prefix_sum_values, net, state)?;
-    //let opened_f_prime = arithmetic::open_vec(&values_apply_perm_inv, net)?;
+    let values_apply_inv_inv = permute::apply_inv(&perm, &prefix_sum_values, net, state)?;
+    //let opened_f_prime = arithmetic::open_vec(&values_apply_inv_inv, net)?;
     //println!("After ApplyInv: {:?}", opened_f_prime);
 
     // Step 6: The result for R is in positions [m, m+n)
@@ -94,7 +94,7 @@ where
     // where L values surround R values for each matching key
     
     // Extract middle n elements (corresponding to R after sorting and prefix sum)
-    let result = values_apply_perm_inv[m..m+n].to_vec();
+    let result = values_apply_inv_inv[m..m+n].to_vec();
 
     Ok((result,perm))
 }
@@ -168,15 +168,15 @@ where
     }
 
     //Apply inverse permutation to values
-    let values_apply_perm = permute::apply_inv(&perm, &values, net, state)?;
+    let values_apply_inv = permute::apply_perm(&perm, &values, net, state)?;
 
     //Compute prefix sum on sorted values
-    let prefix_sum_values = prefix_sum_sequential(&values_apply_perm)?;
+    let prefix_sum_values = prefix_sum_sequential(&values_apply_inv)?;
 
     //Apply inverse permutation to restore R's original order
-    let values_apply_perm_inv = permute::apply_perm(&perm, &prefix_sum_values, net, state)?;
+    let values_apply_inv_inv = permute::apply_inv(&perm, &prefix_sum_values, net, state)?;
 
-    let result = values_apply_perm_inv[len_m..len_m+len_n].to_vec();
+    let result = values_apply_inv_inv[len_m..len_m+len_n].to_vec();
 
     Ok(result)
 }
@@ -258,7 +258,7 @@ where
         let kl_i = k_l[i].as_slice();
         let kr_i = k_r[i].as_slice();
         let key_i  = [kl_i, kr_i, kl_i].concat();
-        let key_i_after_perm = permute::apply_inv_multithreads(&perm, &key_i, nets, states)?;
+        let key_i_after_perm = permute::apply_perm_multithreads(&perm, &key_i, nets, states)?;
         let key_i_bits = bit_decompose_many_multithreads(&key_i_after_perm, bitsize, nets, states)?;
 
         let perm_i = permute::gen_perm_multithreads(
@@ -306,15 +306,15 @@ where
     //这里有问题，负数会变成大整数
 
     // Step 3: Apply inverse permutation to values
-    let values_apply_perm = permute::apply_inv_multithreads(&perm, &values, net, states)?;
+    let values_apply_inv = permute::apply_perm_multithreads(&perm, &values, net, states)?;
 
     // Step 4: Compute prefix sum on sorted values
-    let prefix_sum_values = prefix_sum_sequential(&values_apply_perm)?;
+    let prefix_sum_values = prefix_sum_sequential(&values_apply_inv)?;
 
     //Step 5: Apply inverse permutation to restore R's original order
-    let values_apply_perm_inv = permute::apply_perm_multithreads(&perm, &prefix_sum_values, net, states)?;
+    let values_apply_inv_inv = permute::apply_inv_multithreads(&perm, &prefix_sum_values, net, states)?;
 
-    let result = values_apply_perm_inv[len_m..len_m+len_n].to_vec();
+    let result = values_apply_inv_inv[len_m..len_m+len_n].to_vec();
 
     Ok(result)
 }

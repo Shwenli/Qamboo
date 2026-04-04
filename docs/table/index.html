@@ -1,0 +1,260 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Table Module"><title>table - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="table" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../table/index.html">table</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#table-module" title="Table Module">Table Module</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#core-abstractions" title="Core Abstractions">Core Abstractions</a></li><li><a href="#table-operations" title="Table Operations">Table Operations</a></li><li><a href="#usage-examples" title="Usage Examples">Usage Examples</a></li><li><a href="#column-operations" title="Column Operations">Column Operations</a></li><li><a href="#architecture" title="Architecture">Architecture</a></li><li><a href="#type-parameters" title="Type Parameters">Type Parameters</a></li><li><a href="#integration-with-lower-layers" title="Integration with Lower Layers">Integration with Lower Layers</a></li><li><a href="#performance-notes" title="Performance Notes">Performance Notes</a></li><li><a href="#security" title="Security">Security</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>table</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/table/lib.rs.html#1-48">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="table-module"><a class="doc-anchor" href="#table-module">§</a>Table Module</h2><h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The <code>table</code> module provides high-level abstractions for secure table operations in the Qamboo MPC framework. It implements a columnar secure database that allows parties to perform SQL-like queries on secretly shared data, serving as the primary interface for application developers.</p>
+<h3 id="core-abstractions"><a class="doc-anchor" href="#core-abstractions">§</a>Core Abstractions</h3><h4 id="1-sharetable-share_tablers"><a class="doc-anchor" href="#1-sharetable-share_tablers">§</a>1. ShareTable (<code>share_table.rs</code>)</h4>
+<p>A secure table where all data is secret-shared among parties.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>ShareTable&lt;T&gt; {
+    <span class="kw">pub </span>key_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>schema: IndexMap&lt;String, ShareColumn&lt;T&gt;&gt;,
+}</code></pre></div>
+<p><strong>Features:</strong></p>
+<ul>
+<li>Columnar storage for efficient analytics</li>
+<li>Named schema with IndexMap for predictable iteration</li>
+<li>Row count inferred from column lengths</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>table::share_table::ShareTable;
+
+<span class="comment">// Create empty table
+</span><span class="kw">let </span><span class="kw-2">mut </span>table = ShareTable::&lt;u64&gt;::new();
+
+<span class="comment">// Insert columns
+</span>table.insert_column(<span class="string">"user_id"</span>.to_string(), user_id_column);
+table.insert_column(<span class="string">"amount"</span>.to_string(), amount_column);
+
+<span class="comment">// Access columns
+</span><span class="kw">let </span>ids = table.get_column_by_name(<span class="string">"user_id"</span>);
+<span class="kw">let </span>first_col = table.get_column_by_index(<span class="number">0</span>);</code></pre></div>
+<h4 id="2-sharecolumn-share_columnrs"><a class="doc-anchor" href="#2-sharecolumn-share_columnrs">§</a>2. ShareColumn (<code>share_column.rs</code>)</h4>
+<p>A column of secret-shared values.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>ShareColumn&lt;T&gt; {
+    <span class="kw">pub </span>name: String,
+    <span class="kw">pub </span>data: Vec&lt;Rep3RingShare&lt;T&gt;&gt;,
+}</code></pre></div>
+<h4 id="3-netstateargs-librs"><a class="doc-anchor" href="#3-netstateargs-librs">§</a>3. NetStateArgs (<code>lib.rs</code>)</h4>
+<p>Bundle of network and state references for operator execution:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>NetStateArgs&lt;<span class="lifetime">'a</span>, N: Network&gt; {
+    <span class="kw">pub </span>nets: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<span class="kw-2">&amp;</span><span class="lifetime">'a </span>N],
+    <span class="kw">pub </span>states: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>[<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>Rep3State],
+}</code></pre></div>
+<h3 id="table-operations"><a class="doc-anchor" href="#table-operations">§</a>Table Operations</h3><h4 id="tableoperator-trait-table_operatorrs"><a class="doc-anchor" href="#tableoperator-trait-table_operatorrs">§</a>TableOperator Trait (<code>table_operator.rs</code>)</h4>
+<p>Defines the main SQL-like operations on secure tables:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub trait </span>Open&lt;T, U&gt; {
+    <span class="doccomment">/// Reveal the table to all parties
+    </span><span class="kw">fn </span>open&lt;N: Network&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, netstate_args: <span class="kw-2">&amp;mut </span>NetStateArgs&lt;N&gt;) 
+        -&gt; <span class="prelude-ty">Result</span>&lt;ShareTable&lt;U&gt;&gt;;
+}
+
+<span class="kw">pub trait </span>Filter&lt;T, U&gt; {
+    <span class="doccomment">/// Filter by comparison with public value
+    </span><span class="kw">fn </span>filter_public&lt;N: Network&gt;(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        filter_column: <span class="kw-2">&amp;</span>str,
+        predicate: Predicate,
+        filter_value: <span class="kw-2">&amp;</span>U,
+        netstate_args: <span class="kw-2">&amp;mut </span>NetStateArgs&lt;N&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    
+    <span class="doccomment">/// Filter by comparison with another column
+    </span><span class="kw">fn </span>filter_shared&lt;N: Network&gt;(...);
+    
+    <span class="doccomment">/// Filter by multiple possible values
+    </span><span class="kw">fn </span>filter_in&lt;N: Network&gt;(...);
+}
+
+<span class="kw">pub trait </span>OrderBy&lt;T&gt; {
+    <span class="doccomment">/// Sort table by key column
+    </span><span class="kw">fn </span>order_by&lt;N: Network&gt;(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        key_name: <span class="kw-2">&amp;</span>str,
+        order: bool,  <span class="comment">// true = ASC, false = DESC
+        </span>netstate_args: <span class="kw-2">&amp;mut </span>NetStateArgs&lt;N&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+}
+
+<span class="kw">pub trait </span>Groupby&lt;T&gt; {
+    <span class="doccomment">/// Group by specified keys
+    </span><span class="kw">fn </span>group_by&lt;N: Network&gt;(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        group_keys: Vec&lt;<span class="kw-2">&amp;</span>str&gt;,
+        netstate_args: <span class="kw-2">&amp;mut </span>NetStateArgs&lt;N&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;T&gt;, Vec&lt;Rep3RingShare&lt;u32&gt;&gt;, Vec&lt;Rep3RingShare&lt;Bit&gt;&gt;)&gt;;
+}
+
+<span class="kw">pub trait </span>AggFunc&lt;T&gt; {
+    <span class="doccomment">/// COUNT(*) aggregation
+    </span><span class="kw">fn </span>agg_count&lt;N: Network&gt;(...);
+    
+    <span class="doccomment">/// SUM aggregation
+    </span><span class="kw">fn </span>agg_sum&lt;N: Network&gt;(...);
+    
+    <span class="doccomment">/// AVG aggregation
+    </span><span class="kw">fn </span>agg_avg&lt;N: Network&gt;(...);
+}</code></pre></div>
+<h4 id="predicate-predicaters"><a class="doc-anchor" href="#predicate-predicaters">§</a>Predicate (<code>predicate.rs</code>)</h4>
+<p>Defines comparison predicates for filtering:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub enum </span>Predicate {
+    Eq,   <span class="comment">// ==
+    </span>Ne,   <span class="comment">// !=
+    </span>Lt,   <span class="comment">// &lt;
+    </span>Le,   <span class="comment">// &lt;=
+    </span>Gt,   <span class="comment">// &gt;
+    </span>Ge,   <span class="comment">// &gt;=
+</span>}</code></pre></div>
+<h3 id="usage-examples"><a class="doc-anchor" href="#usage-examples">§</a>Usage Examples</h3><h4 id="creating-and-sharing-data"><a class="doc-anchor" href="#creating-and-sharing-data">§</a>Creating and Sharing Data</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>table::{share_table::ShareTable, NetStateArgs};
+<span class="kw">use </span>protocols::rep3_ring::share_ring_elements;
+
+<span class="comment">// Each party loads their private data
+</span><span class="kw">let </span>my_data: Vec&lt;u64&gt; = load_local_data();
+
+<span class="comment">// Share data among parties
+</span><span class="kw">let </span>rng = <span class="kw-2">&amp;mut </span>thread_rng();
+<span class="kw">let </span>[shares0, shares1, shares2] = share_ring_elements(<span class="kw-2">&amp;</span>my_data, rng);
+
+<span class="comment">// Create shared table
+</span>create_table.insert_column(<span class="string">"value"</span>.to_string(), ShareColumn::new(<span class="string">"value"</span>, shares0));</code></pre></div>
+<h4 id="filter-operation"><a class="doc-anchor" href="#filter-operation">§</a>Filter Operation</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>table::table_operator::Filter;
+<span class="kw">use </span>table::predicate::Predicate;
+
+<span class="comment">// Filter: SELECT * FROM table WHERE amount &gt; 100
+</span>table.filter_public(
+    <span class="string">"amount"</span>,
+    Predicate::Gt,
+    <span class="kw-2">&amp;</span><span class="number">100u64</span>,
+    netstate_args,
+)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="join-operation"><a class="doc-anchor" href="#join-operation">§</a>Join Operation</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>table::table_operator::Join;
+
+<span class="comment">// Join: SELECT * FROM orders JOIN customers ON orders.cust_id = customers.id
+</span><span class="kw">let </span>joined_table = orders_table.join(
+    <span class="kw-2">&amp;</span>customers_table,
+    <span class="string">"cust_id"</span>,      <span class="comment">// left key
+    </span><span class="string">"id"</span>,           <span class="comment">// right key
+    </span>netstate_args,
+)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="groupby-with-aggregation"><a class="doc-anchor" href="#groupby-with-aggregation">§</a>GroupBy with Aggregation</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>table::table_operator::{Groupby, AggFunc};
+
+<span class="comment">// SELECT region, SUM(sales), COUNT(*) FROM table GROUP BY region
+</span><span class="kw">let </span>(group_keys, perm, eq_bits) = table.group_by(
+    <span class="macro">vec!</span>[<span class="string">"region"</span>],
+    netstate_args,
+)<span class="question-mark">?</span>;
+
+<span class="comment">// Apply aggregations
+</span>table.agg_sum(<span class="string">"sales"</span>, <span class="string">"total_sales"</span>, <span class="kw-2">&amp;</span>eq_bits, <span class="kw-2">&amp;</span>perm, netstate_args)<span class="question-mark">?</span>;
+table.agg_count(<span class="string">"count"</span>, <span class="kw-2">&amp;</span>eq_bits, <span class="kw-2">&amp;</span>perm, netstate_args)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="sort-operation"><a class="doc-anchor" href="#sort-operation">§</a>Sort Operation</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>table::table_operator::OrderBy;
+
+<span class="comment">// ORDER BY date DESC
+</span>table.order_by(<span class="string">"date"</span>, <span class="bool-val">false</span>, netstate_args)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="complete-query-example"><a class="doc-anchor" href="#complete-query-example">§</a>Complete Query Example</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// TPC-H Query 1 style operation
+</span><span class="kw">let </span><span class="kw-2">mut </span>lineitem = ShareTable::&lt;u64&gt;::new();
+lineitem.insert_column(<span class="string">"l_shipdate"</span>.to_string(), shipdate_col);
+lineitem.insert_column(<span class="string">"l_returnflag"</span>.to_string(), returnflag_col);
+lineitem.insert_column(<span class="string">"l_linestatus"</span>.to_string(), linestatus_col);
+lineitem.insert_column(<span class="string">"l_quantity"</span>.to_string(), quantity_col);
+lineitem.insert_column(<span class="string">"l_extendedprice"</span>.to_string(), price_col);
+
+<span class="comment">// 1. Filter by date
+</span>lineitem.filter_public(
+    <span class="string">"l_shipdate"</span>,
+    Predicate::Le,
+    <span class="kw-2">&amp;</span>date_threshold,
+    netstate_args,
+)<span class="question-mark">?</span>;
+
+<span class="comment">// 2. Group by returnflag and linestatus
+</span><span class="kw">let </span>(<span class="kw">_</span>, perm, eq_bits) = lineitem.group_by(
+    <span class="macro">vec!</span>[<span class="string">"l_returnflag"</span>, <span class="string">"l_linestatus"</span>],
+    netstate_args,
+)<span class="question-mark">?</span>;
+
+<span class="comment">// 3. Compute aggregations
+</span>lineitem.agg_sum(<span class="string">"l_quantity"</span>, <span class="string">"sum_qty"</span>, <span class="kw-2">&amp;</span>eq_bits, <span class="kw-2">&amp;</span>perm, netstate_args)<span class="question-mark">?</span>;
+lineitem.agg_sum(<span class="string">"l_extendedprice"</span>, <span class="string">"sum_price"</span>, <span class="kw-2">&amp;</span>eq_bits, <span class="kw-2">&amp;</span>perm, netstate_args)<span class="question-mark">?</span>;
+lineitem.agg_count(<span class="string">"count_order"</span>, <span class="kw-2">&amp;</span>eq_bits, <span class="kw-2">&amp;</span>perm, netstate_args)<span class="question-mark">?</span>;
+
+<span class="comment">// 4. Order by returnflag, linestatus
+</span>lineitem.order_by(<span class="string">"l_returnflag"</span>, <span class="bool-val">true</span>, netstate_args)<span class="question-mark">?</span>;
+
+<span class="comment">// 5. Open result
+</span><span class="kw">let </span>result = lineitem.open(netstate_args)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="column-operations"><a class="doc-anchor" href="#column-operations">§</a>Column Operations</h3><h4 id="columnoperator-trait-column_operatorrs"><a class="doc-anchor" href="#columnoperator-trait-column_operatorrs">§</a>ColumnOperator Trait (<code>column_operator.rs</code>)</h4>
+<p>Low-level column-wise operations:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub trait </span>ColumnOperator&lt;T&gt; {
+    <span class="doccomment">/// Arithmetic operations
+    </span><span class="kw">fn </span>add_column(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>ShareColumn&lt;T&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;ShareColumn&lt;T&gt;&gt;;
+    <span class="kw">fn </span>sub_column(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>ShareColumn&lt;T&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;ShareColumn&lt;T&gt;&gt;;
+    <span class="kw">fn </span>mul_column&lt;N: Network&gt;(...);
+    
+    <span class="doccomment">/// Comparison operations
+    </span><span class="kw">fn </span>eq_column&lt;N: Network&gt;(...) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Rep3RingShare&lt;Bit&gt;&gt;&gt;;
+    <span class="kw">fn </span>gt_column&lt;N: Network&gt;(...) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Rep3RingShare&lt;Bit&gt;&gt;&gt;;
+}</code></pre></div>
+<h3 id="architecture"><a class="doc-anchor" href="#architecture">§</a>Architecture</h3><div class="example-wrap"><pre class="language-text"><code>table/
+├── src/
+│   ├── lib.rs                   # Module exports, NetStateArgs
+│   ├── share_table.rs           # ShareTable definition
+│   ├── share_column.rs          # ShareColumn definition
+│   ├── table_operator.rs        # High-level SQL operators (traits)
+│   ├── table_filter.rs          # Filter implementation
+│   ├── table_join.rs            # Join implementation
+│   ├── table_group_by.rs        # GroupBy implementation
+│   ├── table_order_by.rs        # OrderBy implementation
+│   ├── table_project.rs         # Column projection
+│   ├── table_utils.rs           # Utility functions
+│   ├── predicate.rs             # Filter predicates
+│   ├── column_basic_compute.rs  # Basic column operations
+│   ├── column_operator.rs       # Column operator traits
+│   └── column_operator_impl.rs  # Column operator implementations</code></pre></div><h3 id="type-parameters"><a class="doc-anchor" href="#type-parameters">§</a>Type Parameters</h3>
+<ul>
+<li><code>T</code>: The underlying ring type (typically <code>u64</code>)</li>
+<li><code>U</code>: The revealed type after opening (typically <code>u128</code> for precision)</li>
+</ul>
+<h3 id="integration-with-lower-layers"><a class="doc-anchor" href="#integration-with-lower-layers">§</a>Integration with Lower Layers</h3><div class="example-wrap"><pre class="language-text"><code>Application Code
+       ↓
+   table (SQL-like interface)
+       ↓
+   operator (relational operators)
+       ↓
+   primitives (crypto primitives)
+       ↓
+   protocols (MPC protocols)
+       ↓
+   communication + net (network layer)</code></pre></div><h3 id="performance-notes"><a class="doc-anchor" href="#performance-notes">§</a>Performance Notes</h3><h4 id="memory-layout"><a class="doc-anchor" href="#memory-layout">§</a>Memory Layout</h4>
+<ul>
+<li>Columnar storage enables SIMD-friendly operations</li>
+<li>IndexMap provides O(1) column lookup by name</li>
+<li>Predictable iteration order for reproducibility</li>
+</ul>
+<h4 id="lazy-evaluation"><a class="doc-anchor" href="#lazy-evaluation">§</a>Lazy Evaluation</h4>
+<p>Operations are executed eagerly (no query planning optimization yet).</p>
+<h4 id="multi-threading"><a class="doc-anchor" href="#multi-threading">§</a>Multi-Threading</h4>
+<p>All operations support multi-threaded execution:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Fork state for parallel processing
+</span><span class="kw">let </span><span class="kw-2">mut </span>states = state.fork(num_threads)<span class="question-mark">?</span>;
+<span class="kw">let </span>state_refs: Vec&lt;<span class="kw">_</span>&gt; = states.iter_mut().collect();
+<span class="kw">let </span>net_refs: Vec&lt;<span class="kw">_</span>&gt; = nets.iter().collect();
+
+<span class="kw">let </span><span class="kw-2">mut </span>args = NetStateArgs::new(<span class="kw-2">&amp;</span>net_refs, <span class="kw-2">&amp;</span>state_refs);
+table.order_by(<span class="string">"key"</span>, <span class="bool-val">true</span>, <span class="kw-2">&amp;mut </span>args)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="security"><a class="doc-anchor" href="#security">§</a>Security</h3>
+<ul>
+<li>All operations preserve the secret-sharing invariant</li>
+<li>No intermediate values are revealed during computation</li>
+<li>Only explicitly <code>open()</code>ed results are revealed to all parties</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="column_operator/index.html" title="mod table::column_operator">column_<wbr>operator</a></dt><dt><a class="mod" href="predicate/index.html" title="mod table::predicate">predicate</a></dt><dt><a class="mod" href="share_column/index.html" title="mod table::share_column">share_<wbr>column</a></dt><dt><a class="mod" href="share_table/index.html" title="mod table::share_table">share_<wbr>table</a></dt><dt><a class="mod" href="table_operator/index.html" title="mod table::table_operator">table_<wbr>operator</a></dt></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.NetStateArgs.html" title="struct table::NetStateArgs">NetState<wbr>Args</a></dt></dl></section></div></main></body></html>

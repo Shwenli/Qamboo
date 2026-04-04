@@ -1,0 +1,154 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Random Module"><title>random - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="random" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../random/index.html">random</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#random-module" title="Random Module">Random Module</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#core-concept-correlated-randomness" title="Core Concept: Correlated Randomness">Core Concept: Correlated Randomness</a></li><li><a href="#architecture" title="Architecture">Architecture</a></li><li><a href="#core-components" title="Core Components">Core Components</a></li><li><a href="#key-setup-protocol" title="Key Setup Protocol">Key Setup Protocol</a></li><li><a href="#multi-threading-support-rep3rng_rayonrs" title="Multi-Threading Support (`rep3rng_rayon.rs`)">Multi-Threading Support (<code>rep3rng_rayon.rs</code>)</a></li><li><a href="#usage-examples" title="Usage Examples">Usage Examples</a></li><li><a href="#performance-characteristics" title="Performance Characteristics">Performance Characteristics</a></li><li><a href="#security-considerations" title="Security Considerations">Security Considerations</a></li><li><a href="#implementation-details" title="Implementation Details">Implementation Details</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>random</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/random/lib.rs.html#1-29">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="random-module"><a class="doc-anchor" href="#random-module">§</a>Random Module</h2><h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The <code>random</code> module provides secure correlated randomness generation for the Qamboo MPC framework. It implements PRF (Pseudo-Random Function) based randomness expansion that enables parties to generate shared random values without communication, dramatically reducing the communication overhead of MPC protocols.</p>
+<h3 id="core-concept-correlated-randomness"><a class="doc-anchor" href="#core-concept-correlated-randomness">§</a>Core Concept: Correlated Randomness</h3>
+<p>In replicated secret sharing, parties can generate correlated randomness by sharing PRF keys during setup. After initialization, parties can locally expand these keys to produce:</p>
+<ul>
+<li><strong>Additive shares</strong>: Values that sum to a random secret</li>
+<li><strong>Binary shares</strong>: Values that XOR to a random secret</li>
+<li><strong>Bit decomposition shares</strong>: Pre-processed random bits for A2B conversion</li>
+</ul>
+<p>This eliminates the need for online communication to generate random values.</p>
+<h3 id="architecture"><a class="doc-anchor" href="#architecture">§</a>Architecture</h3><div class="example-wrap"><pre class="language-text"><code>random/
+├── src/
+│   ├── lib.rs              # Module exports and MpcState trait
+│   ├── serde_compat.rs     # Serialization utilities
+│   └── rep3/
+│       ├── rep3rng.rs      # Core REP3 randomness generation
+│       └── rep3rng_rayon.rs # Multi-threaded randomness</code></pre></div><h3 id="core-components"><a class="doc-anchor" href="#core-components">§</a>Core Components</h3><h4 id="1-rep3state-rep3rs"><a class="doc-anchor" href="#1-rep3state-rep3rs">§</a>1. Rep3State (<code>rep3.rs</code>)</h4>
+<p>The main protocol state that holds all correlated randomness generators:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>Rep3State {
+    <span class="kw">pub </span>id: PartyID,                    <span class="comment">// This party's ID
+    </span><span class="kw">pub </span>rngs: Rep3CorrelatedRng,        <span class="comment">// Correlated randomness generators
+    </span><span class="kw">pub </span>rng: ChaCha12Rng,               <span class="comment">// Local CSPRNG
+</span>}
+
+<span class="kw">impl </span>Rep3State {
+    <span class="doccomment">/// Initialize from network (performs key exchange)
+    </span><span class="kw">pub fn </span>new&lt;N: Network&gt;(net: <span class="kw-2">&amp;</span>N) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt;
+    
+    <span class="doccomment">/// Fork state for multi-threading
+    </span><span class="kw">pub fn </span>fork(<span class="kw-2">&amp;mut </span><span class="self">self</span>, n: usize) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="self">Self</span>&gt;&gt;
+}</code></pre></div>
+<h4 id="2-rep3correlatedrng-rep3rngrs"><a class="doc-anchor" href="#2-rep3correlatedrng-rep3rngrs">§</a>2. Rep3CorrelatedRng (<code>rep3rng.rs</code>)</h4>
+<p>Container for all correlated randomness generators:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>Rep3CorrelatedRng {
+    <span class="kw">pub </span>rand: Rep3Rand,                      <span class="comment">// Basic additive randomness
+    </span><span class="kw">pub </span>bit_comp1: Rep3RandBitComp,          <span class="comment">// Bit compression generator 1
+    </span><span class="kw">pub </span>bit_comp2: Rep3RandBitComp,          <span class="comment">// Bit compression generator 2
+</span>}</code></pre></div>
+<h4 id="3-rep3rand-rep3rngrs"><a class="doc-anchor" href="#3-rep3rand-rep3rngrs">§</a>3. Rep3Rand (<code>rep3rng.rs</code>)</h4>
+<p>Generates additive and binary correlated randomness:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>Rep3Rand {
+    seed1: [u8; SEED_SIZE],  <span class="comment">// Shared with party i+1
+    </span>seed2: [u8; SEED_SIZE],  <span class="comment">// Shared with party i-1
+</span>}
+
+<span class="kw">impl </span>Rep3Rand {
+    <span class="doccomment">/// Generate random elements for this party's share
+    </span><span class="kw">pub fn </span>random_elements_vec&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, len: usize) -&gt; Vec&lt;RingElement&lt;T&gt;&gt;
+    
+    <span class="doccomment">/// Generate random binary shares
+    </span><span class="kw">pub fn </span>random_binary_shares_vec&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, len: usize) -&gt; Vec&lt;Rep3RingShare&lt;T&gt;&gt;
+    
+    <span class="doccomment">/// Generate random seeds for sub-protocols
+    </span><span class="kw">pub fn </span>random_seeds(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; ([u8; SEED_SIZE], [u8; SEED_SIZE])
+}</code></pre></div>
+<h4 id="4-rep3randbitcomp-rep3rngrs"><a class="doc-anchor" href="#4-rep3randbitcomp-rep3rngrs">§</a>4. Rep3RandBitComp (<code>rep3rng.rs</code>)</h4>
+<p>Pre-computed randomness for efficient bit decomposition (A2B conversion):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>Rep3RandBitComp {
+    key1: [u8; SEED_SIZE],
+    key2: [u8; SEED_SIZE],
+    key3: <span class="prelude-ty">Option</span>&lt;[u8; SEED_SIZE]&gt;,  <span class="comment">// Some parties have 3 keys
+</span>}</code></pre></div>
+<p>This generates the correlated randomness needed for the bit-decomposition protocol, which is the most expensive step in comparison operations.</p>
+<h3 id="key-setup-protocol"><a class="doc-anchor" href="#key-setup-protocol">§</a>Key Setup Protocol</h3>
+<p>During initialization, parties perform a key exchange to establish shared PRF keys:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>Party <span class="number">0</span>:                    Party <span class="number">1</span>:                  Party <span class="number">2</span>:
+   |                          |                         |
+   |  gen seed_a, seed_c      |  gen seed_b, seed_a     |  gen seed_c, seed_b
+   |                          |                         |
+   |&lt;---------seed_a---------|--------seed_a---------&gt; |
+   |--------seed_c---------&gt; |                         |
+   |                          |&lt;--------seed_c---------|
+   |                          |                         |
+   |  keys: (a,c)             |  keys: (b,a)            |  keys: (c,b)</code></pre></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">impl </span>Rep3State {
+    <span class="kw">pub fn </span>setup_prf&lt;N: Network, R: Rng + CryptoRng&gt;(
+        net: <span class="kw-2">&amp;</span>N,
+        rng: <span class="kw-2">&amp;mut </span>R,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;Rep3Rand&gt; {
+        <span class="kw">let </span>seed1: [u8; SEED_SIZE] = rng.gen();
+        <span class="kw">let </span>seed2: [u8; SEED_SIZE] = net.reshare(seed1)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(Rep3Rand::new(seed1, seed2))
+    }
+}</code></pre></div>
+<h3 id="multi-threading-support-rep3rng_rayonrs"><a class="doc-anchor" href="#multi-threading-support-rep3rng_rayonrs">§</a>Multi-Threading Support (<code>rep3rng_rayon.rs</code>)</h3>
+<p>The module provides multi-threaded randomness generation using Rayon:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>random_elements_vec_multithreads&lt;T&gt;(
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+    len: usize,
+) -&gt; Vec&lt;RingElement&lt;T&gt;&gt;
+
+<span class="kw">pub fn </span>random_binary_shares_vec_multithreads&lt;T&gt;(
+    states: <span class="kw-2">&amp;mut </span>[<span class="kw-2">&amp;mut </span>Rep3State],
+    len: usize,
+) -&gt; Vec&lt;Rep3RingShare&lt;T&gt;&gt;</code></pre></div>
+<p>These functions distribute work across multiple threads, each with its own forked state, for parallel randomness generation.</p>
+<h3 id="usage-examples"><a class="doc-anchor" href="#usage-examples">§</a>Usage Examples</h3><h4 id="basic-randomness-generation"><a class="doc-anchor" href="#basic-randomness-generation">§</a>Basic Randomness Generation</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>random::rep3::Rep3State;
+
+<span class="comment">// Initialize state (performs key exchange)
+</span><span class="kw">let </span><span class="kw-2">mut </span>state = Rep3State::new(<span class="kw-2">&amp;</span>net)<span class="question-mark">?</span>;
+
+<span class="comment">// Generate random shares (no network communication!)
+</span><span class="kw">let </span>random_values: Vec&lt;RingElement&lt;u64&gt;&gt; = 
+    state.rngs.rand.random_elements_vec(<span class="number">1000</span>);
+
+<span class="comment">// Generate random binary shares
+</span><span class="kw">let </span>random_bits: Vec&lt;Rep3RingShare&lt;u64&gt;&gt; = 
+    state.rngs.rand.random_binary_shares_vec(<span class="number">1000</span>);</code></pre></div>
+<h4 id="multi-threaded-randomness"><a class="doc-anchor" href="#multi-threaded-randomness">§</a>Multi-Threaded Randomness</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>random::rep3::rep3rng_rayon::<span class="kw-2">*</span>;
+
+<span class="comment">// Fork state for 4 threads
+</span><span class="kw">let </span><span class="kw-2">mut </span>forked_states = state.fork(<span class="number">4</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Generate randomness in parallel
+</span><span class="kw">let </span>refs: Vec&lt;<span class="kw-2">&amp;mut </span>Rep3State&gt; = forked_states.iter_mut().collect();
+<span class="kw">let </span>random_values = random_elements_vec_multithreads::&lt;u64&gt;(
+    <span class="kw-2">&amp;</span>refs, 
+    <span class="number">10000
+</span>);</code></pre></div>
+<h4 id="integration-with-protocols"><a class="doc-anchor" href="#integration-with-protocols">§</a>Integration with Protocols</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>protocols::rep3_ring::arithmetic;
+
+<span class="comment">// Secure multiplication uses correlated randomness for re-sharing
+</span><span class="kw">let </span>product = arithmetic::mul(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y, net, <span class="kw-2">&amp;mut </span>state)<span class="question-mark">?</span>;
+<span class="comment">// The 'mul' function internally uses state.rngs.rand for random masks</span></code></pre></div>
+<h3 id="performance-characteristics"><a class="doc-anchor" href="#performance-characteristics">§</a>Performance Characteristics</h3><div><table><thead><tr><th>Operation</th><th>Communication</th><th>Computation</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Setup</td><td>O(1) seeds</td><td>Key exchange</td><td>One-time cost</td></tr>
+<tr><td>Random element</td><td>0</td><td>PRF expansion</td><td>~ns per element</td></tr>
+<tr><td>Binary share</td><td>0</td><td>PRF expansion</td><td>~ns per element</td></tr>
+<tr><td>Bit comp random</td><td>0</td><td>PRF expansion</td><td>Pre-computed for A2B</td></tr>
+</tbody></table>
+</div><h3 id="security-considerations"><a class="doc-anchor" href="#security-considerations">§</a>Security Considerations</h3>
+<ol>
+<li><strong>PRF Security</strong>: Based on ChaCha12 stream cipher, providing 128-bit security</li>
+<li><strong>Key Confidentiality</strong>: Each key is known to exactly 2 parties, maintaining the sharing invariant</li>
+<li><strong>Forward Secrecy</strong>: New seeds generated for each protocol execution</li>
+<li><strong>Fork Safety</strong>: State forking uses independent key derivation to prevent key reuse</li>
+</ol>
+<h3 id="implementation-details"><a class="doc-anchor" href="#implementation-details">§</a>Implementation Details</h3>
+<ul>
+<li><strong>ChaCha12Rng</strong>: Uses ChaCha12 for cryptographically secure pseudo-random generation</li>
+<li><strong>Zero Allocation</strong>: Randomness expansion writes directly to pre-allocated vectors</li>
+<li><strong>Deterministic</strong>: Same seed sequence produces identical randomness across parties (required for correctness)</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="rep3/index.html" title="mod random::rep3">rep3</a></dt><dt><a class="mod" href="serde_compat/index.html" title="mod random::serde_compat">serde_<wbr>compat</a></dt><dd>Compatibility functions for serde and ark_serialize</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.MpcState.html" title="trait random::MpcState">MpcState</a></dt></dl></section></div></main></body></html>

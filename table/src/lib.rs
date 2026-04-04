@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 pub mod share_column;
 pub mod share_table;
 pub mod predicate;

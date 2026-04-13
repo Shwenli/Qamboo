@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["WORD"],"fn":["main"],"struct":["Args"]};

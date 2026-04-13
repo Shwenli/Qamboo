@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["ASPIRIN","HD"],"fn":["main"],"struct":["Args"]};

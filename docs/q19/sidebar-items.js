@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["AIR","BRAND1","BRAND2","BRAND3","DELIVER_IN_PERSON","QUANTITY1","QUANTITY2","QUANTITY3"],"fn":["main"],"struct":["Args"]};

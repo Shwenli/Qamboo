@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["TARGET_YEAR","THRESHOLD"],"fn":["main"],"struct":["Args"]};

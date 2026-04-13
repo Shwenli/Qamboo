@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["BRAND","COMMENT","SIZE1","SIZE2","SIZE3","SIZE4","SIZE5","SIZE6","SIZE7","SIZE8","TYPE"],"fn":["main"],"struct":["Args"]};

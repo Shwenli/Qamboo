@@ -1,3 +1,41 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")"
+
+echo "Generating documentation..."
+
+# Clean old docs
+rm -rf target/doc docs
+
+# Generate documentation for entire workspace
+cargo doc --no-deps --workspace
+
+# Copy to docs folder
+cp -r target/doc docs/
+touch docs/.nojekyll
+
+# Remove binary documentation folders
+echo "Cleaning up binary documentation..."
+for bin in q{1..22} q{2,3,5,8,13,17,18,20,21}_no_secure_cut \
+           q{2,5,7,8,9,10}_no_join_reorder q4_no_semi \
+           multi_keys_join radix_sort radix_sort_scalability radix_sort_mpspdz \
+           comorbidity rcdiff aspirin pwd credit; do
+    if [ -d "docs/$bin" ]; then
+        rm -rf "docs/$bin"
+        echo "  Removed folder: $bin"
+    fi
+done
+
+# Clean up crates.js - remove binary crates from the list
+echo "Cleaning up crates.js..."
+cat > docs/crates.js << 'EOF'
+window.ALL_CRATES = ["algebra","communication","experiments","net","operator","primitives","protocols","random","table"];
+//{"start":21,"fragment_lengths":[9,14,14,6,11,13,12,9,8]}
+EOF
+
+# Create custom index.html with full Qamboo overview
+cat > docs/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,3 +155,24 @@
 </main>
 </body>
 </html>
+EOF
+
+echo "  Created: custom index.html"
+
+# Calculate size
+SIZE=$(du -sh docs/ | cut -f1)
+FILES=$(find docs/ -type f | wc -l)
+
+echo ""
+echo "✓ Documentation generated successfully!"
+echo "  Size: $SIZE"
+echo "  Files: $FILES"
+echo "  Crates: 9 library crates only"
+echo ""
+echo "To preview locally:"
+echo "  cd docs && python3 -m http.server 8080"
+echo ""
+echo "To deploy to GitHub Pages:"
+echo "  git add docs/"
+echo "  git commit -m 'Update documentation'"
+echo "  git push"

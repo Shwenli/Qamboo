@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["NATION"],"fn":["main"],"struct":["Args"]};

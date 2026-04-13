@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["DATE","DATE_PLUS_1_MONTH","P_TYPE"],"fn":["main"],"struct":["Args"]};

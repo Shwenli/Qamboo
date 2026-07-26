@@ -3,7 +3,9 @@
 # Single-thread Radix Sort (Multinode SSH)
 # Usage: ./run_radix_single_ssh.sh [SHIFT] [HOST1] [HOST2]
 
-PROJECT_PATH="/root/Qamboo"
+# Auto-detect project root from script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_PATH="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel)"
 BIN_PATH="$PROJECT_PATH/target/release/radix_sort_single"
 
 SHIFT=${1:-20}

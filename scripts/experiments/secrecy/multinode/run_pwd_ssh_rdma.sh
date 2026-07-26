@@ -2,7 +2,9 @@
 #! run with: ./run_pwd_ssh_rdma.sh 4 0.01
 
 # Define remote host IPs and users (Modify according to actual situation)
-PROJECT_PATH="/root/Qamboo"  # Replace with the absolute path of the project on remote machines
+# Auto-detect project root from script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_PATH="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel)"
 BIN_PATH="smc_run ./target/release/pwd"
 
 NUM_COMMTHREADS=${1:-4} #number of threads (default: 4)

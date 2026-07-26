@@ -15,7 +15,9 @@ generate_script() {
     cat > "$MULTINODE_DIR/run_q${q}_thread_scaling.sh" << 'EOF'
 #!/bin/bash
 
-PROJECT_PATH="/root/Qamboo"
+# Auto-detect project root from script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_PATH="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel)"
 BIN_PATH="./target/release/qQUERY"
 
 NUM_COMMTHREADS=${1:-6}

@@ -1,0 +1,21 @@
+Thread Scaling Results (LOCAL) - SF=0.1, Queries=3
+Started at: Mon Apr 13 12:04:31 CST 2026
+============================================================
+>>> [1/20] RAYON_NUM_THREADS=1, NUM_COMMTHREADS=1
+    Q3:
+    Q3 OK
+--------------------------------------------------------
+>>> [2/20] RAYON_NUM_THREADS=1, NUM_COMMTHREADS=2
+    Q3:
+    Q3 OK
+--------------------------------------------------------
+>>> [3/20] RAYON_NUM_THREADS=1, NUM_COMMTHREADS=4
+    Q3:
+    Q3 FAILED
+--------------------------------------------------------
+>>> [4/20] RAYON_NUM_THREADS=1, NUM_COMMTHREADS=8
+    Q3:
+    Q3 FAILED
+--------------------------------------------------------
+>>> [5/20] RAYON_NUM_THREADS=2, NUM_COMMTHREADS=1
+    Q3:

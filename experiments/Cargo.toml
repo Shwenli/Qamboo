@@ -258,6 +258,14 @@ name = "radix_sort_mpspdz"
 path = "operator/radix_sort_mpspdz.rs"
 
 [[bin]]
+name = "radix_sort_single"
+path = "operator/radix_sort_single.rs"
+
+[[bin]]
+name = "radix_sort_multi"
+path = "operator/radix_sort_multi.rs"
+
+[[bin]]
 name = "comorbidity"
 path = "query/secrecy/comorbidity.rs"
 

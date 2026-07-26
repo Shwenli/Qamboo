@@ -4,31 +4,45 @@ This folder contains scripts to evaluate the performance impact of different thr
 - **RAYON_NUM_THREADS**: Number of Rayon compute threads (data parallelism)
 - **NUM_COMMTHREADS**: Number of communication threads (I/O parallelism)
 
+Supports both **multinode** (distributed) and **local** (single machine) execution.
+
 ## Directory Structure
 
 ```
 thread_scaling/
-├── run_thread_scaling_exp.sh      # Main experiment runner
-├── generate_query_scripts.sh      # Generate query scripts (Q1-Q22)
+├── run_thread_scaling_exp.sh           # Main experiment runner (multinode)
+├── run_thread_scaling_local_exp.sh     # Main experiment runner (local)
+├── generate_query_scripts.sh           # Generate multinode query scripts
+├── generate_local_scripts.sh           # Generate local query scripts
+├── analyze_results.py                  # Result analysis script
 ├── multinode/
-│   ├── run_q1_thread_scaling.sh   # Individual query scripts
-│   ├── run_q2_thread_scaling.sh
+│   ├── run_q1_thread_scaling.sh        # Distributed query scripts
 │   └── ... (Q1-Q22)
-└── README.md                      # This file
+├── local/
+│   ├── run_q1_thread_scaling.sh        # Local query scripts (3 parties on 1 machine)
+│   └── ... (Q1-Q22)
+└── README.md                           # This file
 ```
 
 ## Usage
 
 ### 1. Generate Query Scripts (if needed)
 
-Scripts for Q1-Q22 are already generated. If you need to regenerate them:
+Scripts for Q1-Q22 are already generated for both multinode and local. If you need to regenerate:
 
 ```bash
 cd scripts/experiments/optimization/thread_scaling
+
+# Generate multinode scripts
 ./generate_query_scripts.sh
+
+# Generate local scripts
+./generate_local_scripts.sh
 ```
 
 ### 2. Run Thread Scaling Experiments
+
+#### Multinode (Distributed)
 
 ```bash
 cd scripts/experiments/optimization/thread_scaling
@@ -48,27 +62,54 @@ cd scripts/experiments/optimization/thread_scaling
 ./run_thread_scaling_exp.sh 1 "3" -h1 192.168.1.11 -h2 192.168.1.12
 ```
 
+#### Local (Single Machine)
+
+```bash
+cd scripts/experiments/optimization/thread_scaling
+./run_thread_scaling_local_exp.sh <SF> <QUERIES>
+```
+
+**Examples:**
+
+```bash
+# Run Q1, Q3, Q4 at SF=1
+./run_thread_scaling_local_exp.sh 1 "1,3,4"
+
+# Run Q1-Q8 at SF=0.1
+./run_thread_scaling_local_exp.sh 0.1 "1..8"
+
+# Run all queries at SF=1
+./run_thread_scaling_local_exp.sh 1 "1..22"
+```
+
 ### 3. Default Thread Configurations
 
 The script tests the following combinations:
 
 | RAYON_NUM_THREADS | NUM_COMMTHREADS |
 |-------------------|-----------------|
-| 1, 2, 4, 8, 16, 32 | 1, 2, 4, 6, 8 |
+| 1, 2, 4, 8, 16, 32 | 1, 2, 4, 8, 16 |
 
 **Total combinations**: 6 × 5 = 30 per query
 
 To modify these configurations, edit the arrays in `run_thread_scaling_exp.sh`:
 ```bash
 RAYON_THREADS_LIST=(1 2 4 8 16 32)
-COMM_THREADS_LIST=(1 2 4 6 8)
+COMM_THREADS_LIST=(1 2 4 8 16)
 ```
 
 ### 4. Results
 
 Results are saved to:
+
+**Multinode:**
 ```
 experiments/result/thread_scaling/thread_scaling_sf<SF>.log
+```
+
+**Local:**
+```
+experiments/result/thread_scaling_local/thread_scaling_local_sf<SF>.log
 ```
 
 The log file contains timing results for each (RAYON_NUM_THREADS, NUM_COMMTHREADS) combination.

@@ -182,7 +182,7 @@ where
     for g_item in &mut g {
         carries.push(g_item.get_bit(T::K - 1));
         *g_item <<= 1;
-        *g_item ^= p[carries.len() - 1];  // 注意：这里假设 p 和 g 的长度相同，且索引对应
+        *g_item ^= p[carries.len() - 1];  
     }
     Ok((g, carries))
 }

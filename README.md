@@ -10,7 +10,7 @@ Qamboo is an MPC-based framework for **secure collaborative analytics**. It allo
 
 
 <p align="center">
-  <img src="Qamboo_NSDI/picture/Qamboo_overview.png" alt="Qamboo System Overview" width="100%"><br>
+  <img src="Qamboo_overview.png" alt="Qamboo System Overview" width="100%"><br>
   <em> Qamboo System Overview</em>
 </p>
 

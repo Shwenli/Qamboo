@@ -18,7 +18,7 @@ rust-version = "1.85"
 authors = ["Anonymous"]
 homepage = "Anonymous"
 repository = "Anonymous"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 publish = false
 readme = "./README.md"
 

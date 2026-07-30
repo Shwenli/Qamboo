@@ -1,163 +1,31 @@
-# Qamboo 🎋
+# Qamboo: An Efficient and Scalable MPC Framework for Relational Analytics
 
-**Scalable Secure Collaborative Analytics in Cloud with Low-Overhead Implementation**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Rust Version](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
-[![Paper](https://img.shields.io/badge/Paper-PDF-red.svg)](#)
-
-> An efficient MPC-based framework for privacy-preserving collaborative data analytics in cloud environments.
+Qamboo brings secure multi-party computation to relational analytics, allowing distrusting parties to jointly query their combined data without exposing it. Details can be found in our paper (Accepted by NSDI '27).
 
 ---
 
-## Abstract
+## Overview
 
-Qamboo is a high-performance Secure Multi-Party Computation (MPC) framework designed for **scalable secure collaborative analytics** in cloud environments. By leveraging replicated secret sharing and novel low-overhead cryptographic protocols, Qamboo enables multiple distrusting parties to jointly analyze their combined datasets without revealing sensitive information. Our implementation supports the full TPC-H benchmark suite with significantly reduced communication overhead compared to prior approaches, making secure analytics practical for real-world cloud deployments.
+Qamboo is an MPC-based framework for **secure collaborative analytics**. It allows multiple data owners to jointly run analytical queries over their combined data — joins, aggregations, sorting, and more — while cryptographically guaranteeing that no party (or cloud provider) ever sees the others' raw data. Computation is distributed across 3 cloud servers using replicated secret sharing, so results remain correct and private even if one server is compromised. The framework exposes a columnar `SharedTable` API (Dataflow-style) for composing queries, ships with implementations of all 22 TPC-H queries and the Secrecy application benchmarks, and is engineered for practical cloud deployment: it scales near-linearly with data size, works over both LAN and WAN, and can transparently accelerate communication with SMC-R RDMA.
 
-**Key Contributions:**
-- ☁️ **Cloud-Native Design**: Optimized for high-latency cloud networks with efficient batching and parallelization
-- 📈 **Scalable Architecture**: Linear scaling with data size and number of parties
-- ⚡ **Low Overhead**: Zero-copy serialization, minimized round trips, and streaming execution
-- 🗃️ **Full SQL Support**: Complete TPC-H query suite (Q1-Q22) with Joins, GroupBy, Sort, and Aggregation
 
----
-
-## System Overview
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                        Qamboo Framework                          │
-├─────────────────────────────────────────────────────────────────┤
-│  Application Layer │  TPC-H Queries  │  Custom Analytics        │
-├─────────────────────────────────────────────────────────────────┤
-│   Table Operators  │  Secure Join │ GroupBy │ Sort │ Filter     │
-├─────────────────────────────────────────────────────────────────┤
-│  Crypto Primitives │  Compare │ Permute │ Shuffle │ Multiplex   │
-├─────────────────────────────────────────────────────────────────┤
-│    MPC Protocols   │  Replicated Secret Sharing (3-Party)       │
-│                    │  Shamir Secret Sharing                     │
-├─────────────────────────────────────────────────────────────────┤
-│   Network Layer    │  Fast TCP │ Zero-Copy Comm │ RDMA-ready   │
-└─────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="Qamboo_NSDI/picture/Qamboo_overview.png" alt="Qamboo System Overview" width="100%"><br>
+  <em> Qamboo System Overview</em>
+</p>
 
 ---
 
-## Quick Start
+## For NSDI Artifact Evaluation
 
-### Prerequisites
+**Reviewers: please start with [`nsdi27-ae/README.md`](nsdi27-ae/README.md).** It is the dedicated artifact evaluation guide for the NSDI 2027 paper and contains everything needed to reproduce our results:
 
-- Rust 1.85 or later
-- Linux/macOS environment
-- (Optional) RDMA-capable network for high-performance deployments
+- **Badge claims** (Available / Functional / Reproduced) and the mapping from paper claims to experiments.
+- **Cluster setup** on top of `scripts/setup/deploy.sh`, the network environment (LAN/WAN emulation), and a ~10-minute smoke test.
+- **Per-figure reproduction instructions** (Fig 7–14) with expected runtimes and expected results, driven by the scripts under [`nsdi27-ae/scripts/`](nsdi27-ae/scripts/), which wrap the benchmark runners in [`scripts/experiments/`](scripts/README.md).
+- **Result collection and plotting** to regenerate the paper's figures from the produced logs.
 
-### Building
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd qamboo
-
-# Build release version
-cargo build --release
-
-# Run tests
-cargo test --workspace
-```
-
-### Running TPC-H Benchmarks
-
-Qamboo implements all 22 TPC-H queries for secure multi-party analytics:
-
-```bash
-# Run Query 1 (Pricing Summary Report)
-cargo run --bin q1 --release -- --config configs/3party.toml
-
-# Run Query 5 (Local Supplier Volume)
-cargo run --bin q5 --release -- --config configs/3party.toml
-
-# Run all TPC-H queries
-./scripts/experiments/tpch/run_local_exp.sh
-```
-
----
-
-## Architecture
-
-Qamboo adopts a modular workspace architecture with 9 specialized crates:
-
-| Crate | Description | Key Features |
-|-------|-------------|--------------|
-| `protocols/` | Core MPC protocols | Replicated secret sharing, arithmetic operations |
-| `primitives/` | Cryptographic primitives | Comparison, permutation, shuffling, MUX |
-| `operator/` | Database operators | Join, GroupBy, Sort, Distinct, Aggregation |
-| `table/` | Secure table operations | Columnar processing, query planning |
-| `net/` | Network layer | Fast TCP, connection pooling, bandwidth optimization |
-| `communication/` | Zero-copy communication | Optimized serialization for ring elements |
-| `algebra/` | Algebraic foundations | Ring theory, finite field arithmetic |
-| `random/` | Secure randomness | Correlated randomness generation |
-| `experiments/` | Benchmarks & evaluation | TPC-H Q1-Q22, operator micro-benchmarks |
-
----
-
-## Performance Highlights
-
-### Low-Overhead Optimizations
-
-| Technique | Benefit |
-|-----------|---------|
-| **Zero-Copy Serialization** | Eliminates memory copies for ring elements via pointer casting |
-| **Streaming Execution** | Memory-efficient processing of large datasets |
-| **Parallel Network I/O** | Concurrent sends/receives across party pairs |
-| **Rayon Parallelism** | Data-parallel local computations |
-| **Connection Pooling** | Reusable TCP connections with buffering |
-
-### Scalability
-
-- **Data Size**: Linear scaling with dataset size
-- **Parties**: Optimized for 3-party setting (semi-honest)
-- **Network**: Efficient bandwidth utilization for cloud deployments
-
----
-
-## Security Model
-
-Qamboo implements protocols secure in the **semi-honest model** with **3 parties**, where:
-
-- **Privacy**: No single party learns others' private inputs
-- **Robustness**: Tolerates collusion of up to 1 party
-- **Assumptions**: Based on standard cryptographic hardness assumptions
-- **Cloud-Ready**: Designed for honest-majority scenarios in cloud environments
-
----
-
-## Example: Secure Collaborative Query
-
-```rust
-use table::{
-    table_operator::{Filter, Groupby, AggFunc, OrderBy},
-    share_table::SharedTable,
-    NetStateArgs,
-};
-use protocols::rep3_ring::Rep3RingShare;
-use random::rep3::Rep3State;
-use net::fast_tcp::FastTcpNetwork;
-
-// Initialize cloud deployment
-let network = FastTcpNetwork::new(cloud_config)?;
-let state = Rep3State::new(party_id, shared_seed);
-let mut args = NetStateArgs::new(&[&network], &mut [&mut state]);
-
-// Parties jointly analyze combined data without revealing inputs
-let result = SharedTable::from_plain(&args, party_data)?
-    .filter(&args, predicate)?              // Secure filtering
-    .group_by(&args, keys, aggregations)?   // Secure aggregation
-    .order_by(&args, sort_keys)?;           // Secure sorting
-
-// Only final result is revealed
-let output = result.open(&args)?;
-```
+The rest of this README covers general framework usage (build, deployment, and running benchmarks) and is not required for the artifact evaluation.
 
 ---
 
@@ -168,75 +36,176 @@ qamboo/
 ├── Cargo.toml           # Workspace configuration
 ├── LICENSE              # Dual MIT/Apache-2.0 license
 ├── README.md            # This file
-├── algebra/             # Ring and field arithmetic
-├── communication/       # Zero-copy communication primitives
+├── algebra/             # Ring arithmetic
+├── communication/       # Parallel connection management between parties
+├── docs/                # Module documentation
 ├── experiments/         # Evaluation suite
 │   ├── query/tpch/      # TPC-H Q1-Q22 implementations
+│   ├── query/secrecy/   # Secrecy application benchmarks
 │   └── operator/        # Operator micro-benchmarks
-├── net/                 # Cloud-optimized network layer
+├── net/                 # Transport abstraction
+├── nsdi27-ae/           # NSDI 2027 artifact evaluation materials
 ├── operator/            # Privacy-preserving relational operators
 ├── primitives/          # MPC building blocks (compare, permute, shuffle)
-├── protocols/           # Replicated & Shamir secret sharing
+├── protocols/           # 3-party replicated secret sharing
 ├── random/              # Correlated randomness generation
-├── scripts/             # Deployment automation
-├── table/               # Secure table abstractions
+├── scripts/             # Deployment and experiment automation
+│   ├── setup/           # Cluster deployment (SSH trust, /etc/hosts, RDMA,
+│   │                    #   network configs, tc WAN emulation, build & distribute)
+│   │   └── net/         # Network config generators (local / LAN)
+│   └── experiments/     # Benchmark runners
+│       ├── run_common.sh# Shared engine for the suite runners
+│       ├── run_tpch.sh  # TPC-H Q1-Q22
+│       ├── run_secrecy.sh     # Secrecy application benchmarks
+│       ├── run_operator.sh    # Operator micro-benchmarks
+│       └── run_optimization.sh# Ablations + thread-scaling sweeps
+├── table/               # Secure table/operator abstractions (Dataflow API)
 └── tests/               # Integration tests
 ```
 
----
-
-## Evaluation
-
-Qamboo has been evaluated on:
-
-- **TPC-H Benchmark**: All 22 queries at scale factors SF1-SF100
-- **Cloud Deployment**: AWS/Azure multi-region setups
-- **Network Conditions**: High-latency (50-200ms) WAN environments
-- **Comparison**: Baseline against plain-text DB and prior MPC systems
-
-See `experiments/` for reproducible benchmark scripts.
 
 ---
 
-## Citation
 
-If you use Qamboo in your research, please cite:
+## Dependencies
 
-```bibtex
-@inproceedings{qamboo2026,
-  author    = {Shang, Qingxu},
-  title     = {Qamboo: Scalable Secure Collaborative Analytics in Cloud 
-               with Low-Overhead Implementation},
-  booktitle = {...},
-  year      = {2026},
-  url       = {<repository-url>}
-}
+- Rust 1.85 or later
+- Python 3 (network config generators)
+- Linux for multi-node deployment (setup scripts use `/etc/hosts`, `modprobe`, `tc`); macOS works for local single-machine runs
+- Multi-node only: OpenSSH client and password-less sudo on all nodes; optional SMC-R support for the RDMA variants
+
+---
+
+## Building Qamboo
+
+This section covers how to build Qamboo and deploy it in two setups: **local deployment**, where all 3 parties run as processes on a single machine (useful for development and testing), and **multi-node deployment**, where the parties run on a 3-node cluster via the one-click `deploy.sh` pipeline.
+
+> [!TIP]
+> For the best runtime performance, uncomment the following section in `Cargo.toml` before building. This enables link-time optimization and single-codegen-unit compilation, which produce faster binaries at the cost of a noticeably longer compile time:
+>
+> ```toml
+> [profile.release]
+> lto = "thin"
+> codegen-units = 1
+> panic = "abort"
+> ```
+
+
+### Local Deployment (Single Machine)
+
+No cluster setup is needed — just clone and build:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd qamboo
+
+# Build the full workspace (release, tuned for the local CPU)
+RUSTFLAGS="-C target-cpu=native" cargo build --workspace --release
 ```
 
+
+The workspace crates build the `qamboo` libraries. The experiment binaries (`q1`–`q22`, Secrecy apps, operator micro-benchmarks) live in the `experiments` package and are built with the `tcp` feature, e.g.:
+
+```bash
+cargo build --release --package experiments --bin q1 --features tcp
+```
+
+The 3 parties later run as local processes on `127.0.0.1` using the pre-generated configs in `experiments/net/local/` (see *Running Benchmarks* below).
+
+### Multi-Node Deployment (Cluster)
+
+Run everything from the driver node (conventionally `node0`); the other two nodes only need SSH access and sudo:
+
+```bash
+./scripts/setup/deploy.sh -i 192.168.1.10,192.168.1.11,192.168.1.12 -x node
+```
+
+This one-click pipeline calls the scripts under `scripts/setup/` in order:
+
+1. **`setup_ssh.sh`** — Generates an SSH key pair locally (if missing) and installs the public key on every node with `ssh-copy-id`, establishing password-less SSH trust.
+2. **`setup_host.sh`** — Writes the IP-to-`nodeN` aliases into `/etc/hosts` locally and pushes the file to all nodes, so every machine can resolve `node0`, `node1`, `node2`.
+3. **`setup_rdma.sh`** — Loads the `smc` and `smc_diag` kernel modules on all nodes for SMC-R RDMA support.
+4. **Rust check** — Verifies each node has a working Rust toolchain and installs one via `rustup` if missing.
+5. **Build** — Compiles the workspace in release mode on the driver node.
+6. **Distribute** — Copies the entire project to the same absolute path on every node with `scp -r`.
+
+Each step is also a standalone script, so you can re-run any of them individually (e.g. `./scripts/setup/setup_ssh.sh -h node0,node1,node2`).
+
 ---
 
-## Acknowledgments
 
-Qamboo builds upon the following open-source libraries:
+## Running Benchmarks
 
-- [arkworks](https://github.com/arkworks-rs) — Elliptic curve and finite field arithmetic
-- [tokio](https://tokio.rs/) — Async runtime for network operations
-- [polars](https://pola.rs/) — DataFrame library for benchmark data generation
-- [rayon](https://github.com/rayon-rs/rayon) — Data-parallelism for local computations
+Qamboo implements all 22 TPC-H queries for secure multi-party analytics.
+
+### Network Configuration
+
+At runtime, all parties locate each other through TOML configs under `experiments/net/`. Pre-generated configs ship with the repo (`experiments/net/local/` for single-machine runs, `experiments/net/multinode/` for clusters). To regenerate them:
+
+```bash
+./scripts/setup/setup_connection.sh -t local -h localhost          -n 10  # local: 10 groups
+./scripts/setup/setup_connection.sh -t lan   -h node0,node1,node2  -n 16  # cluster: 16 groups
+```
+
+Optional: emulate WAN bandwidth/RTT with `tc` — `./scripts/setup/setup_delay.sh -c -H node0,node1,node2 6GBit 20ms`.
+
+### Running Queries
+
+Each benchmark suite has a runner under `scripts/experiments/` (`run_tpch.sh`, `run_secrecy.sh`, `run_operator.sh`, `run_optimization.sh`):
+
+```bash
+# Local: run Q1 with 6 communication threads at SF=0.01
+./scripts/experiments/run_tpch.sh 1 -t 6 -s 0.01
+
+# Local: batch-run Q1–Q22 at SF=1
+./scripts/experiments/run_tpch.sh "1..22" -t 6 -s 1
+
+# Multi-node: batch-run Q1–Q22 at SF=1 over TCP (party 0 local, parties 1 & 2 via SSH)
+./scripts/experiments/run_tpch.sh "1..22" -t 32 -s 1 -m tcp -h node0,node1,node2
+
+# Multi-node, RDMA-accelerated variant (requires SMC-R, set up by deploy.sh)
+./scripts/experiments/run_tpch.sh "1..22" -t 32 -s 1 -m rdma -h node0,node1,node2
+```
+
+All four runners share the same options:
+
+```text
+<targets>  What to run: comma list ("1,3,5"), range ("1..8"), or "all".
+           run_optimization.sh takes a variant name first
+           (no_secure_cut / no_join_reorder / no_semi / thread_scaling)
+-m         Execution mode (local/tcp/rdma); default: local
+           local: 3 parties as processes on this machine
+           tcp:   party i runs on the i-th host of -h (remote parties via SSH)
+           rdma:  like tcp, but under smc_run (SMC-R RDMA)
+-t         Number of communication threads per party; default: 6 (4 for run_secrecy.sh)
+-s         Scale factor for data generation (for radix_sort this is the shift,
+           i.e. log2 of the input size); default: 0.01 (20 for radix_sort)
+-n         Number of sizes swept by radix_sort_scalability
+           (2^19 .. 2^(19+N-1) rows); default: 7
+-h         Comma-separated list of 3 hosts, one per party; a host matching this
+           machine runs in-process, others via SSH (tcp/rdma modes only);
+           default: node0,node1,node2
+--rayon    RAYON_NUM_THREADS, compute threads per party (data parallelism);
+           default: unset
+--log      Append "INFO Total" result lines to this file instead of the
+           per-suite stat log; default: per-suite path
+--no-log   Disable stat logging
+```
+
+See the *Local Deployment* and *Multi-Node Deployment* sections above for first-time setup, and `scripts/README.md` for the full runner reference (Secrecy apps, operator micro-benchmarks, ablations, thread scaling).
 
 ---
+
+
+
 
 ## License
 
 This project is licensed under either of:
 
 - **MIT License** — See [LICENSE](LICENSE) file for details
-- **Apache License, Version 2.0** — See [LICENSE](LICENSE) file for details
 
-at your option.
 
----
 
-**Contact**: For questions or collaboration inquiries, please open an issue or contact the authors.
 
-Made with 🎋 for secure cloud analytics.

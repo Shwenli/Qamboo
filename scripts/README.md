@@ -8,22 +8,21 @@ This directory contains automation scripts for deploying the Qamboo framework an
 scripts/
 ├── setup/                  # Environment setup and deployment automation
 │   ├── net/               # Network configuration generators
-│   ├── build_dist.sh      # Build and distribute code to remote hosts
-│   ├── deploy.sh          # One-click full deployment pipeline
+│   ├── deploy.sh          # One-click multi-machine deployment pipeline
 │   ├── setup_connection.sh # Generate network configs across hosts
 │   ├── setup_delay.sh     # Network delay emulation
 │   ├── setup_host.sh      # Update /etc/hosts across nodes
 │   ├── setup_rdma.sh      # RDMA environment setup
 │   └── setup_ssh.sh       # SSH trust establishment
 │
-└── experiments/           # Benchmark execution scripts
-    ├── tpch/             # TPC-H Q1–Q22 benchmarks
-    ├── operator/         # Operator-level micro-benchmarks
-    ├── optimization/     # Optimization ablation studies
-    │   ├── no_secure_cut/
-    │   ├── no_join_reorder/
-    │   └── no_semi/
-    └── secrecy/          # Privacy-preserving application benchmarks
+└── experiments/           # Benchmark execution
+    ├── run_common.sh     # Shared engine (sourced by the runners)
+    ├── run_tpch.sh       # TPC-H Q1–Q22
+    ├── run_secrecy.sh    # Secrecy application benchmarks
+    ├── run_operator.sh   # Operator micro-benchmarks
+    ├── run_optimization.sh # Ablations + thread-scaling sweeps
+    ├── run_radix_sort_mpspdz_ssh.sh # MP-SPDZ baseline
+    └── thread_scaling/   # Analysis tooling + radix thread-scaling scripts
 ```
 
 ---
@@ -32,7 +31,7 @@ scripts/
 
 ### Quick Deployment
 
-For fresh multi-node deployments, use the top-level orchestrator:
+For fresh multi-node deployments, run the one-click deployment pipeline:
 
 ```bash
 cd scripts/setup
@@ -40,10 +39,11 @@ cd scripts/setup
 ```
 
 This pipeline executes the following steps automatically:
-1. **`setup_ssh.sh`** — Establish password-less SSH trust between nodes.
+1. **`setup_ssh.sh`** — Establish password-less SSH trust between nodes (also usable standalone).
 2. **`setup_host.sh`** — Synchronize `/etc/hosts` entries.
 3. **`setup_rdma.sh`** — Configure RDMA environments.
-4. **`build_dist.sh`** — Compile the release build and sync the entire project to remote hosts.
+4. **Rust check** — Verify/install the Rust toolchain on remote hosts.
+5. **Build & distribute** — Compile the release build and sync the entire project to remote hosts.
 
 ### Network Configuration
 
@@ -68,7 +68,6 @@ Each group contains `config_party0.toml`, `config_party1.toml`, and `config_part
 | `setup_host.sh` | Write node aliases to `/etc/hosts` |
 | `setup_rdma.sh` | Install and verify RDMA drivers/libraries |
 | `setup_delay.sh` | Emulate WAN latency using `tc` (traffic control) |
-| `build_dist.sh` | Compile workspace (`--exclude experiments`) and `scp -r` to all targets |
 | `net/local_net_gen.py` | Generate localhost port mappings |
 | `net/lan_net_gen.py` | Generate LAN IP/port mappings |
 
@@ -76,152 +75,123 @@ Each group contains `config_party0.toml`, `config_party1.toml`, and `config_part
 
 ## Running Benchmarks
 
-All experiment scripts follow a consistent layout:
+Each benchmark suite has its own runner under `scripts/experiments/`, all built on the shared engine `run_common.sh`:
 
-- **`local/`** — Launch 3 parties as local background processes (`&`) and `wait`.
-- **`multinode/`** — Build the binary locally, `scp` it to remote hosts, then launch party 0 locally and parties 1 & 2 via `ssh`.
-- **`*_rdma*.sh`** — RDMA-enabled variants of multinode scripts.
-- **Top-level `run_*.sh`** — Batch runners that iterate over a set of experiments, parse query ranges, and aggregate results.
-
-### Common Arguments
-
-| Argument | Description | Example |
+| Script | Suite | Targets |
 |:---|:---|:---|
-| `NUM_COMMTHREADS` | Number of communication threads | `6`, `12` |
-| `SF` | Scale factor for data generation | `0.01`, `0.1`, `1` |
-| `QUERIES` | Query list or range | `"1,3,5"` or `"1..8"` |
-| `HOST1` / `HOST2` | Remote hosts for multinode SSH | `node1`, `192.168.1.11` |
+| `run_tpch.sh` | TPC-H Q1–Q22 | `"1..22"`, `"1,3,5"`, `all` |
+| `run_secrecy.sh` | Secrecy apps | `aspirin comorbidity credit pwd rcdiff`, `all` |
+| `run_operator.sh` | Operator micro-benchmarks | `multi_keys_join radix_sort radix_sort_scalability radix_sort_single radix_sort_multi`, `all` |
+| `run_optimization.sh` | Ablations + thread scaling | `no_secure_cut`, `no_join_reorder`, `no_semi`, `thread_scaling` |
 
----
+Each runner builds the binary (`cargo build --release --features tcp`), launches the 3 parties, and appends `INFO Total` lines to the suite's stat log. Targets support comma lists (`"1,3,5"`), ranges (`"1..8"`), and `all`.
 
-## TPC-H Benchmarks (`experiments/tpch/`)
+### Modes
 
-### Local Execution
-
-Run individual queries or batch ranges:
-
-```bash
-cd scripts/experiments/tpch
-
-# Single query
-./local/run_q1.sh 6 0.1
-
-# Batch runner: queries 1-22 at SF=1 with 6 threads
-./run_local_exp.sh 6 1 "1..22"
-
-# Batch runner: selective queries
-./run_local_exp.sh 6 0.1 "1,3,5,8"
+```text
+local  3 parties as local background processes (experiments/net/local/); default
+tcp    party i runs on the i-th host of -h, remote parties via SSH
+       (experiments/net/multinode/)
+rdma   like tcp, but binaries run under smc_run (SMC-R RDMA)
 ```
 
-### Multinode Execution
+### Options
 
-```bash
-cd scripts/experiments/tpch
-
-# SSH-based distributed run
-./run_multinode_exp.sh 6 1 "1..22" -h1 node1 -h2 node2
-
-# RDMA-based distributed run
-./run_multinode_rdma_exp.sh 6 1 "1..22" -h1 node1 -h2 node2
+```text
+<targets>  What to run: comma list ("1,3,5"), range ("1..8"), or "all".
+           run_optimization.sh takes a variant name first
+           (no_secure_cut / no_join_reorder / no_semi / thread_scaling)
+-m         Execution mode (local/tcp/rdma); default: local
+-t         Number of communication threads per party; default: 6 (4 for run_secrecy.sh)
+-s         Scale factor / shift (log2 input size for radix_sort);
+           default: 0.01 (20 for radix_sort)
+-n         Number of sizes swept by radix_sort_scalability; default: 7
+-h         Comma-separated list of 3 hosts, one per party; a host matching this
+           machine runs in-process, others via SSH (tcp/rdma modes only);
+           default: node0,node1,node2
+--rayon    RAYON_NUM_THREADS, compute threads per party; default: unset
+--log      Override the stat log path; default: per-suite path
+--no-log   Disable stat logging
 ```
 
-Results are appended to:
-- `experiments/result/tpch_query/local/stat_output.log`
-- `experiments/result/tpch_query/multinode/stat_output.log`
+### Examples
 
----
+```bash
+cd scripts/experiments
 
-## Operator-Level Benchmarks (`experiments/operator/`)
+# TPC-H
+./run_tpch.sh 1 -t 6 -s 0.1                                     # single query, local
+./run_tpch.sh "1..22" -t 6 -s 1                                 # batch, local
+./run_tpch.sh "1..22" -t 32 -s 1 -m tcp  -h node0,node1,node2    # multinode
+./run_tpch.sh "1..22" -t 32 -s 1 -m rdma -h node0,node1,node2    # multinode, RDMA
 
-| Script | Description |
+# Secrecy applications
+./run_secrecy.sh comorbidity -t 4 -s 0.01
+./run_secrecy.sh all -t 16 -s 0.1 -m tcp -h node0,node1,node2
+
+# Operator micro-benchmarks
+./run_operator.sh multi_keys_join
+./run_operator.sh radix_sort -t 6 -s 20 -m tcp                  # shift=20, multinode
+./run_operator.sh radix_sort_scalability -t 6 -n 7              # sweep 2^19..2^25 rows
+
+# Optimization ablations
+./run_optimization.sh no_secure_cut "2,3,5" -t 6 -s 1 -m tcp -h node0,node1,node2
+./run_optimization.sh no_semi 4 -t 6 -s 0.1
+
+# Thread scaling (RAYON_NUM_THREADS x NUM_COMMTHREADS sweep)
+./run_optimization.sh thread_scaling "1,3,4" -s 1               # local sweep
+./run_optimization.sh thread_scaling "1..8" -s 1 -m tcp         # multinode sweep
+```
+
+Ablation variants and their supported queries:
+
+| Variant | Supported queries |
 |:---|:---|
-| `local/run_multi_keys_join.sh` | Multi-key join performance test |
-| `local/run_radix_sort_compare.sh` | Radix sort performance test |
-| `local/run_radix_sort_scalability.sh` | Radix sort scalability sweep |
-| `multinode/run_radix_sort_compare_ssh.sh` | Multinode radix sort (SSH) |
-| `multinode/run_radix_sort_compare_ssh_rdma.sh` | Multinode radix sort (RDMA) |
-| `multinode/run_radix_sort_mpspdz_ssh.sh` | MP-SPDZ radix-sort baseline |
+| `no_secure_cut` | Q2, Q3, Q5, Q8, Q13, Q17, Q18, Q20, Q21 |
+| `no_join_reorder` | Q2, Q5, Q7, Q8, Q9, Q10 |
+| `no_semi` | Q4 |
+| `thread_scaling` | Q1–Q22 (sweep; requires `-s`) |
 
-Example:
+Also under `scripts/experiments/`:
 
-```bash
-cd scripts/experiments/operator/local
-./run_multi_keys_join.sh
-./run_radix_sort_compare.sh
+- `run_radix_sort_mpspdz_ssh.sh` — MP-SPDZ radix-sort baseline (requires MP-SPDZ on the nodes).
+- `thread_scaling/` — result analysis (`analyze_results.py`) and radix-sort thread-scaling scripts (`radix/`).
+
+### Shared engine (`run_common.sh`)
+
+`run_common.sh` is sourced (not executed) by all four runners. To add a new suite runner: parse the suite's targets, fill `TARGETS`/`BINS`, call `setup_log`, then `run_all`.
+
+```text
+Options parsed by parse_common_opts (same as the runner CLIs above):
+-m / -t / -s / -n / -h / --rayon / --log / --no-log
+
+Globals consumed by the engine:
+TARGETS       Display names to run (parallel to BINS); required by run_all
+BINS          Cargo binary name per target (e.g. q5, comorbidity); required
+MODE          local | tcp | rdma; default: local
+THREADS       Communication threads; runner fills its suite default when unset
+SF            Scale factor / shift; runner fills its suite default when unset
+NUM           Test number for radix_sort_scalability; default: 7
+HOST_LIST     From -h; party i runs on the i-th host, local hosts in-process;
+              default: node0,node1,node2
+RAYON         From --rayon; exported as RAYON_NUM_THREADS on every party
+LOG_OVERRIDE  From --log; default: ""
+NO_LOG        From --no-log; default: false
+PROJECT_ROOT  Auto-detected via git rev-parse (fallback: ../.. from the script)
+LOG_FILE      Resolved by setup_log; rdma mode uses stat_output_rdma.log
+
+Functions provided:
+parse_common_opts "$@"            Parse the options above into the globals
+expand_targets <input> [all...]   Expand "all", comma lists and "1..8" ranges
+contains <x> [values...]          Membership test
+is_local_host <host>              True for $(hostname) / localhost / 127.0.0.1
+setup_log <result-subdir>         Resolve LOG_FILE and mkdir -p its directory
+run_one <bin>                     Build the binary (--features tcp), distribute
+                                  it to remote hosts, and run the 3 parties
+run_all <label>                   Loop TARGETS/BINS through run_one, tee
+                                  "INFO Total" lines into LOG_FILE, and
+                                  report per-target success/failure
 ```
-
----
-
-## Optimization Comparison Experiments (`experiments/optimization/`)
-
-These scripts run ablation studies that disable specific query-planning optimizations.
-
-### Secure Group Cutting (`no_secure_cut/`)
-
-Compares the full optimized query against a version with secure-cut disabled.
-
-Supported queries: **Q2, Q3, Q5, Q8, Q13, Q17, Q18, Q20, Q21**
-
-```bash
-cd scripts/experiments/optimization/no_secure_cut
-./local/run_q5_no_secure_cut.sh 6 0.1
-./run_multinode_exp.sh 6 1 "2,3,5,8,13,17,18,20,21"
-```
-
-### Join Reorder (`no_join_reorder/`)
-
-Compares the full optimized query against a version with join-reorder disabled.
-
-Supported queries: **Q2, Q5, Q7, Q8, Q9, Q10**
-
-```bash
-cd scripts/experiments/optimization/no_join_reorder
-./local/run_q5_no_join_reorder.sh 6 0.1
-./run_multinode_exp.sh 6 1 "2,5,7,8,9,10"
-```
-
-### Semi-Join (`no_semi/`)
-
-Compares the semi-join optimized version of **Q4** against the unoptimized fallback.
-
-```bash
-cd scripts/experiments/optimization/no_semi
-./run_q4_no_semi.sh 6 0.1
-```
-
----
-
-## Privacy-Preserving Application Benchmarks (`experiments/secrecy/`)
-
-| Script | Experiment | Description |
-|:---|:---|:---|
-| `run_comorbidity.sh` | `comorbidity` | Medical comorbidity analysis |
-| `run_aspirin.sh` | `aspirin` | Aspirin treatment analysis |
-| `run_credit.sh` | `credit` | Credit score change analysis |
-| `run_pwd.sh` | `pwd` | Duplicate password detection |
-| `run_rcdiff.sh` | `rcdiff` | Differential-privacy related experiments |
-
-### Local Execution
-
-```bash
-cd scripts/experiments/secrecy/local
-./run_comorbidity.sh 4 0.01
-./run_aspirin.sh 4 0.01
-./run_credit.sh 4 0.01
-./run_pwd.sh 4 0.01
-./run_rcdiff.sh 4 0.01
-```
-
-### Multinode Execution
-
-```bash
-cd scripts/experiments/secrecy
-./run_multinode_exp.sh 4 0.1 -h1 node1 -h2 node2
-```
-
-There are also dedicated paper/RDMA batch runners:
-- `run_multinode_exp_paper.sh` — Paper-result reproduction batch
-- `run_multinode_rdma_exp.sh` — RDMA variant batch
 
 ---
 
@@ -234,5 +204,9 @@ All batch runners pipe `INFO Total` lines from the experiment binaries into stru
 | TPC-H | `experiments/result/tpch_query/local/stat_output.log` | `experiments/result/tpch_query/multinode/stat_output.log` |
 | Secrecy | `experiments/result/secrecy_query/local/stat_output.log` | `experiments/result/secrecy_query/multinode/stat_output.log` |
 | Operator | `experiments/result/operator/local/stat_output.log` | `experiments/result/operator/multinode/stat_output.log` |
+| Optimization | `experiments/result/query_optimization/<variant>/local/stat_output.log` | `experiments/result/query_optimization/<variant>/multinode/stat_output.log` |
+| Thread scaling | `experiments/result/thread_scaling_local/` | `experiments/result/thread_scaling/` |
+
+> RDMA runs (`-m rdma`) log to `stat_output_rdma.log` next to the multinode log.
 
 > **Tip:** The batch scripts strip ANSI color codes before appending to logs, so they are safe for direct parsing with `awk`, `grep`, or Python.

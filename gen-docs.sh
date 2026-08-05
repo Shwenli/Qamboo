@@ -20,6 +20,7 @@ echo "Cleaning up binary documentation..."
 for bin in q{1..22} q{2,3,5,8,13,17,18,20,21}_no_secure_cut \
            q{2,5,7,8,9,10}_no_join_reorder q4_no_semi \
            multi_keys_join radix_sort radix_sort_scalability radix_sort_mpspdz \
+           radix_sort_single radix_sort_multi \
            comorbidity rcdiff aspirin pwd credit; do
     if [ -d "docs/$bin" ]; then
         rm -rf "docs/$bin"
@@ -34,7 +35,35 @@ window.ALL_CRATES = ["algebra","communication","experiments","net","operator","p
 //{"start":21,"fragment_lengths":[9,14,14,6,11,13,12,9,8]}
 EOF
 
-# Create custom index.html with full Qamboo overview
+# Add a "home" link (back to index.html) at the top of the sidebar on every
+# page. rustdoc loads static.files/storage-*.js in the <head> of every page,
+# so appending the snippet there covers all items without touching the
+# generated HTML files. The relative path to the root comes from each page's
+# data-root-path attribute.
+echo "Adding home link to all pages..."
+for f in docs/static.files/storage-*.js; do
+cat >> "$f" << 'EOF'
+
+// Injected by gen-docs.sh: "home" link at the top of the sidebar on every page.
+document.addEventListener("DOMContentLoaded", function () {
+    var crate = document.querySelector("nav.sidebar .sidebar-crate");
+    if (!crate || document.querySelector(".sidebar-home")) return;
+    var vars = document.querySelector("meta[name=rustdoc-vars]");
+    var root = (vars && vars.getAttribute("data-root-path")) || "./";
+    var home = document.createElement("div");
+    home.className = "sidebar-crate sidebar-home";
+    home.innerHTML = '<h2><a href="' + root + 'index.html">&#8962; home</a></h2>';
+    crate.parentNode.insertBefore(home, crate);
+});
+EOF
+done
+
+# Create the index page from the project README: the README body is rendered
+# by pandoc (GFM) and wrapped in the rustdoc shell, so the module sidebar
+# stays available. Images referenced by the README are copied alongside.
+echo "Creating index.html from README.md..."
+cp Qamboo_overview.png docs/
+
 cat > docs/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -42,7 +71,7 @@ cat > docs/index.html << 'EOF'
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="rustdoc">
-<meta name="description" content="Qamboo: Scalable Secure Collaborative Analytics in Cloud">
+<meta name="description" content="Qamboo: An Efficient and Scalable MPC Framework for Relational Analytics">
 <title>Qamboo - Rust</title>
 <script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="static.files/${f}">`).join(""))</script>
 <link rel="stylesheet" href="static.files/normalize-9960930a.css">
@@ -77,79 +106,18 @@ cat > docs/index.html << 'EOF'
 <li><a href="experiments/index.html">experiments</a></li>
 </ul>
 </section>
-<section>
-<h2><a href="#architecture">Architecture</a></h2>
-</section>
-<section>
-<h2><a href="#benchmarks">Benchmarks</a></h2>
-</section>
 </div>
 </nav>
 <div class="sidebar-resizer"></div>
 <main>
 <div class="width-limiter">
-<div class="sub-container">
-<h1 class="fqn"><span class="in-band">Qamboo Workspace</span></h1>
-</div>
 <section id="main-content" class="content">
+EOF
 
-<p>Qamboo is a high-performance Secure Multi-Party Computation (MPC) framework designed for <strong>scalable secure collaborative analytics</strong> in cloud environments.</p>
+# Render the project README (GitHub-flavored Markdown) into the page body.
+pandoc README.md -f gfm -t html5 --wrap=none >> docs/index.html
 
-<p>By leveraging replicated secret sharing and novel low-overhead cryptographic protocols, Qamboo enables multiple distrusting parties to jointly analyze their combined datasets without revealing sensitive information. The implementation supports the full TPC-H benchmark suite with significantly reduced communication overhead compared to prior approaches.</p>
-
-<h2 id="architecture"><a class="doc-anchor" href="#architecture">§</a>Architecture</h2>
-
-<pre class="text rust-example-rendered"><code>Application Code
-       ↓
-   table (SQL-like interface)
-       ↓
-   operator (relational operators)
-       ↓
-   primitives (crypto primitives)
-       ↓
-   protocols (MPC protocols)
-       ↓
-   communication + net (network layer)</code></pre>
-
-<h2 id="modules"><a class="doc-anchor" href="#modules">§</a>Workspace Crates</h2>
-
-<table><thead><tr><th>Crate</th><th>Description</th></tr></thead><tbody>
-<tr><td><a href="algebra/index.html"><code>algebra</code></a></td><td>Foundational algebraic structures for MPC. Ring theory abstractions over <code>Z_{2^k}</code> with zero-copy serialization.</td></tr>
-<tr><td><a href="communication/index.html"><code>communication</code></a></td><td>Optimized communication primitives for 3-party REP3. Zero-copy serialization and multi-threaded network operations.</td></tr>
-<tr><td><a href="net/index.html"><code>net</code></a></td><td>High-performance network abstractions for MPC. Fast TCP with connection pooling, vectored I/O, and userspace buffering.</td></tr>
-<tr><td><a href="operator/index.html"><code>operator</code></a></td><td>Privacy-preserving relational database operators: Join, GroupBy, Sort, Distinct, and Aggregation.</td></tr>
-<tr><td><a href="primitives/index.html"><code>primitives</code></a></td><td>Cryptographic primitives built on MPC protocols: comparison, permutation, shuffling, MUX, division, and transforms.</td></tr>
-<tr><td><a href="protocols/index.html"><code>protocols</code></a></td><td>Core MPC protocols. Semi-honest 3-party replicated secret sharing (REP3) over rings <code>Z_{2^k}</code>.</td></tr>
-<tr><td><a href="random/index.html"><code>random</code></a></td><td>Secure correlated randomness generation. PRF-based expansion that eliminates online communication for random values.</td></tr>
-<tr><td><a href="table/index.html"><code>table</code></a></td><td>High-level secure table operations. Columnar secure database with SQL-like query interface.</td></tr>
-<tr><td><a href="experiments/index.html"><code>experiments</code></a></td><td>Benchmark suite and evaluation: TPC-H Q1–Q22, operator micro-benchmarks, and privacy-preserving applications.</td></tr>
-</tbody></table>
-
-<h2 id="benchmarks"><a class="doc-anchor" href="#benchmarks">§</a>Benchmarks</h2>
-
-<p>The <a href="experiments/index.html"><code>experiments</code></a> crate provides comprehensive benchmarks, exposed as standalone binaries:</p>
-<ul>
-<li><strong>TPC-H</strong>: <code>q1</code> – <code>q22</code></li>
-<li><strong>Operator Micro-benchmarks</strong>: <code>multi_keys_join</code>, <code>radix_sort</code>, <code>radix_sort_scalability</code>, <code>radix_sort_mpspdz</code></li>
-<li><strong>Optimization Ablations</strong>: <code>q*_no_secure_cut</code>, <code>q*_no_join_reorder</code>, <code>q4_no_semi</code></li>
-<li><strong>Privacy-Preserving Apps</strong>: <code>comorbidity</code>, <code>aspirin</code>, <code>credit</code>, <code>pwd</code>, <code>rcdiff</code></li>
-</ul>
-
-<p>Each binary has its own rustdoc page (e.g. <code>q1</code>, <code>multi_keys_join</code>), but they are all indexed from the <a href="experiments/index.html#binary-targets"><code>experiments</code></a> crate documentation. See the <code>scripts/</code> directory for automation scripts.</p>
-
-<h2 id="security-model"><a class="doc-anchor" href="#security-model">§</a>Security Model</h2>
-
-<p>Qamboo implements protocols secure in the <strong>semi-honest model</strong> with <strong>3 parties</strong>:</p>
-<ul>
-<li><strong>Privacy</strong>: No single party learns others' private inputs</li>
-<li><strong>Robustness</strong>: Tolerates collusion of up to 1 party</li>
-<li><strong>Cloud-Ready</strong>: Designed for honest-majority scenarios in cloud environments</li>
-</ul>
-
-<h2 id="license"><a class="doc-anchor" href="#license">§</a>License</h2>
-
-<p>Licensed under either of <a href="https://opensource.org/licenses/MIT">MIT</a> or <a href="https://opensource.org/licenses/Apache-2.0">Apache-2.0</a> at your option.</p>
-
+cat >> docs/index.html << 'EOF'
 </section>
 </div>
 </main>
@@ -157,7 +125,7 @@ cat > docs/index.html << 'EOF'
 </html>
 EOF
 
-echo "  Created: custom index.html"
+echo "  Created: index.html from README.md"
 
 # Calculate size
 SIZE=$(du -sh docs/ | cut -f1)

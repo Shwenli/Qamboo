@@ -23,3 +23,14 @@
         <button id="toggle-all-docs"
 title="Collapse sections (shift-click to also collapse impl blocks)"><span
 class="label">Summary</span></button>`;}}window.customElements.define("rustdoc-toolbar",RustdocToolbarElement);
+// Injected by gen-docs.sh: "home" link at the top of the sidebar on every page.
+document.addEventListener("DOMContentLoaded", function () {
+    var crate = document.querySelector("nav.sidebar .sidebar-crate");
+    if (!crate || document.querySelector(".sidebar-home")) return;
+    var vars = document.querySelector("meta[name=rustdoc-vars]");
+    var root = (vars && vars.getAttribute("data-root-path")) || "./";
+    var home = document.createElement("div");
+    home.className = "sidebar-crate sidebar-home";
+    home.innerHTML = '<h2><a href="' + root + 'index.html">&#8962; home</a></h2>';
+    crate.parentNode.insertBefore(home, crate);
+});

@@ -1,0 +1,71 @@
+- generic [active] [ref=f2e1]:
+  - navigation [ref=f2e2]:
+    - heading [level=2] [ref=f2e4]:
+      - link "⌂ home" [ref=f2e5] [cursor=pointer]:
+        - /url: ../../index.html
+    - heading "algebra 0.1.0" [level=2] [ref=f2e7]:
+      - link "algebra" [ref=f2e8] [cursor=pointer]:
+        - /url: ../../algebra/index.html
+      - generic [ref=f2e9]: 0.1.0
+    - generic [ref=f2e10]:
+      - generic [ref=f2e11]:
+        - heading [level=2] [ref=f2e12]:
+          - link "Module ring" [ref=f2e13] [cursor=pointer]:
+            - /url: "#"
+        - heading [level=3] [ref=f2e14]:
+          - link "Module Items" [ref=f2e15] [cursor=pointer]:
+            - /url: "#modules"
+        - list [ref=f2e16]:
+          - listitem [ref=f2e17]:
+            - link "Modules" [ref=f2e18] [cursor=pointer]:
+              - /url: "#modules"
+      - generic [ref=f2e19]:
+        - heading [level=2] [ref=f2e20]:
+          - link "In crate algebra" [ref=f2e21] [cursor=pointer]:
+            - /url: ../index.html
+        - heading [level=3] [ref=f2e22]:
+          - link "Modules" [ref=f2e23] [cursor=pointer]:
+            - /url: ../index.html#modules
+        - list [ref=f2e24]:
+          - listitem [ref=f2e25]:
+            - link "ring" [ref=f2e26] [cursor=pointer]:
+              - /url: ../ring/index.html
+  - generic "Drag to resize sidebar" [ref=f2e27]
+  - main [ref=f2e28]:
+    - generic [ref=f2e29]:
+      - navigation [ref=f2e31]:
+        - searchbox "Run search in the documentation" [ref=f2e33]
+      - generic [ref=f2e34]:
+        - generic [ref=f2e35]:
+          - link "algebra" [ref=f2e37] [cursor=pointer]:
+            - /url: ../index.html
+          - heading [level=1] [ref=f2e38]:
+            - text: Module ring
+            - button "Copy item path" [ref=f2e39] [cursor=pointer]
+          - generic [ref=f2e40]:
+            - link "Settings" [ref=f2e42] [cursor=pointer]:
+              - /url: ../../settings.html
+            - link "Help" [ref=f2e45] [cursor=pointer]:
+              - /url: ../../help.html
+            - button "Summary" [ref=f2e47] [cursor=pointer]
+          - link "Source" [ref=f2e50] [cursor=pointer]:
+            - /url: ../../src/algebra/ring.rs.html#1-7
+        - group [ref=f2e51]:
+          - generic "Collapse" [ref=f2e52] [cursor=pointer]
+          - generic [ref=f2e53]:
+            - paragraph [ref=f2e54]: Ring
+            - paragraph [ref=f2e55]: "Contains traits and implementations for different rings Z_{2^k}"
+        - heading "Modules" [level=2] [ref=f2e56]
+        - generic [ref=f2e57]:
+          - term [ref=f2e58]:
+            - link "bit" [ref=f2e59] [cursor=pointer]:
+              - /url: bit/index.html
+          - definition [ref=f2e60]: Bit
+          - term [ref=f2e61]:
+            - link "int_ring" [ref=f2e62] [cursor=pointer]:
+              - /url: int_ring/index.html
+          - definition [ref=f2e63]: IntRing
+          - term [ref=f2e64]:
+            - link "ring_impl" [ref=f2e65] [cursor=pointer]:
+              - /url: ring_impl/index.html
+          - definition [ref=f2e66]: RingImpl

@@ -4,10 +4,18 @@ import numpy as np
 import os
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Plot TPC-H scaling from CSV')
+    parser.add_argument('--source', choices=['paper', 'run'], default='paper',
+                        help='Data source directory: ../data/paper (published '
+                             'numbers, default) or ../data/run (your own runs)')
+    args = parser.parse_args()
+
     # Path configuration
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file = os.path.join(script_dir, '..', 'data', 'fig13.csv')
-    pic_dir = os.path.join(script_dir, '..', 'figures')
+    data_file = os.path.join(script_dir, '..', 'data', args.source, 'fig13.csv')
+    pic_dir = os.path.join(script_dir, '..', 'figures', args.source)
     os.makedirs(pic_dir, exist_ok=True)
 
     plt.rcParams['font.family'] = 'sans-serif'

@@ -119,28 +119,33 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description='Plot LAN vs WAN execution time comparison (stacked)')
-    # Resolve default paths relative to this script: ../data for inputs, ../figures for outputs
+    # Resolve default paths relative to this script: ../data/<source> for
+    # inputs (paper = published data, run = freshly extracted results),
+    # ../figures for outputs
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, '..', 'data')
-    figures_dir = os.path.join(script_dir, '..', 'figures')
-    os.makedirs(figures_dir, exist_ok=True)
 
-    parser.add_argument('--lan', type=str, default=os.path.join(data_dir, 'fig7_lan_tpch.csv'),
-                        help='Path to the LAN CSV file (default: ../data/fig7_lan_tpch.csv)')
-    parser.add_argument('--wan', type=str, default=os.path.join(data_dir, 'fig7_wan_tpch.csv'),
-                        help='Path to the WAN CSV file (default: ../data/fig7_wan_tpch.csv)')
-    parser.add_argument('-o', '--output', type=str, default=os.path.join(figures_dir, 'fig7.pdf'),
-                        help='Path to the output PDF file (default: ../figures/fig7.pdf)')
-    
+    parser.add_argument('--source', choices=['paper', 'run'], default='paper',
+                        help='Data source directory: ../data/paper (published '
+                             'numbers, default) or ../data/run (your own runs)')
+    parser.add_argument('--lan', type=str, default=None,
+                        help='Path to the LAN CSV file (default: ../data/<source>/fig7_lan_tpch.csv)')
+    parser.add_argument('--wan', type=str, default=None,
+                        help='Path to the WAN CSV file (default: ../data/<source>/fig7_wan_tpch.csv)')
+    parser.add_argument('-o', '--output', type=str, default=None,
+                        help='Path to the output PDF file (default: ../figures/<source>/fig7.pdf)')
+
     args = parser.parse_args()
-    
+
     # Resolve input file paths
-    lan_path = args.lan
-    wan_path = args.wan
+    data_dir = os.path.join(script_dir, '..', 'data', args.source)
+    lan_path = args.lan or os.path.join(data_dir, 'fig7_lan_tpch.csv')
+    wan_path = args.wan or os.path.join(data_dir, 'fig7_wan_tpch.csv')
     
     # Resolve output file path
-    output_image_path = args.output
+    figures_dir = os.path.join(script_dir, '..', 'figures', args.source)
+    os.makedirs(figures_dir, exist_ok=True)
+    output_image_path = args.output or os.path.join(figures_dir, 'fig7.pdf')
     if not output_image_path.endswith('.pdf'):
         output_image_path += '.pdf'
-    
+
     plot_execution_time(lan_path, wan_path, output_image_path)

@@ -113,3 +113,12 @@ $EXP_PREFIX ./exp_qcredit 2097152 262144 | tee "${LOG_DIR}/exp_qcredit.txt"
 # Password Reuse (exp_qpwd): input table 2m, batch size 256k
 date
 $EXP_PREFIX ./exp_qpwd 2097152 262144 | tee "${LOG_DIR}/exp_qpwd.txt"
+
+# Extract the Secrecy logs into a CSV under nsdi27-ae/data/run/ (results of
+# this run; the paper's published numbers live in nsdi27-ae/data/paper/).
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+python3 "${AE_DIR}/plotting_scripts/extract_orq_log.py" \
+    -i "${LOG_DIR}" --median -o "${RUN_DATA}/fig9_secrecy.csv"
+
+echo "==== Fig 9 (Secrecy) finished. Results: ${RUN_DATA}/fig9_secrecy.csv (logs: ${LOG_DIR}) ===="

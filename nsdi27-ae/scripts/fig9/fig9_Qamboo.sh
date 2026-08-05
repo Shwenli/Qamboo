@@ -57,4 +57,12 @@ echo "==== Fig 9 (Qamboo): Secrecy application queries + TPC-H Q4/Q6/Q13, LAN ==
 "${RUN_TPCH}"    4           -t "${THREADS}" -s 0.02184533 -m tcp -h "${HOSTS}" --log "${LOG}"
 "${RUN_TPCH}"    6           -t "${THREADS}" -s 1.39810133 -m tcp -h "${HOSTS}" --log "${LOG}"
 
-echo "==== Fig 9 (Qamboo) finished. Results: experiments/result/secrecy_query/multinode/stat_output_paper.log ===="
+# Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
+# run; the paper's published numbers live in nsdi27-ae/data/paper/).
+AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" \
+    -i "${LOG}" -o "${RUN_DATA}/fig9_qamboo.csv"
+
+echo "==== Fig 9 (Qamboo) finished. Results: ${RUN_DATA}/fig9_qamboo.csv (log: ${LOG}) ===="

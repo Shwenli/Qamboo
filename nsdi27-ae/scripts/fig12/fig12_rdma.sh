@@ -57,4 +57,14 @@ echo "==== Loading SMC-R kernel modules (setup_rdma.sh) ===="
 
 echo "==== Fig 12 (Qamboo, RDMA): TPC-H queries ${QUERIES}, SF=1, 32 threads ===="
 "${RUN_TPCH}" "${QUERIES}" -t 32 -s 1 -m rdma -h "${HOSTS}"
-echo "==== Fig 12 (RDMA) finished. Results: experiments/result/tpch_query/multinode/stat_output_rdma.log ===="
+
+# Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
+# run; the paper's published numbers live in nsdi27-ae/data/paper/).
+AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+LOG="${QAMBOO_DIR}/experiments/result/tpch_query/multinode/stat_output_rdma.log"
+python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" \
+    -i "${LOG}" -o "${RUN_DATA}/fig12_rdma.csv"
+
+echo "==== Fig 12 (RDMA) finished. Results: ${RUN_DATA}/fig12_rdma.csv (log: ${LOG}) ===="

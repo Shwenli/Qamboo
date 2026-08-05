@@ -75,7 +75,7 @@ The experimental section has 8 experiments:
 
 We offer three levels of reproduction, from the cheapest to the most faithful:
 
-1. **Open data (no runs needed).** The real measurements behind every figure are open-sourced under [`data/`](data/) (one CSV per figure: `fig7_lan_tpch.csv`, `fig7_wan_tpch.csv`, `fig8.csv`, …, `fig14.csv`). Together with the plotting scripts under [`plotting_scripts/`](plotting_scripts/), reviewers can regenerate every figure in the paper directly from our experimental data — see [Plotting](#plotting). No cluster, no runs, no cost.
+1. **Open data (no runs needed).** The real measurements behind every figure are open-sourced under [`data/paper/`](data/paper/) (one CSV per figure: `fig7_lan_tpch.csv`, `fig7_wan_tpch.csv`, `fig8.csv`, …, `fig14.csv` — see [Experimental data](#experimental-data) for a per-file description). Together with the plotting scripts under [`plotting_scripts/`](plotting_scripts/), reviewers can regenerate every figure in the paper directly from our experimental data — see [Plotting](#plotting). No cluster, no runs, no cost. If you rerun the experiments yourself, the per-figure scripts extract your fresh measurements into [`data/run/`](data/run/) (see [Result collection](#result-collection)), keeping them separate from the published numbers.
 
 2. **Local single-machine runs (no cluster needed).** If a 3-node cloud cluster is a cost or time concern, every benchmark can also run on a single machine: the 3 parties then run as local processes on `127.0.0.1` (`-m local`, the default mode of all runners under `scripts/experiments/`). This exercises the same binaries and the same protocol end-to-end at smaller scale factors — the [smoke test](#smoke-test-10-minutes) below is exactly such a local run (~10 minutes). Note that local runs validate functionality and relative behavior, not the paper's absolute performance numbers, which require the cluster setting below.
 
@@ -160,7 +160,7 @@ $ ./nsdi27-ae/scripts/fig7/fig7_Qamboo.sh wan   # applies/removes tc emulation a
 Expected: Qamboo outperforms ORQ on 21 of 22 queries (Q6 is the exception, see paper §7.2.1), with a median speedup of 2.1× and up to 4.5× (Q18) in LAN; comparable speedups in WAN.
 
 <p align="center">
-  <img src="figures/fig7.png" alt="Fig 7: Execution time of Qamboo vs. ORQ on all 22 TPC-H queries at SF=1 (LAN and WAN)" width="100%"><br>
+  <img src="figures/paper/fig7.png" alt="Fig 7: Execution time of Qamboo vs. ORQ on all 22 TPC-H queries at SF=1 (LAN and WAN)" width="100%"><br>
   <em>Fig 7: Execution time of Qamboo vs. ORQ on all 22 TPC-H queries at SF=1 (LAN and WAN)</em>
 </p>
 
@@ -177,7 +177,7 @@ $ ./nsdi27-ae/scripts/fig8/fig8_Qamboo.sh
 Expected: Qamboo reduces communication cost by 5.1× on average over ORQ (Q6 excepted), with the largest savings on multi-way join queries (Q5: 90.5%, Q7: 84.1%, Q8: 86.0%).
 
 <p align="center">
-  <img src="figures/fig8.png" alt="Fig 8: Per-query communication volume (row bandwidth) of Qamboo vs. ORQ at SF=10" width="100%"><br>
+  <img src="figures/paper/fig8.png" alt="Fig 8: Per-query communication volume (row bandwidth) of Qamboo vs. ORQ at SF=10" width="100%"><br>
   <em>Fig 8: Per-query communication volume (row bandwidth) of Qamboo vs. ORQ at SF=10</em>
 </p>
 
@@ -194,7 +194,7 @@ $ ./nsdi27-ae/scripts/fig9/fig9_Qamboo.sh -h node0,node1,node2
 Expected: median speedup of 45× on the five Secrecy queries (up to 1632× on Aspirin) and 5836× on the three TPC-H queries (up to 6220× on Q4). Q6 is again the exception.
 
 <p align="center">
-  <img src="figures/fig9.png" alt="Fig 9: Execution time of Qamboo vs. Secrecy on the Secrecy application queries and TPC-H Q4/Q6/Q13" width="80%"><br>
+  <img src="figures/paper/fig9.png" alt="Fig 9: Execution time of Qamboo vs. Secrecy on the Secrecy application queries and TPC-H Q4/Q6/Q13" width="80%"><br>
   <em>Fig 9: Execution time of Qamboo vs. Secrecy on the Secrecy application queries and TPC-H Q4/Q6/Q13</em>
 </p>
 
@@ -220,7 +220,7 @@ $ ./run_radix_sort_mpspdz_ssh.sh
 Expected: median speedup of 7× (up to 9.2× at 2^21 rows) for 64-bit keys; similar speedups (5.5×–9.0×) for 32-bit keys.
 
 <p align="center">
-  <img src="figures/fig10.png" alt="Fig 10: Oblivious RadixSort execution time of Qamboo vs. MP-SPDZ (64-bit and 32-bit keys)" width="80%"><br>
+  <img src="figures/paper/fig10.png" alt="Fig 10: Oblivious RadixSort execution time of Qamboo vs. MP-SPDZ (64-bit and 32-bit keys)" width="80%"><br>
   <em>Fig 10: Oblivious RadixSort execution time of Qamboo vs. MP-SPDZ (64-bit and 32-bit keys)</em>
 </p>
 
@@ -245,12 +245,12 @@ $ ./nsdi27-ae/scripts/fig11/fig11_b.sh
 The corresponding optimized numbers come from the Fig 7 run at SF=1. Expected: join reordering gives a median speedup of 1.6× (up to 2.0× on Q8); secure group cutting gives a median speedup of 1.8× (up to 2.9× on Q13).
 
 <p align="center">
-  <img src="figures/fig11a.png" alt="Fig 11a: Effect of smallest-first join reordering" width="80%"><br>
+  <img src="figures/paper/fig11a.png" alt="Fig 11a: Effect of smallest-first join reordering" width="80%"><br>
   <em>Fig 11a: Effect of smallest-first join reordering</em>
 </p>
 
 <p align="center">
-  <img src="figures/fig11b.png" alt="Fig 11b: Effect of secure group cutting" width="80%"><br>
+  <img src="figures/paper/fig11b.png" alt="Fig 11b: Effect of secure group cutting" width="80%"><br>
   <em>Fig 11b: Effect of secure group cutting</em>
 </p>
 
@@ -264,7 +264,7 @@ Expected: an average ratio of ~10.5× across all 22 queries, close to the theore
 
 <p align="center">
 <p align="center">
-  <img src="figures/fig13.png" alt="Fig 13: TPC-H scaling ratio (SF=10 vs. SF=1) per query" width="80%"><br>
+  <img src="figures/paper/fig13.png" alt="Fig 13: TPC-H scaling ratio (SF=10 vs. SF=1) per query" width="80%"><br>
   <em>Fig 13: TPC-H scaling ratio (SF=10 vs. SF=1) per query</em>
 </p>
 </p>
@@ -285,7 +285,7 @@ Run it once in LAN, and once more in WAN (the script applies the `tc` delay emul
 Expected: execution time grows linearly with input size in both settings; 32-bit keys are ~2× faster than 64-bit keys; the WAN/LAN gap narrows from ~3× to ~2× as data grows.
 
 <p align="center">
-  <img src="figures/fig14.png" alt="Fig 14: RadixSort scaling from 2^20 to 2^27 rows in LAN and WAN" width="80%"><br>
+  <img src="figures/paper/fig14.png" alt="Fig 14: RadixSort scaling from 2^20 to 2^27 rows in LAN and WAN" width="80%"><br>
   <em>Fig 14: RadixSort scaling from 2^20 to 2^27 rows in LAN and WAN</em>
 </p>
 
@@ -303,7 +303,7 @@ $ ./nsdi27-ae/scripts/fig12/fig12_rdma.sh  # RDMA (SMC-R)
 Expected: RDMA reduces execution time by a median of 11.3% (up to 25.6% on Q6).
 
 <p align="center">
-  <img src="figures/fig12.png" alt="Fig 12: TCP vs. RDMA (SMC-R) execution time on all 22 TPC-H queries at SF=1" width="100%"><br>
+  <img src="figures/paper/fig12.png" alt="Fig 12: TCP vs. RDMA (SMC-R) execution time on all 22 TPC-H queries at SF=1" width="100%"><br>
   <em>Fig 12: TCP vs. RDMA (SMC-R) execution time on all 22 TPC-H queries at SF=1</em>
 </p>
 
@@ -320,8 +320,49 @@ All batch runners strip ANSI color codes and append the `INFO Total ...` timing 
 
 Each TPC-H query binary also prints its end-to-end time (`Total Q* execution time`) and per-party communication volume (`print_communication_stats`), and asserts the MPC result bit-for-bit against the Polars plaintext baseline before exiting — a failed assertion indicates an incorrect run and should be reported.
 
+**Data extraction.** After the run finishes, every per-figure script under [`scripts/`](scripts/) automatically parses its result log into a CSV under [`data/run/`](data/run/), using the extractors in [`plotting_scripts/`](plotting_scripts/):
+
+- `extract_log_data.py` — Qamboo logs (`Total Q* execution time` / `Total ... Communication Sent ... MB`, RadixSort `took:` lines; `--delta` converts the cumulative per-party communication counters of the operator benchmarks into per-task traffic; `--labels` merges several logs into one pivoted CSV).
+- `extract_orq_log.py` — ORQ and Secrecy per-query logs (`[ SW] <stage> <t> sec`, `[=SW] Overall <t> sec`; `--median` collapses repeated runs).
+- `extract_mpspdz_log.py` — MP-SPDZ logs (`Spent <t> seconds ... online/offline phase`, per exponent).
+
+Two directories keep the data sources apart: [`data/paper/`](data/paper/) holds the published measurements behind the paper's figures (used by default by the plotting scripts), while [`data/run/`](data/run/) receives the CSVs extracted from your own runs. Note that the Qamboo logs are cumulative across runs of the same experiment type (e.g. Figs 7, 8, and 12-TCP share `experiments/result/tpch_query/multinode/stat_output.log`), and the extractors keep the latest value per query — so an extracted CSV reflects the most recent run recorded in the log.
+
+### Experimental data
+
+The real measurements behind every figure are open-sourced under [`data/paper/`](data/paper/), one CSV per figure. Each CSV is the exact input of the corresponding script in [`plotting_scripts/`](plotting_scripts/), so every figure in the paper can be regenerated directly from these files (see [Plotting](#plotting)).
+
+| CSV | Figure | Contents |
+|:---|:---|:---|
+| `fig7_lan_tpch.csv`, `fig7_wan_tpch.csv` | Fig 7 | Execution time (s) of Qamboo vs. ORQ on all 22 TPC-H queries at SF=10, in LAN and WAN, plus the per-query speedup. |
+| `fig8.csv` | Fig 8 | Communication sent (MB) and row bandwidth of Qamboo vs. ORQ per TPC-H query at SF=10. |
+| `fig9.csv` | Fig 9 | Execution time (s) of Qamboo vs. Secrecy on the privacy-preserving applications (Q6, Pwd, Credit, Comor., Rcdiff, Aspirin, Q4, Q13). |
+| `fig10.csv` | Fig 10 | Oblivious RadixSort execution time (s) and communication (MB) of Qamboo vs. MP-SPDZ, 2^16–2^24 rows, for 64-bit and 32-bit keys. |
+| `fig11.csv` | Fig 11 | Query-optimization ablations per TPC-H query: execution time (s) and communication (MB) of full Qamboo, the no-join-reorder variant, and the no-secure-cut variant. |
+| `fig12.csv` | Fig 12 | Execution time (s) over TCP vs. eRDMA on all 22 TPC-H queries. |
+| `fig13.csv` | Fig 13 | TPC-H scaling from SF=1 to SF=10: per-query execution time (s) and the SF10/SF1 ratio, over TCP and eRDMA. |
+| `fig14.csv` | Fig 14 | RadixSort scaling from 2^20 to 2^27 rows in LAN and WAN, for 64-bit and 32-bit keys: execution time (s). |
+
 ### Plotting
 
-<!-- TODO: add the plotting/data-extraction scripts (e.g. nsdi27-replication/plotting/) that parse the logs above into the paper figures, then document them here. -->
+Each script `plotting_scripts/fig<N>.py` reads its CSV from [`data/paper/`](data/paper/) by default and writes the figure (PDF + PNG) to [`figures/paper/`](figures/paper/) — like `data/`, the `figures/` directory is split into `paper/` (the published figures) and `run/` (figures from your own measurements):
 
-The logs under `experiments/result/` can be parsed directly with `awk`/`grep`/Python. To compare against the paper, extract the per-query `Total Q* execution time` values for Figs 7, 9, 11, 12, and 13, and the communication volumes for Fig 8, then normalize against the baseline data points reported in §7 of the paper.
+```bash
+$ cd nsdi27-ae/plotting_scripts
+$ python3 fig7.py     # regenerates figures/paper/fig7.pdf from data/paper/
+```
+
+To plot your own measurements instead, pass `--source run` — every plotting script then reads its default CSV from [`data/run/`](data/run/) instead of `data/paper/` and writes to `figures/run/` (the CSV must use the paper's filename and column layout; the extractors below produce raw per-run data, so assemble the figure CSV the same way `data/paper/` does). An explicitly passed CSV path or output path always takes precedence over `--source`:
+
+```bash
+$ python3 fig7.py --source run                       # data/run/fig7_*_tpch.csv -> figures/run/fig7.pdf
+$ python3 fig12.py ../data/run/fig12.csv             # explicit path also works
+```
+
+The extraction step itself can also be rerun standalone (it already runs automatically at the end of each per-figure experiment script):
+
+```bash
+$ python3 extract_log_data.py -i ../../experiments/result/tpch_query/multinode/stat_output.log -o ../data/run/fig7_qamboo_lan.csv
+$ python3 extract_orq_log.py -i ../baselines/orq/results/query-benchmark/tpch/<timestamp>-3PC-lan-SF1/raw_data --median -o ../data/run/fig7_orq_lan.csv
+$ python3 extract_mpspdz_log.py -i ../data/run/fig10_mpspdz.log -o ../data/run/fig10_mpspdz.csv
+```

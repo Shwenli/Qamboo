@@ -112,10 +112,19 @@ def plot_sort_scale(csv_file, output_file):
     # plt.show()
 
 if __name__ == "__main__":
-    # Resolve paths relative to this script: ../data for inputs, ../figures for outputs
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Plot RadixSort scaling from CSV')
+    parser.add_argument('--source', choices=['paper', 'run'], default='paper',
+                        help='Data source directory: ../data/paper (published '
+                             'numbers, default) or ../data/run (your own runs)')
+    args = parser.parse_args()
+
+    # Resolve paths relative to this script: ../data/<source> for inputs,
+    # ../figures/<source> for outputs
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_path = os.path.join(script_dir, '..', 'data', 'fig14.csv')
-    output_path = os.path.join(script_dir, '..', 'figures', 'fig14.pdf')
+    csv_path = os.path.join(script_dir, '..', 'data', args.source, 'fig14.csv')
+    output_path = os.path.join(script_dir, '..', 'figures', args.source, 'fig14.pdf')
     
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

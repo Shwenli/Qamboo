@@ -38,4 +38,16 @@ RUN_OPERATOR="${QAMBOO_DIR}/scripts/experiments/run_operator.sh"
 
 echo "==== Fig 10 (Qamboo): oblivious RadixSort, 2^16–2^24 rows, 64/32-bit keys ===="
 "${RUN_OPERATOR}" radix_sort -m tcp -h "${HOSTS}"
-echo "==== Fig 10 (Qamboo) finished. Results: experiments/result/operator/multinode/stat_output.log ===="
+
+# Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
+# run; the paper's published numbers live in nsdi27-ae/data/paper/).
+# --delta: the log's communication counters are cumulative per party, so the
+# per-task traffic is the sum of the per-party increments.
+AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+LOG="${QAMBOO_DIR}/experiments/result/operator/multinode/stat_output.log"
+python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" --delta \
+    -i "${LOG}" -o "${RUN_DATA}/fig10_qamboo.csv"
+
+echo "==== Fig 10 (Qamboo) finished. Results: ${RUN_DATA}/fig10_qamboo.csv (log: ${LOG}) ===="

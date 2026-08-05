@@ -122,4 +122,21 @@ echo "==== Start TPCH ===="
 ../query-experiments.sh tpch $SCALE_FACTOR $PROTOCOL 16 $NETWORK $QUERY_SELECT
 echo "==== Finished TPCH ===="
 
+# Extract the ORQ results into a CSV under nsdi27-ae/data/run/ (results of
+# this run; the paper's published numbers live in nsdi27-ae/data/paper/).
+# query-experiments.sh writes one log per query to
+# results/query-benchmark/tpch/<timestamp>-3PC-<env>-SF1/raw_data/q*.txt;
+# pick the folder created by this run (the newest one).
+AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+LATEST_RAW="$(ls -td "${ORQ_DIR}"/results/query-benchmark/tpch/*/raw_data 2>/dev/null | head -1)"
+if [[ -n "${LATEST_RAW}" ]]; then
+    python3 "${AE_DIR}/plotting_scripts/extract_orq_log.py" \
+        -i "${LATEST_RAW}" --median -o "${RUN_DATA}/fig7_orq_${NETWORK}.csv"
+    echo "==== Fig 7 (ORQ) finished. Results: ${RUN_DATA}/fig7_orq_${NETWORK}.csv (logs: ${LATEST_RAW}) ===="
+else
+    echo "WARNING: no ORQ results found under ${ORQ_DIR}/results/query-benchmark/tpch" >&2
+fi
+
 

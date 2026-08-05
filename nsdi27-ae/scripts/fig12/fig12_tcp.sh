@@ -45,4 +45,14 @@ RUN_TPCH="${QAMBOO_DIR}/scripts/experiments/run_tpch.sh"
 
 echo "==== Fig 12 (Qamboo, TCP): TPC-H queries ${QUERIES}, SF=1, 32 threads ===="
 "${RUN_TPCH}" "${QUERIES}" -t 32 -s 1 -m tcp -h "${HOSTS}"
-echo "==== Fig 12 (TCP) finished. Results: experiments/result/tpch_query/multinode/stat_output.log ===="
+
+# Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
+# run; the paper's published numbers live in nsdi27-ae/data/paper/).
+AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+LOG="${QAMBOO_DIR}/experiments/result/tpch_query/multinode/stat_output.log"
+python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" \
+    -i "${LOG}" -o "${RUN_DATA}/fig12_tcp.csv"
+
+echo "==== Fig 12 (TCP) finished. Results: ${RUN_DATA}/fig12_tcp.csv (log: ${LOG}) ===="

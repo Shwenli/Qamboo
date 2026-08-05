@@ -48,4 +48,14 @@ RUN_OPT="${QAMBOO_DIR}/scripts/experiments/run_optimization.sh"
 
 echo "==== Fig 11b (Qamboo): no_secure_cut, queries ${QUERIES}, SF=1, 32 threads, LAN ===="
 "${RUN_OPT}" no_secure_cut "${QUERIES}" -t 32 -s 1 -m tcp -h "${HOSTS}"
-echo "==== Fig 11b finished. Results: experiments/result/query_optimization/no_secure_cut/multinode/stat_output.log ===="
+
+# Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
+# run; the paper's published numbers live in nsdi27-ae/data/paper/).
+AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+RUN_DATA="${AE_DIR}/data/run"
+mkdir -p "${RUN_DATA}"
+LOG="${QAMBOO_DIR}/experiments/result/query_optimization/no_secure_cut/multinode/stat_output.log"
+python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" \
+    -i "${LOG}" -o "${RUN_DATA}/fig11b_qamboo.csv"
+
+echo "==== Fig 11b finished. Results: ${RUN_DATA}/fig11b_qamboo.csv (log: ${LOG}) ===="

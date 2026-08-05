@@ -102,23 +102,29 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description='Plot execution time from CSV')
-    # Resolve default paths relative to this script: ../data for inputs, ../figures for outputs
+    # Resolve default paths relative to this script: ../data/<source> for
+    # inputs (paper = published data, run = freshly extracted results),
+    # ../figures for outputs
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, '..', 'data')
-    figures_dir = os.path.join(script_dir, '..', 'figures')
-    os.makedirs(figures_dir, exist_ok=True)
 
-    parser.add_argument('input_file', type=str, nargs='?', default=os.path.join(data_dir, 'fig12.csv'),
-                        help='Input CSV file path (default: ../data/fig12.csv)')
+    parser.add_argument('--source', choices=['paper', 'run'], default='paper',
+                        help='Data source directory: ../data/paper (published '
+                             'numbers, default) or ../data/run (your own runs)')
+    parser.add_argument('input_file', type=str, nargs='?', default=None,
+                        help='Input CSV file path (default: ../data/<source>/fig12.csv)')
     parser.add_argument('output_file', type=str, nargs='?', default=None,
-                        help='Output PDF file path (optional, defaults to input filename + .pdf)')
-    
+                        help='Output PDF file path (optional, defaults to '
+                             '../figures/<source>/<input filename>.pdf)')
+
     args = parser.parse_args()
-    
+
     # Handle input file path
-    csv_path = args.input_file
-    
+    data_dir = os.path.join(script_dir, '..', 'data', args.source)
+    csv_path = args.input_file or os.path.join(data_dir, 'fig12.csv')
+
     # If no output file is specified, use the input filename (without extension) + .pdf
+    figures_dir = os.path.join(script_dir, '..', 'figures', args.source)
+    os.makedirs(figures_dir, exist_ok=True)
     if args.output_file is None:
         base_name = os.path.splitext(os.path.basename(csv_path))[0]
         output_image_path = os.path.join(figures_dir, base_name + '.pdf')

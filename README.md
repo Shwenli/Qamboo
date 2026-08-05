@@ -2,20 +2,6 @@
 
 Qamboo brings secure multi-party computation to relational analytics, allowing distrusting parties to jointly query their combined data without exposing it. Details can be found in our paper (Accepted by NSDI '27).
 
----
-
-## Overview
-
-Qamboo is an MPC-based framework for **secure collaborative analytics**. It allows multiple data owners to jointly run analytical queries over their combined data — joins, aggregations, sorting, and more — while cryptographically guaranteeing that no party (or cloud provider) ever sees the others' raw data. Computation is distributed across 3 cloud servers using replicated secret sharing, so results remain correct and private even if one server is compromised. The framework exposes a columnar `SharedTable` API (Dataflow-style) for composing queries, ships with implementations of all 22 TPC-H queries and the Secrecy application benchmarks, and is engineered for practical cloud deployment: it scales near-linearly with data size, works over both LAN and WAN, and can transparently accelerate communication with SMC-R RDMA.
-
-
-<p align="center">
-  <img src="Qamboo_overview.png" alt="Qamboo System Overview" width="100%"><br>
-  <em> Qamboo System Overview</em>
-</p>
-
----
-
 ## For NSDI Artifact Evaluation
 
 **Reviewers: please start with [`nsdi27-ae/README.md`](nsdi27-ae/README.md).** It is the dedicated artifact evaluation guide for the NSDI 2027 paper and contains everything needed to reproduce our results:
@@ -28,6 +14,20 @@ Qamboo is an MPC-based framework for **secure collaborative analytics**. It allo
 The rest of this README covers general framework usage (build, deployment, and running benchmarks) and is not required for the artifact evaluation.
 
 ---
+
+## Overview
+
+Qamboo is an MPC-based framework for **secure collaborative analytics**. It allows multiple data owners to jointly run analytical queries over their combined data — joins, aggregations, sorting, and more — while cryptographically guaranteeing that no party (or cloud provider) ever sees the others' raw data. Computation is distributed across 3 cloud servers using replicated secret sharing, so results remain correct and private even if one server is compromised. The framework exposes a columnar `SharedTable` API (Dataflow-style) for composing queries, ships with implementations of all 22 TPC-H queries and the Secrecy application benchmarks, and is engineered for practical cloud deployment: it scales near-linearly with data size, works over both LAN and WAN, and can transparently accelerate communication with SMC-R RDMA.
+
+
+<p align="center">
+  <img src="Qamboo_overview.png" alt="Qamboo System Overview" width="80%"><br>
+  <em> Qamboo System Overview</em>
+</p>
+
+---
+
+
 
 ## Repository Structure
 

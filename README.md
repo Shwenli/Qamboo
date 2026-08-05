@@ -1,4 +1,4 @@
-# Qamboo: An Efficient and Scalable MPC Framework for Relational Analytics
+# Qamboo: An MPC Framework for Efficient and Scalable Relational Analytics
 
 Qamboo brings secure multi-party computation to relational analytics, allowing distrusting parties to jointly query their combined data without exposing it. Details can be found in our paper (Accepted by NSDI '27).
 

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["compare","div","kogge_stone_adder","mul","mux","permute","shuffle","transform","utils"]};

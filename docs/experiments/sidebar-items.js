@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["convert_binary_from_arithmetic","gen_rand_column_data_pk_u64","gen_rand_column_data_u64","gen_rand_column_pk_u64_ring","gen_rand_column_u64_ring","gen_valid_column_data_u64","gen_valid_column_u64_ring"],"mod":["net_statistics","secrecy_database_gen","timer","tpch_database_gen"]};

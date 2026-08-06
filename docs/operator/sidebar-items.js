@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["agg_func","distinct","from_l_to_r","group_by","join","sort"]};

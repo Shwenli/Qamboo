@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["apply_inv","apply_inv_multithreads","apply_perm","apply_perm_in_place","apply_perm_in_place_multithreads","apply_perm_multithreads","compose","compose_perm_multithreads","gen_bit_perm","gen_bit_perm_multithreads","gen_perm","gen_perm_multithreads"]};

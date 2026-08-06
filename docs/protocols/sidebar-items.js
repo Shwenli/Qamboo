@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["SEED_SIZE"],"mod":["rep3_ring"],"trait":["MpcState"],"type":["RngType"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["id","multinet_impl","net_impl"]};

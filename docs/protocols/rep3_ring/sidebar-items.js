@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["combine_ring_element","combine_ring_element_binary","combine_ring_elements","combine_ring_elements_binary","share_ring_element","share_ring_element_binary","share_ring_elements","share_ring_elements_binary"],"mod":["arithmetic","binary","conversion","detail"],"struct":["Rep3RingShare"],"type":["Rep3BitShare","SeedRng"]};

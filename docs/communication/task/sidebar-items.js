@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["get_mut_task_chunks","get_task_chunks"]};

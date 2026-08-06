@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["mux_if_share_then_public_vec","mux_if_share_then_public_vec_multithreads","mux_if_then_public","mux_if_then_share_vec","mux_if_then_share_vec_multithreads"]};

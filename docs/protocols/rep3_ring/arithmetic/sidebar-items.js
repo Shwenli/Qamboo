@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["add","add_assign","add_assign_public","add_public","add_vec","add_vec_assign","local_mul_vec","mul_assign_public","mul_public","neg","open","open_bit","open_vec","open_vec_bit","promote_to_trivial_share","reshare_vec","sub","sub_assign","sub_public_by_shared","sub_shared_by_public","sub_vec_assign"],"type":["RingShare"]};

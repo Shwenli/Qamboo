@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["agg_count","agg_count_by_valid","agg_sum","table_agg_count","table_agg_count_by_valid","table_agg_count_by_valid_multithreads","table_agg_count_multithreads","table_agg_max_multithreads","table_agg_min_multithreads","table_agg_sum","table_agg_sum_multithreads"]};

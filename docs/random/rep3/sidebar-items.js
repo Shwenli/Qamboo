@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["SeededType"],"mod":["rep3rng","rep3rng_rayon"],"struct":["Rep3State","ReplicatedSeedType"],"type":["SeedRng"]};

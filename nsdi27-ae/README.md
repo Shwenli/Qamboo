@@ -129,11 +129,18 @@ $ ./setup_delay.sh -d -H node0,node1,node2             # delete on all nodes
 
 Remember to delete the `tc` rules before switching back to LAN experiments.
 
+The 3-party protocols communicate over TCP ports assigned in pre-generated TOML configs under `experiments/net/`: `local/` for single-machine runs (parties talk over `127.0.0.1`, 10 pre-allocated port groups starting at 9000) and `multinode/` for cluster runs (16 groups, generated from the node IPs). Both are created by `scripts/setup/setup_connection.sh` (step 4 of the [installation](#qamboo-installation)).
+
+Note that these ports are statically pre-allocated in the config files — Qamboo does not detect or resolve port conflicts automatically. This is a deliberate simplification: Qamboo is an academic prototype rather than a production system, and ports on a dedicated benchmarking cluster are generally clean. If a port happens to be occupied on your machines, edit the affected `config_party*.toml` files (or regenerate them with a different base port) and rerun.
+
 #### Smoke test (~10 minutes)
 
-Before running the long experiments, verify the installation end-to-end with a small local run (3 parties as processes on one machine, SF=0.01). It builds the binary, executes Q9, and checks the result bit-for-bit against the Polars plaintext baseline:
+Before running the long experiments, verify the installation end-to-end with a small local run (3 parties as processes on one machine, SF=0.01). It builds the binary, executes Q9, and checks the result bit-for-bit against the Polars plaintext baseline. The local run uses the pre-configured loopback ports described in [Network environment](#network-environment); if you skipped step 4 of the installation (e.g., you are on a single machine), generate the configs first.
+
+The runners take the thread count via `-t` (and `--rayon` for the Rayon compute-thread pool where applicable). The minimum supported setting is **4 threads**: some low-level operators hardcode multithreaded execution, so end-to-end queries currently do not support single-threaded or dual-threaded configurations. Use `-t 4` or more.
 
 ```bash
+$ ./scripts/setup/setup_connection.sh -t local -h localhost -n 10   # pre-configure local ports
 $ cd scripts/experiments
 $ ./run_tpch.sh 9 -t 6 -s 0.01
 ```
@@ -145,6 +152,8 @@ A successful run ends with `Q9: MPC result matches polars result!` in the log.
 All of the following experiments are long-running. To avoid improper termination, please use [screen](https://linuxize.com/post/how-to-use-linux-screen/) or `tmux` to run them. All commands are run from `node0`.
 
 Every batch runner compiles the release binaries, distributes them to `node1`/`node2` via `scp`, launches party 0 locally and parties 1 & 2 via `ssh`, and appends the timing/communication statistics to structured logs under `experiments/result/` (see [Result collection](#result-collection)). Run times below are approximate and were measured on the ALI setup described above.
+
+
 
 #### Fig 7: Execution time vs. ORQ
 

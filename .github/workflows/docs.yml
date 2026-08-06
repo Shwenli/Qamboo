@@ -20,7 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Pin to 1.90: ethnum 1.5.2 (a locked dependency) fails to compile on
+      # newer toolchains where core::num::TryFromIntError is no longer a ZST.
+      - uses: dtolnay/rust-toolchain@1.90.0
 
       - uses: Swatinem/rust-cache@v2
 

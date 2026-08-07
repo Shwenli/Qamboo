@@ -13,7 +13,7 @@ We plan to attach an open-source license (MIT, already included as [LICENSE](../
 
 ## Functional Badge
 
-We provide Qamboo, a modular and extensible MPC framework for secure collaborative analytics, implemented in ~20,000 lines of Rust. Qamboo performance is significantly better than state-of-the-art systems on the full TPC-H benchmark and on representative secure analytics workloads.
+We provide Qamboo, a modular and extensible MPC framework for secure collaborative analytics, implemented in ~20,000 lines of Rust. Qamboo performance is significantly better than state-of-the-art systems on the full TPC-H benchmark and on representative secure analytics workloads. Full API documentation is available at the [project docs page](https://shwenli.github.io/Qamboo/).
 
 We demonstrate this through the following components (see the main [README](../README.md#architecture) for the full architecture):
 
@@ -79,22 +79,62 @@ We offer three levels of reproduction, from the cheapest to the most faithful:
 
 2. **Local single-machine runs (no cluster needed).** If a 3-node cloud cluster is a cost or time concern, every benchmark can also run on a single machine: the 3 parties then run as local processes on `127.0.0.1` (`-m local`, the default mode of all runners under `scripts/experiments/`). This exercises the same binaries and the same protocol end-to-end at smaller scale factors — the [smoke test](#smoke-test-10-minutes) below is exactly such a local run (~10 minutes). Note that local runs validate functionality and relative behavior, not the paper's absolute performance numbers, which require the cluster setting below.
 
-3. **Multi-node cluster runs (full reproduction).** The per-figure scripts under [`nsdi27-ae/scripts/`](scripts/) reproduce the paper numbers on 3 networked nodes in the ALI-LAN / ALI-WAN settings described above. Because this requires 3 networked nodes, we offer access to a ready-to-use cluster — if you choose to use it, you can skip the [Setup](#setup) section and go directly to [Experiments](#experiments). <!-- TODO: confirm cluster access for reviewers -->
+3. **Multi-node cluster runs (full reproduction).** The per-figure scripts under [`nsdi27-ae/scripts/`](scripts/) reproduce the paper numbers on 3 networked nodes in the ALI-LAN / ALI-WAN settings described above. Because this requires 3 networked nodes, we offer access to a ready-to-use cluster — if you choose to use it, you can skip the [Setup](#setup) section and go directly to [Experiments](#experiments). 
 
 ### Setup
 
+The complete setup is the following sequence of commands, run from `node0` (details for each step are in the section named in its comment):
+
+```bash
+# 1. Clone the repository (details: Qamboo installation)
+git clone https://github.com/Shwenli/Qamboo.git
+cd Qamboo
+
+# 2. One-click deploy to the 3 nodes: SSH trust, /etc/hosts, RDMA,
+#    Rust toolchain check, release build, distribution
+#    (details: Qamboo installation)
+./scripts/setup/deploy.sh -i <ip-0>,<ip-1>,<ip-2> -x node
+
+# 3. Generate the TOML network configs (peer addresses and ports)
+#    (details: Network environment)
+./scripts/setup/setup_connection.sh -t lan   -h node0,node1,node2 -n 32
+./scripts/setup/setup_connection.sh -t local -h localhost         -n 10
+
+# 4. WAN experiments only: emulate 6 Gbps / 20 ms RTT on all nodes
+#    (details: Network environment; skip for LAN, remove with -d afterwards)
+./scripts/setup/setup_delay.sh -c -H node0,node1,node2 6GBit 20ms
+
+# 5. Smoke test: local 3-party Q9 at SF=0.01, ~10 minutes
+#    (details: Smoke test)
+./scripts/experiments/run_tpch.sh 9 -t 6 -s 0.01
+```
+
 #### Qamboo installation
 
-Please refer to the main [README](../README.md#building-qamboo) for system requirements (Rust 1.85+). For the multi-node experiments, we install as follows:
+Please refer to the main [README](../README.md#building-qamboo) for system requirements (Rust 1.85+). Qamboo supports two deployment modes:
+
+**Single-machine deployment.** All 3 parties run as processes on one host, communicating over `127.0.0.1` — sufficient for the [smoke test](#smoke-test-10-minutes) and development. Simply clone the repository; the experiment runners compile the release binaries automatically on first use:
+
+```bash
+$ git clone https://github.com/Shwenli/Qamboo.git
+$ cd Qamboo
+```
+
+**Multi-machine deployment.** The 3 parties run on 3 separate nodes, driven from `node0`:
 
 1. Prepare 3 nodes connected together. Call them `node0`, `node1`, and `node2`, and ensure that `node0` has SSH access to the other two. Note that SSH access is used only for benchmarking purposes (binary distribution and remote launch) and is not required in a real production deployment.
-2. Clone this repository on `node0` and enter the directory:
+2. Clone this repository on `node0`:
    ```bash
-   $ git clone https://github.com/<org>/Qamboo   # TODO: fill in after the org transfer
+   $ git clone https://github.com/Shwenli/Qamboo.git
    $ cd Qamboo
    ```
+3. Run the one-click deployment pipeline from `node0`, which establishes SSH trust, synchronizes `/etc/hosts`, optionally configures RDMA, checks the Rust toolchain, and builds and distributes the project to all nodes (see [`scripts/README.md`](../scripts/README.md) for details):
+   ```bash
+   $ ./scripts/setup/deploy.sh -i <ip-0>,<ip-1>,<ip-2> -x node
+   ```
+
 > [!TIP]
-> For the best runtime performance, uncomment the following section in `Cargo.toml` before deployment. This enables link-time optimization and single-codegen-unit compilation, which produce faster binaries at the cost of a noticeably longer compile time:
+> For the best runtime performance, uncomment the following section in `Cargo.toml` before deployment (step 3). This enables link-time optimization and single-codegen-unit compilation, which produce faster binaries at the cost of a noticeably longer compile time:
 >
 > ```toml
 > [profile.release]
@@ -103,56 +143,41 @@ Please refer to the main [README](../README.md#building-qamboo) for system requi
 > panic = "abort"
 > ```
 
-1. Run the one-click deployment pipeline from `node0`, which establishes SSH trust, synchronizes `/etc/hosts`, optionally configures RDMA, and builds and distributes the project to all nodes (see [`scripts/README.md`](../scripts/README.md) for details):
-   ```bash
-   $ cd scripts/setup
-   $ ./deploy.sh -i <ip-0>,<ip-1>,<ip-2> -x node
-   ```
-2. Generate the TOML network configs for the 3-party protocol on all hosts (16 connection groups for multinode, 10 for local single-machine runs):
-   ```bash
-   $ ./setup_connection.sh -t lan   -h node0,node1,node2 -n 16
-   $ ./setup_connection.sh -t local -h localhost         -n 10
-   ```
-   For WAN experiments, additionally emulate the 20 ms RTT / 6 Gbps setting:
-   ```bash
-   $ ./setup_delay.sh   # uses tc; run on all nodes as documented in scripts/README.md
-   ```
+After deployment, set up the network as described in [Network environment](#network-environment).
 
 #### Network environment
 
-The paper's WAN experiments assume 6 Gbps bandwidth and 20 ms RTT between nodes. If the network parameters of your rented servers differ from the paper's setting, use `tc` (traffic control) to emulate them on **all three nodes**. Note that `tc` applies the delay per node, so each node adds half of the target RTT (10 ms each for a 20 ms RTT):
+The 3-party protocols communicate over TCP ports assigned in pre-generated TOML configs under `experiments/net/`: `local/` for single-machine runs (parties talk over `127.0.0.1`, 10 pre-allocated port groups starting at 9000) and `multinode/` for cluster runs (32 groups, generated from the node IPs). Each network connection (`-t`) consumes one group: LAN runs use 16 connections (groups 0–15), WAN runs use 32. Both sets are created by `scripts/setup/setup_connection.sh`:
 
 ```bash
-# Load: limit bandwidth to 6 Gbps and add 10 ms delay (i.e., 20 ms RTT in total)
-$ sudo tc qdisc add dev eth0 root netem rate 6GBit delay 10ms
+# Multinode: run on node0; generates the configs on all 3 hosts via SSH
+# (32 groups: LAN runs use 16 connections, WAN runs use 32)
+$ ./scripts/setup/setup_connection.sh -t lan   -h node0,node1,node2 -n 32
 
-# Delete: restore the original network parameters
-$ sudo tc qdisc del dev eth0 root
+# Local: loopback port groups for single-machine runs
+$ ./scripts/setup/setup_connection.sh -t local -h localhost         -n 10
 ```
 
-Replace `eth0` with the actual network interface used for inter-node communication if it differs. Alternatively, `scripts/setup/setup_delay.sh` wraps these commands and can apply them to all nodes at once:
+Note that these ports are statically pre-allocated in the config files — Qamboo does not detect or resolve port conflicts automatically. This is a deliberate simplification: Qamboo is an academic prototype rather than a production system, and ports on a dedicated benchmarking cluster are generally clean. If a port happens to be occupied on your machines, edit the affected `config_party*.toml` files (or regenerate them with a different base port) and rerun.
+
+The paper's WAN experiments assume 6 Gbps bandwidth and 20 ms RTT between nodes. If the network parameters of your rented servers differ from the paper's setting, use `tc` (traffic control) to emulate them on **all three nodes**. Note that `tc` applies the delay per node, so each node adds half of the target RTT (10 ms each for a 20 ms RTT). `scripts/setup/setup_delay.sh` wraps the `tc` commands and can apply them to all nodes at once:
 
 ```bash
-$ ./setup_delay.sh -c -H node0,node1,node2 6GBit 20ms   # load on all nodes
-$ ./setup_delay.sh -d -H node0,node1,node2             # delete on all nodes
+$ ./scripts/setup/setup_delay.sh -c -H node0,node1,node2 6GBit 20ms   # load on all nodes
+$ ./scripts/setup/setup_delay.sh -d -H node0,node1,node2             # delete on all nodes
 ```
 
 Remember to delete the `tc` rules before switching back to LAN experiments.
 
-The 3-party protocols communicate over TCP ports assigned in pre-generated TOML configs under `experiments/net/`: `local/` for single-machine runs (parties talk over `127.0.0.1`, 10 pre-allocated port groups starting at 9000) and `multinode/` for cluster runs (16 groups, generated from the node IPs). Both are created by `scripts/setup/setup_connection.sh` (step 4 of the [installation](#qamboo-installation)).
-
-Note that these ports are statically pre-allocated in the config files — Qamboo does not detect or resolve port conflicts automatically. This is a deliberate simplification: Qamboo is an academic prototype rather than a production system, and ports on a dedicated benchmarking cluster are generally clean. If a port happens to be occupied on your machines, edit the affected `config_party*.toml` files (or regenerate them with a different base port) and rerun.
-
 #### Smoke test (~10 minutes)
 
-Before running the long experiments, verify the installation end-to-end with a small local run (3 parties as processes on one machine, SF=0.01). It builds the binary, executes Q9, and checks the result bit-for-bit against the Polars plaintext baseline. The local run uses the pre-configured loopback ports described in [Network environment](#network-environment); if you skipped step 4 of the installation (e.g., you are on a single machine), generate the configs first.
+Before running the long experiments, verify the installation end-to-end with a small local run (3 parties as processes on one machine, SF=0.01). It builds the binary, executes Q9, and checks the result bit-for-bit against the Polars plaintext baseline. The local run uses the pre-configured loopback ports described in [Network environment](#network-environment); if you have not generated the configs yet (e.g., you are on a single machine), generate them first.
 
-The runners take the thread count via `-t` (and `--rayon` for the Rayon compute-thread pool where applicable). The minimum supported setting is **4 threads**: some low-level operators hardcode multithreaded execution, so end-to-end queries currently do not support single-threaded or dual-threaded configurations. Use `-t 4` or more.
+The runners take the network-connection count via `-t`; compute threads come from the Rayon pool, which auto-sizes to the machine's cores (override with `--rayon` where applicable). The minimum supported setting is **4 connections**: some low-level operators hardcode multithreaded execution, so end-to-end queries currently do not support single- or dual-connection configurations. Use `-t 4` or more.
 
 ```bash
 $ ./scripts/setup/setup_connection.sh -t local -h localhost -n 10   # pre-configure local ports
-$ cd scripts/experiments
-$ ./run_tpch.sh 9 -t 6 -s 0.01
+$ ./scripts/experiments/run_tpch.sh 9 -t 6 -s 0.01
 ```
 
 A successful run ends with `Q9: MPC result matches polars result!` in the log.

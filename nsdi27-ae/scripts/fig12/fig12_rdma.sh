@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # fig12_rdma.sh — Fig 12 (Qamboo, RDMA): execution time of TPC-H queries at
-# SF=1 with 32 threads over RDMA via SMC-R (transparent at the socket layer,
+# SF=1 with 32 compute threads and 16 network connections over RDMA via
+# SMC-R (transparent at the socket layer,
 # no code changes), on eRDMA-capable instances (Alibaba Cloud Linux
 # 3.2104 LTS). The TCP baseline is fig12_tcp.sh.
 #
@@ -22,7 +23,7 @@ usage () {
     echo "Usage: $0 [query-spec] [-h HOSTS]"
     echo "  query-spec: queries to run, e.g. \"1,3,4\" or \"1..8\" (default: \"1..22\")."
     echo "  Loads SMC-R modules via scripts/setup/setup_rdma.sh, then runs the"
-    echo "  selected TPC-H queries at SF=1 with 32 threads over RDMA (SMC-R)."
+    echo "  selected TPC-H queries at SF=1 with 16 connections over RDMA (SMC-R)."
     exit 1
 }
 
@@ -56,7 +57,7 @@ echo "==== Loading SMC-R kernel modules (setup_rdma.sh) ===="
 "${SETUP_RDMA}" -h "${RDMA_NODES}"
 
 echo "==== Fig 12 (Qamboo, RDMA): TPC-H queries ${QUERIES}, SF=1, 32 threads ===="
-"${RUN_TPCH}" "${QUERIES}" -t 32 -s 1 -m rdma -h "${HOSTS}"
+"${RUN_TPCH}" "${QUERIES}" -t 16 -s 1 -m rdma -h "${HOSTS}"
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

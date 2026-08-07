@@ -2,8 +2,8 @@
 #
 # fig11_a.sh — Fig 11a (Qamboo): effect of smallest-first join reordering.
 # Runs the no_join_reorder variants (one optimization disabled) at SF=1 with
-# 32 threads in LAN; the corresponding optimized numbers come from the Fig 7
-# run at SF=1.
+# 32 compute threads and 16 network connections in LAN; the corresponding
+# optimized numbers come from the Fig 7 run at SF=1.
 #
 # Runs scripts/experiments/run_optimization.sh (variant: no_join_reorder).
 #
@@ -21,7 +21,7 @@ usage () {
     echo "Usage: $0 [query-spec] [-h HOSTS]"
     echo "  query-spec: queries to run, e.g. \"2,5,7\" or \"2..10\""
     echo "              (default: \"2,5,7,8,9,10\" — all available for this ablation)."
-    echo "  Runs the no_join_reorder variants at SF=1 with 32 threads (LAN)."
+    echo "  Runs the no_join_reorder variants at SF=1 with 16 connections (LAN)."
     exit 1
 }
 
@@ -47,7 +47,7 @@ QAMBOO_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_OPT="${QAMBOO_DIR}/scripts/experiments/run_optimization.sh"
 
 echo "==== Fig 11a (Qamboo): no_join_reorder, queries ${QUERIES}, SF=1, 32 threads, LAN ===="
-"${RUN_OPT}" no_join_reorder "${QUERIES}" -t 32 -s 1 -m tcp -h "${HOSTS}"
+"${RUN_OPT}" no_join_reorder "${QUERIES}" -t 16 -s 1 -m tcp -h "${HOSTS}"
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

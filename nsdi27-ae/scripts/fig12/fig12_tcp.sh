@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # fig12_tcp.sh — Fig 12 (Qamboo, TCP baseline): execution time of TPC-H
-# queries at SF=1 with 32 threads over plain TCP, on eRDMA-capable instances
+# queries at SF=1 with 32 compute threads and 16 network connections over
+# plain TCP, on eRDMA-capable instances
 # (Alibaba Cloud Linux 3.2104 LTS). The RDMA counterpart is fig12_rdma.sh.
 #
 # Runs scripts/experiments/run_tpch.sh (mode: tcp).
@@ -18,7 +19,7 @@ set -euo pipefail
 usage () {
     echo "Usage: $0 [query-spec] [-h HOSTS]"
     echo "  query-spec: queries to run, e.g. \"1,3,4\" or \"1..8\" (default: \"1..22\")."
-    echo "  Runs the selected TPC-H queries at SF=1 with 32 threads over TCP."
+    echo "  Runs the selected TPC-H queries at SF=1 with 16 connections over TCP."
     exit 1
 }
 
@@ -44,7 +45,7 @@ QAMBOO_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_TPCH="${QAMBOO_DIR}/scripts/experiments/run_tpch.sh"
 
 echo "==== Fig 12 (Qamboo, TCP): TPC-H queries ${QUERIES}, SF=1, 32 threads ===="
-"${RUN_TPCH}" "${QUERIES}" -t 32 -s 1 -m tcp -h "${HOSTS}"
+"${RUN_TPCH}" "${QUERIES}" -t 16 -s 1 -m tcp -h "${HOSTS}"
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

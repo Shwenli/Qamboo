@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 #
 # fig7_Qamboo.sh — Fig 7 (Qamboo side): execution time of all 22 TPC-H
-# queries at SF=1, with 32 compute threads and 16 network connections.
+# queries at SF=1, with 32 compute threads and 16 network connections in
+# LAN (32 connections in WAN).
 #
-# The 16 network connections come from the TOML network configs generated
-# during setup (scripts/setup/setup_connection.sh -t lan -n 16); the run
-# script itself only takes the thread count, scale factor, and query list.
+# Compute threads come from the Rayon pool, auto-sized to the machine's
+# cores (32 vCPUs -> 32 threads), so no flag is needed. Each network
+# connection (-t) consumes one TOML config group generated during setup
+# (scripts/setup/setup_connection.sh -t lan -n 32 covers both LAN and WAN);
+# the run script itself only takes the connection count, scale factor, and
+# query list.
 #
 # In WAN mode, the 6 Gbps / 20 ms RTT emulation is applied via Qamboo's
 # scripts/setup/setup_delay.sh (tc netem) before the run and removed
@@ -23,7 +27,8 @@ set -euo pipefail
 usage () {
     echo "Usage: $0 <lan|wan> [query-spec] [-h HOSTS]"
     echo "  query-spec: queries to run, e.g. \"1,3,4\" or \"1..8\" (default: \"1..22\")."
-    echo "  Runs the selected TPC-H queries at SF=1 with 32 threads / 16 connections."
+    echo "  Runs the selected TPC-H queries at SF=1 with 32 compute threads;"
+    echo "  16 network connections in LAN, 32 in WAN."
     echo "  In WAN, we emulate a 20 ms RTT, 6 Gbps connection via"
     echo "  Qamboo's scripts/setup/setup_delay.sh (tc netem)."
     exit 1
@@ -80,8 +85,12 @@ if [[ "$NETWORK" == "wan" ]]; then
     "${SETUP_DELAY}" -c -H "${DELAY_NODES}" 6GBit 20ms
 fi
 
-echo "==== Fig 7 (Qamboo): TPC-H queries ${QUERIES}, SF=1, 32 threads, ${NETWORK} ===="
-"${RUN_TPCH}" "${QUERIES}" -t 32 -s 1 -m tcp -h "${HOSTS}"
+# Network connections: 16 in LAN, 32 in WAN. Compute threads are auto-sized
+# by Rayon (32 vCPUs -> 32 threads), so no --rayon flag is needed.
+CONNS=16
+[[ "$NETWORK" == "wan" ]] && CONNS=32
+echo "==== Fig 7 (Qamboo): TPC-H queries ${QUERIES}, SF=1, ${CONNS} connections, ${NETWORK} ===="
+"${RUN_TPCH}" "${QUERIES}" -t "${CONNS}" -s 1 -m tcp -h "${HOSTS}"
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

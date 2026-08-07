@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # fig8_Qamboo.sh — Fig 8 (Qamboo side): per-query communication volume (row
-# bandwidth) of all 22 TPC-H queries at SF=10, with 32 threads.
+# bandwidth) of all 22 TPC-H queries at SF=10, with 32 compute threads and
+# 16 network connections (LAN).
 #
 # The per-query communication volume is printed by each binary via
 # print_communication_stats and collected into the result log.
@@ -18,7 +19,8 @@ set -euo pipefail
 usage () {
     echo "Usage: $0 [query-spec] [-h HOSTS]"
     echo "  query-spec: queries to run, e.g. \"1,3,4\" or \"1..8\" (default: \"1..22\")."
-    echo "  Runs the selected TPC-H queries at SF=10 with 32 threads (row bandwidth)."
+    echo "  Runs the selected TPC-H queries at SF=10 with 16 network connections"
+    echo "  (compute threads auto-sized by Rayon; row bandwidth)."
     exit 1
 }
 
@@ -44,7 +46,7 @@ QAMBOO_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_TPCH="${QAMBOO_DIR}/scripts/experiments/run_tpch.sh"
 
 echo "==== Fig 8 (Qamboo): TPC-H queries ${QUERIES}, SF=10, 32 threads (row bandwidth) ===="
-"${RUN_TPCH}" "${QUERIES}" -t 32 -s 10 -m tcp -h "${HOSTS}"
+"${RUN_TPCH}" "${QUERIES}" -t 16 -s 10 -m tcp -h "${HOSTS}"
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

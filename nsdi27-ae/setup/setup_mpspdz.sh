@@ -107,6 +107,9 @@ EOF
 echo "==> Generating the HOSTS hostfile (${PARTIES[*]})..."
 printf '%s\n' "${PARTIES[@]}" > HOSTS
 
+echo "==> Generating SSL certificates for the 3 parties..."
+Scripts/setup-ssl.sh 3
+
 echo
 echo "======================================================================"
 echo "SUCCESS: MP-SPDZ installed in ${INSTALL_DIR} (parties: ${PARTIES[*]})"

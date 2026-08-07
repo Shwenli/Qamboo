@@ -81,24 +81,6 @@ ping -qc 1 node1 && \
 ping -qc 1 node2 && \
 echo "==== Connectivity check OK! ====" || exit 1
 
-if [[ ! -f ~/already-deployed ]]; then
-    echo "==== Haven't deployed yet. ===="
-    # shell expand to the full list of nodes
-    # Use the ORQ checkout under baselines/orq (patched by setup_orq.sh so the
-    # same absolute path is used on every node), not ~/orq. 3 nodes, one per
-    # party (upstream used 4).
-    ../orchestration/deploy.sh "${ORQ_DIR}" node{0,1,2}
-
-    # don't repeat installation
-    if [[ $? -eq 0 ]]; then
-        touch ~/already-deployed
-    else
-        echo "==== Failed to deploy! ===="
-        exit 1
-    fi
-    echo "==== Deployment done. ===="
-fi
-
 (
     echo "==== Test nocopy... ==="
     cd ../../build

@@ -184,6 +184,27 @@ $ ./scripts/experiments/run_tpch.sh 9 -t 6 -s 0.01
 
 A successful run ends with `Q9: MPC result matches polars result!` in the log.
 
+#### Baseline installation
+
+The baselines are only needed to reproduce the comparison figures (ORQ: Figs 7–8, Secrecy: Fig 9, MP-SPDZ: Fig 10) — skip this section if you only run Qamboo. Each baseline is installed by a script under [`setup/`](setup/), which clones a pinned commit into [`baselines/`](baselines/) and deploys it to the cluster. Run them from `node0` after the multi-machine deployment above (they reuse its SSH trust and `/etc/hosts` entries):
+
+```bash
+# ORQ (Figs 7–8): clone the pinned commit, then deploy to all nodes via ORQ's
+# own deploy.sh (also builds ORQ's third-party dependencies, which takes a
+# while on the first run). Addresses may be space- or comma-separated.
+$ ./nsdi27-ae/setup/setup_orq.sh <ip-0> <ip-1> <ip-2>
+
+# Secrecy (Fig 9): install into baselines/secrecy on node0 (locally) and on
+# node1/node2 (via SSH), at the same absolute path on every node.
+$ ./nsdi27-ae/setup/setup_secrecy.sh
+
+# MP-SPDZ (Fig 10): install build dependencies and Boost 1.75 on node0, clone
+# the pinned commit into baselines/mpspdz, and run `make setup`.
+$ ./nsdi27-ae/setup/setup_mpspdz.sh
+```
+
+All three scripts default to the `node0,node1,node2` naming; see the header comment of each script for options.
+
 ### Experiments
 
 All of the following experiments are long-running. To avoid improper termination, please use [screen](https://linuxize.com/post/how-to-use-linux-screen/) or `tmux` to run them. All commands are run from `node0`.
@@ -203,6 +224,13 @@ $ ./nsdi27-ae/scripts/fig7/fig7_Qamboo.sh lan
 $ ./nsdi27-ae/scripts/fig7/fig7_Qamboo.sh wan   # applies/removes tc emulation automatically
 ```
 
+For the ORQ baseline (requires `setup_orq.sh` first, see [Baseline installation](#baseline-installation)):
+
+```bash
+$ ./nsdi27-ae/scripts/fig7/fig7_orq.sh lan
+$ ./nsdi27-ae/scripts/fig7/fig7_orq.sh wan
+```
+
 Expected: Qamboo outperforms ORQ on 21 of 22 queries (Q6 is the exception, see paper §7.2.1), with a median speedup of 2.1× and up to 4.5× (Q18) in LAN; comparable speedups in WAN.
 
 <p align="center">
@@ -220,6 +248,9 @@ This experiment supports [claim #1](#claim-1). It reruns all 22 TPC-H queries at
 $ ./nsdi27-ae/scripts/fig8/fig8_Qamboo.sh
 ```
 
+> [!NOTE]
+ > We do not recommend running the ORQ-side SF=10 script, because ORQ's runtime is very long. For the ORQ numbers, please refer to Table 7 (Bandwidth Measurements) in Appendix D of the ORQ SOSP'25 paper: the communication cost depends only on the data volume and the data type, both of which are fixed here, so the results are essentially identical.
+
 Expected: Qamboo reduces communication cost by 5.1× on average over ORQ (Q6 excepted), with the largest savings on multi-way join queries (Q5: 90.5%, Q7: 84.1%, Q8: 86.0%).
 
 <p align="center">
@@ -235,6 +266,12 @@ This experiment supports [claim #1](#claim-1) and runs in ALI-LAN. It runs the f
 
 ```bash
 $ ./nsdi27-ae/scripts/fig9/fig9_Qamboo.sh -h node0,node1,node2
+```
+
+For the Secrecy baseline (requires `setup_secrecy.sh` first, see [Baseline installation](#baseline-installation)):
+
+```bash
+$ ./nsdi27-ae/scripts/fig9/fig9_secrecy.sh
 ```
 
 Expected: median speedup of 45× on the five Secrecy queries (up to 1632× on Aspirin) and 5836× on the three TPC-H queries (up to 6220× on Q4). Q6 is again the exception.
@@ -256,11 +293,10 @@ For Qamboo:
 $ ./nsdi27-ae/scripts/fig10/fig10_Qamboo.sh
 ```
 
-For MP-SPDZ (requires a working MP-SPDZ installation on all three nodes):
+For MP-SPDZ (requires `setup_mpspdz.sh` first, see [Baseline installation](#baseline-installation)):
 
 ```bash
-$ cd scripts/experiments
-$ ./run_radix_sort_mpspdz_ssh.sh
+$ ./nsdi27-ae/scripts/fig10/fig10_mpspdz.sh
 ```
 
 Expected: median speedup of 7× (up to 9.2× at 2^21 rows) for 64-bit keys; similar speedups (5.5×–9.0×) for 32-bit keys.

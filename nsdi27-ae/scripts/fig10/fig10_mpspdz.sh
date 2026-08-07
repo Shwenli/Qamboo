@@ -26,13 +26,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SPDZ_DIR="${SCRIPT_DIR}/../../baselines/mpspdz"
 
-if [[ ! -d "${SPDZ_DIR}" ]]; then
-    echo "Error: ${SPDZ_DIR} not found; run ${SCRIPT_DIR}/../../setup/setup_mpspdz.sh first." >&2
-    exit 1
-fi
 cd "${SPDZ_DIR}"
-
-Scripts/setup-ssl.sh 3
 
 # The sweep is tee'd into a log under nsdi27-ae/data/run/ and then extracted
 # into a CSV (results of this run; the paper's published numbers live in

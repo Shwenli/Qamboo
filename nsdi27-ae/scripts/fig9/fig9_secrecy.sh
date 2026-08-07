@@ -53,12 +53,6 @@ EXP_HOSTS="-n 3 -host ${NODE_PREFIX}0,${NODE_PREFIX}1,${NODE_PREFIX}2"
 SECRECY_BUILD_DIR="${AE_DIR}/baselines/secrecy/build"
 LOG_DIR="${AE_DIR}/data/logs/fig9/secrecy"
 
-if [[ ! -d "${SECRECY_BUILD_DIR}" ]]; then
-    echo "Error: ${SECRECY_BUILD_DIR} not found." >&2
-    echo "Run ../../setup/setup_secrecy.sh first to install and build Secrecy." >&2
-    exit 1
-fi
-
 # Create results directory
 mkdir -p "${LOG_DIR}"
 

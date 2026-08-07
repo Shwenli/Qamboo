@@ -127,7 +127,10 @@ run_one() {
     [ -n "$RAYON" ] && rayon_prefix="RAYON_NUM_THREADS=$RAYON"
 
     echo ">>> [Build] $bin"
-    (cd "$PROJECT_ROOT" && RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin "$bin" --features tcp)
+    if ! (cd "$PROJECT_ROOT" && RUSTFLAGS="-C target-cpu=native" cargo build --release --package experiments --bin "$bin" --features tcp); then
+        echo "Error: build failed for '$bin'; skipping this target." >&2
+        return 1
+    fi
 
     cd "$PROJECT_ROOT"
 
@@ -189,13 +192,18 @@ run_all() {
         echo ""
         echo ">>> Running '$target' (bin: $bin, mode: $MODE) ..."
 
+        # Note: $? after a pipeline is tee's status, so capture run_one's
+        # real exit code via PIPESTATUS.
+        local rc
         if $NO_LOG; then
             run_one "$bin" 2>&1
+            rc=$?
         else
             run_one "$bin" 2>&1 | tee >(perl -pe 's/\x1b\[[0-9;]*m//g' | grep --line-buffered "INFO Total" >> "$LOG_FILE")
+            rc=${PIPESTATUS[0]}
         fi
 
-        if [ $? -eq 0 ]; then
+        if [ $rc -eq 0 ]; then
             echo ">>> Target '$target' Finished Successfully."
         else
             echo ">>> Target '$target' Failed."
@@ -214,4 +222,6 @@ run_all() {
         echo "Completed with failures: ${FAILED[*]}"
     fi
     echo "============================================================"
+
+    [ ${#FAILED[@]} -eq 0 ]
 }

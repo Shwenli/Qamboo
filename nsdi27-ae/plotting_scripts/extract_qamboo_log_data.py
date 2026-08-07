@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 Generic log-to-CSV extractor.
 
 Built-in mode (default) recognizes the two standard Qamboo log metrics,

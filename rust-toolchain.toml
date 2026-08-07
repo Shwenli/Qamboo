@@ -1,0 +1,5 @@
+# Pin to 1.90: ethnum 1.5.2 (a locked dependency) fails to compile on newer
+# toolchains where core::num::TryFromIntError is no longer a ZST (E0512).
+# Keep in sync with the toolchain pinned in .github/workflows/docs.yml.
+[toolchain]
+channel = "1.90.0"

@@ -30,11 +30,11 @@ Options:
                     time (default), sent or recv.
 
 Examples:
-  python3 extract_log_data.py -i exp_1_wan_tpch.txt -o fig.csv
-  python3 extract_log_data.py -i exp_5_sort_scale.txt --section LAN RDMA WAN TCP
-  python3 extract_log_data.py -i exp_2_sort_mpspdz.txt --delta
-  python3 extract_log_data.py -i log.txt --regex 'row=rows: (?P<rows>\d+)'
-  python3 extract_log_data.py -i tcp.log rdma.log --labels TCP RDMA -o fig12.csv
+  python3 extract_qamboo_log_data.py -i exp_1_wan_tpch.txt -o fig.csv
+  python3 extract_qamboo_log_data.py -i exp_5_sort_scale.txt --section LAN RDMA WAN TCP
+  python3 extract_qamboo_log_data.py -i exp_2_sort_mpspdz.txt --delta
+  python3 extract_qamboo_log_data.py -i log.txt --regex 'row=rows: (?P<rows>\d+)'
+  python3 extract_qamboo_log_data.py -i tcp.log rdma.log --labels TCP RDMA -o fig12.csv
 """
 
 import argparse

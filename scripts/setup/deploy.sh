@@ -106,6 +106,10 @@ for host in "${HOSTS[@]}"; do
         ssh -o StrictHostKeyChecking=no "$host" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . \"\$HOME/.cargo/env\" && cargo --version"
         echo "    -> Rust installed successfully on $host."
     fi
+
+    # Symlink cargo binaries system-wide so every shell (non-interactive ssh,
+    # sudo, scripts) finds them without sourcing ~/.cargo/env
+    ssh -o StrictHostKeyChecking=no "$host" "ln -sf \$HOME/.cargo/bin/* /usr/local/bin/ 2>/dev/null || true"
 done
 
 
@@ -123,6 +127,9 @@ cd "$PROJECT_ROOT"
 if ! command -v cargo >/dev/null 2>&1 && [ -f "$HOME/.cargo/env" ]; then
     . "$HOME/.cargo/env"
 fi
+
+# Same system-wide symlink for the local build machine
+ln -sf "$HOME"/.cargo/bin/* /usr/local/bin/ 2>/dev/null || true
 
 echo ">>> [Build] Compiling workspace (Release)..."
 RUSTFLAGS="-C target-cpu=native" cargo build --workspace --exclude experiments --release

@@ -9,7 +9,7 @@ We are applying for all three badges: {[Available](#available-badge), [Functiona
 
 We make the artifact available to reviewers in our [GitHub repository](https://github.com/Shwenli/Qamboo) <!-- TODO: fill in after the org transfer -->, which includes a README file highlighting the key dependencies, a getting-started guide, and the main features. Additionally, we provide documentation of the framework modules under [`docs/`](../docs/) and of the experiment scripts under [`scripts/README.md`](../scripts/README.md).
 
-We plan to attach an open-source license (MIT OR Apache-2.0, already included as [LICENSE](../LICENSE)) to the artifact and upload it to Zenodo after approval and before the artifact decision deadline. <!-- TODO: add Zenodo DOI -->
+We plan to attach an open-source license (MIT, already included as [LICENSE](../LICENSE)) to the artifact. <!-- TODO: add Zenodo DOI -->
 
 ## Functional Badge
 
@@ -93,12 +93,22 @@ Please refer to the main [README](../README.md#building-qamboo) for system requi
    $ git clone https://github.com/<org>/Qamboo   # TODO: fill in after the org transfer
    $ cd Qamboo
    ```
-3. Run the one-click deployment pipeline from `node0`, which establishes SSH trust, synchronizes `/etc/hosts`, optionally configures RDMA, and builds and distributes the project to all nodes (see [`scripts/README.md`](../scripts/README.md) for details):
+> [!TIP]
+> For the best runtime performance, uncomment the following section in `Cargo.toml` before deployment. This enables link-time optimization and single-codegen-unit compilation, which produce faster binaries at the cost of a noticeably longer compile time:
+>
+> ```toml
+> [profile.release]
+> lto = "thin"
+> codegen-units = 1
+> panic = "abort"
+> ```
+
+1. Run the one-click deployment pipeline from `node0`, which establishes SSH trust, synchronizes `/etc/hosts`, optionally configures RDMA, and builds and distributes the project to all nodes (see [`scripts/README.md`](../scripts/README.md) for details):
    ```bash
    $ cd scripts/setup
    $ ./deploy.sh -i <ip-0>,<ip-1>,<ip-2> -x node
    ```
-4. Generate the TOML network configs for the 3-party protocol on all hosts (16 connection groups for multinode, 10 for local single-machine runs):
+2. Generate the TOML network configs for the 3-party protocol on all hosts (16 connection groups for multinode, 10 for local single-machine runs):
    ```bash
    $ ./setup_connection.sh -t lan   -h node0,node1,node2 -n 16
    $ ./setup_connection.sh -t local -h localhost         -n 10
@@ -331,7 +341,7 @@ Each TPC-H query binary also prints its end-to-end time (`Total Q* execution tim
 
 **Data extraction.** After the run finishes, every per-figure script under [`scripts/`](scripts/) automatically parses its result log into a CSV under [`data/run/`](data/run/), using the extractors in [`plotting_scripts/`](plotting_scripts/):
 
-- `extract_log_data.py` — Qamboo logs (`Total Q* execution time` / `Total ... Communication Sent ... MB`, RadixSort `took:` lines; `--delta` converts the cumulative per-party communication counters of the operator benchmarks into per-task traffic; `--labels` merges several logs into one pivoted CSV).
+- `extract_qamboo_log_data.py` — Qamboo logs (`Total Q* execution time` / `Total ... Communication Sent ... MB`, RadixSort `took:` lines; `--delta` converts the cumulative per-party communication counters of the operator benchmarks into per-task traffic; `--labels` merges several logs into one pivoted CSV).
 - `extract_orq_log.py` — ORQ and Secrecy per-query logs (`[ SW] <stage> <t> sec`, `[=SW] Overall <t> sec`; `--median` collapses repeated runs).
 - `extract_mpspdz_log.py` — MP-SPDZ logs (`Spent <t> seconds ... online/offline phase`, per exponent).
 
@@ -371,7 +381,7 @@ $ python3 fig12.py ../data/run/fig12.csv             # explicit path also works
 The extraction step itself can also be rerun standalone (it already runs automatically at the end of each per-figure experiment script):
 
 ```bash
-$ python3 extract_log_data.py -i ../../experiments/result/tpch_query/multinode/stat_output.log -o ../data/run/fig7_qamboo_lan.csv
+$ python3 extract_qamboo_log_data.py -i ../../experiments/result/tpch_query/multinode/stat_output.log -o ../data/run/fig7_qamboo_lan.csv
 $ python3 extract_orq_log.py -i ../baselines/orq/results/query-benchmark/tpch/<timestamp>-3PC-lan-SF1/raw_data --median -o ../data/run/fig7_orq_lan.csv
 $ python3 extract_mpspdz_log.py -i ../data/run/fig10_mpspdz.log -o ../data/run/fig10_mpspdz.csv
 ```

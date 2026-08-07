@@ -3,6 +3,16 @@ name: Deploy Docs to GitHub Pages
 on:
   push:
     branches: [main]
+    # Only rebuild docs when inputs that affect rustdoc output change;
+    # script/README/experiment-only pushes skip the deployment.
+    paths:
+      - '**/src/**'
+      - '**/Cargo.toml'
+      - 'Cargo.lock'
+      - 'gen-docs.sh'
+      - 'README.md'
+      - 'Qamboo_overview.png'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:

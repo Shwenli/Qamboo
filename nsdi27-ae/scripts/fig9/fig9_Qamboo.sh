@@ -62,7 +62,7 @@ echo "==== Fig 9 (Qamboo): Secrecy application queries + TPC-H Q4/Q6/Q13, LAN ==
 AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 RUN_DATA="${AE_DIR}/data/run"
 mkdir -p "${RUN_DATA}"
-python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" \
+python3 "${AE_DIR}/plotting_scripts/extract_qamboo_log_data.py" \
     -i "${LOG}" -o "${RUN_DATA}/fig9_qamboo.csv"
 
 echo "==== Fig 9 (Qamboo) finished. Results: ${RUN_DATA}/fig9_qamboo.csv (log: ${LOG}) ===="

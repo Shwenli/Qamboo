@@ -55,7 +55,7 @@ AE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 RUN_DATA="${AE_DIR}/data/run"
 mkdir -p "${RUN_DATA}"
 LOG="${QAMBOO_DIR}/experiments/result/query_optimization/no_join_reorder/multinode/stat_output.log"
-python3 "${AE_DIR}/plotting_scripts/extract_log_data.py" \
+python3 "${AE_DIR}/plotting_scripts/extract_qamboo_log_data.py" \
     -i "${LOG}" -o "${RUN_DATA}/fig11a_qamboo.csv"
 
 echo "==== Fig 11a finished. Results: ${RUN_DATA}/fig11a_qamboo.csv (log: ${LOG}) ===="

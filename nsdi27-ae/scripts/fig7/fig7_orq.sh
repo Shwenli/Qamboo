@@ -27,7 +27,7 @@ ORQ_DIR="${AE_DIR}/baselines/orq"
 
 # Qamboo's tc-based WAN emulation script (Qamboo/scripts/setup/setup_delay.sh).
 SETUP_DELAY="${AE_DIR}/../scripts/setup/setup_delay.sh"
-DELAY_NODES="node0,node1,node2,node3"
+DELAY_NODES="node0,node1,node2"
 
 usage () {
     echo "Usage: $0 <lan|wan> [query-spec]"
@@ -79,15 +79,15 @@ trap cleanup EXIT
 
 ping -qc 1 node1 && \
 ping -qc 1 node2 && \
-ping -qc 1 node3 && \
 echo "==== Connectivity check OK! ====" || exit 1
 
 if [[ ! -f ~/already-deployed ]]; then
     echo "==== Haven't deployed yet. ===="
     # shell expand to the full list of nodes
     # Use the ORQ checkout under baselines/orq (patched by setup_orq.sh so the
-    # same absolute path is used on every node), not ~/orq.
-    ../orchestration/deploy.sh "${ORQ_DIR}" node{0,1,2,3}
+    # same absolute path is used on every node), not ~/orq. 3 nodes, one per
+    # party (upstream used 4).
+    ../orchestration/deploy.sh "${ORQ_DIR}" node{0,1,2}
 
     # don't repeat installation
     if [[ $? -eq 0 ]]; then

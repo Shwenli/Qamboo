@@ -22,18 +22,41 @@
 # Usage:
 #   ./setup_orq.sh <ip-0> <ip-1> <ip-2> [ip-3 ...]
 #
-# Each <ip-N> is the IP address of nodeN. node0 (the first argument) is the
-# main node and must have SSH access to the others.
+# Each <ip-N> is the IP address of nodeN (hostnames are also accepted and
+# resolved to IPv4 first). node0 (the first argument) is the main node and
+# must have SSH access to the others.
 
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 <ip-0> <ip-1> <ip-2> [ip-3 ...]" >&2
+    echo "  Addresses may be space- or comma-separated." >&2
     echo "  node0 (first argument) is the main node and must have SSH access to the others." >&2
     exit 1
 fi
 
-IPS=("$@")
+# Accept both space- and comma-separated addresses (the other Qamboo setup
+# scripts use comma lists).
+IFS=' ,' read -r -a IPS <<< "$*"
+
+# ORQ's _update_hostfile.sh writes each argument verbatim into /etc/hosts as
+# the IP field, so passing hostnames produces invalid "node0 node0" entries
+# and breaks name resolution on every node. Resolve hostnames to IPv4 first
+# (must happen before /etc/hosts is rewritten).
+RESOLVED=()
+for a in "${IPS[@]}"; do
+    if [[ "$a" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        RESOLVED+=("$a")
+    else
+        ip="$(getent ahostsv4 "$a" | awk 'NR==1 {print $1}')"
+        if [[ -z "$ip" ]]; then
+            echo "Error: cannot resolve '$a' to an IPv4 address." >&2
+            exit 1
+        fi
+        RESOLVED+=("$ip")
+    fi
+done
+IPS=("${RESOLVED[@]}")
 IP_LIST="$(IFS=,; echo "${IPS[*]}")"
 
 # Build the node name list (node0 node1 ...) matching the IP count.

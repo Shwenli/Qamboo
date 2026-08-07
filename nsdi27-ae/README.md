@@ -83,7 +83,7 @@ We offer three levels of reproduction, from the cheapest to the most faithful:
 
 ### Setup
 
-The complete setup is the following sequence of commands, run from `node0` (details for each step are in the section named in its comment):
+**Before running any experiments, complete this setup first.** The complete setup is the following sequence of commands, run from `node0` (details for each step are in the section named in its comment):
 
 ```bash
 # 1. Clone the repository (details: Qamboo installation)
@@ -100,11 +100,7 @@ cd Qamboo
 ./scripts/setup/setup_connection.sh -t lan   -h node0,node1,node2 -n 32
 ./scripts/setup/setup_connection.sh -t local -h localhost         -n 10
 
-# 4. WAN experiments only: emulate 6 Gbps / 20 ms RTT on all nodes
-#    (details: Network environment; skip for LAN, remove with -d afterwards)
-./scripts/setup/setup_delay.sh -c -H node0,node1,node2 6GBit 20ms
-
-# 5. Smoke test: local 3-party Q9 at SF=0.01, ~10 minutes
+# 4. Smoke test: local 3-party Q9 at SF=0.01, ~10 minutes
 #    (details: Smoke test)
 ./scripts/experiments/run_tpch.sh 9 -t 6 -s 0.01
 ```
@@ -118,7 +114,11 @@ Please refer to the main [README](../README.md#building-qamboo) for system requi
 ```bash
 $ git clone https://github.com/Shwenli/Qamboo.git
 $ cd Qamboo
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   # if Rust is not installed
+$ cargo build --workspace --exclude experiments --release
 ```
+
+The pinned `rust-toolchain.toml` at the repository root makes rustup download and select Rust 1.90.0 automatically on the first `cargo` invocation — no version management needed.
 
 **Multi-machine deployment.** The 3 parties run on 3 separate nodes, driven from `node0`:
 
@@ -160,7 +160,9 @@ $ ./scripts/setup/setup_connection.sh -t local -h localhost         -n 10
 
 Note that these ports are statically pre-allocated in the config files — Qamboo does not detect or resolve port conflicts automatically. This is a deliberate simplification: Qamboo is an academic prototype rather than a production system, and ports on a dedicated benchmarking cluster are generally clean. If a port happens to be occupied on your machines, edit the affected `config_party*.toml` files (or regenerate them with a different base port) and rerun.
 
-The paper's WAN experiments assume 6 Gbps bandwidth and 20 ms RTT between nodes. If the network parameters of your rented servers differ from the paper's setting, use `tc` (traffic control) to emulate them on **all three nodes**. Note that `tc` applies the delay per node, so each node adds half of the target RTT (10 ms each for a 20 ms RTT). `scripts/setup/setup_delay.sh` wraps the `tc` commands and can apply them to all nodes at once:
+The paper's WAN experiments assume 6 Gbps bandwidth and 20 ms RTT between nodes. If the network parameters of your rented servers differ from the paper's setting, use `tc` (traffic control) to emulate them on **all three nodes**. Note that `tc` applies the delay per node, so each node adds half of the target RTT (10 ms each for a 20 ms RTT).
+
+The WAN emulation is integrated into the Qamboo experiment scripts that take a `lan|wan` parameter (Fig 7 and Fig 14): selecting `wan` applies the `tc` rules on all nodes automatically before the run and removes them afterwards — also on failure, via a trap — so no manual configuration is needed. For manual control (e.g., when running a baseline system), `scripts/setup/setup_delay.sh` wraps the `tc` commands and can apply them to all nodes at once:
 
 ```bash
 $ ./scripts/setup/setup_delay.sh -c -H node0,node1,node2 6GBit 20ms   # load on all nodes

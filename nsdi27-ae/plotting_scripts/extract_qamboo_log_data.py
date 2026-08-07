@@ -18,6 +18,8 @@ Options:
                     per-party increments between consecutive tasks, where the
                     parties of one task are the consecutive Comm lines that
                     follow its time line).
+  --paper-time      emit the fig7 paper layout "Query,Qamboo,Orq,,Speed up"
+                    with execution times under Qamboo (Orq/Speed up blank).
   --regex LABEL=PATTERN
                     custom mode: ignore the built-in metrics and emit one CSV
                     row per regex match. Capture groups become columns (named
@@ -48,6 +50,10 @@ COMM_RE = re.compile(r'Total (.+?) Communication Sent\s+([\d.]+)\s*MB(?:,\s*Recv
 
 # tracing_subscriber-style prefix, e.g. "2026-02-20T10:48:58.267062Z  INFO "
 PREFIX_RE = re.compile(r'^\d{4}-\d{2}-\d{2}T\S+\s+(?:TRACE|DEBUG|INFO|WARN|ERROR)\s+')
+
+# Per-party communication lines, e.g. "Total Party0 Q6 Communication ...";
+# only Party0's counters are kept (historically only Party0 printed this).
+PARTY_RE = re.compile(r'^Party(\d+)\s+(.+)$')
 
 DEFAULT_SECTIONS = ['LAN', 'RDMA', 'WAN', 'TCP']
 
@@ -115,6 +121,13 @@ def parse_builtin(input_file, sections, delta):
                         rec['communication_sent'] = rec.get('communication_sent', 0.0) + sent
                         prev_sent.append(sent)
                 else:
+                    party_match = PARTY_RE.match(task)
+                    if party_match:
+                        # Fold per-party lines into the bare task; keep only
+                        # Party0's counters (paper numbers are Party0's).
+                        if party_match.group(1) != '0':
+                            continue
+                        task = party_match.group(2).strip()
                     key = (current_section, task)
                     rec = records.setdefault(key, {'section': current_section, 'task': task})
                     rec['communication_sent'] = sent
@@ -243,6 +256,9 @@ def main():
                              'e.g. --labels TCP RDMA (default: file basenames)')
     parser.add_argument('--metric', choices=['time', 'sent', 'recv'], default='time',
                         help='metric used for the merge-mode columns (default: %(default)s)')
+    parser.add_argument('--paper-time', action='store_true',
+                        help='emit the fig7 paper layout "Query,Qamboo,Orq,,Speed up" '
+                             'with execution times under Qamboo (Orq/Speed up blank)')
 
     args = parser.parse_args()
 
@@ -284,6 +300,13 @@ def main():
     except FileNotFoundError as e:
         print(f'Error: input file not found: {e.filename}', file=sys.stderr)
         sys.exit(1)
+
+    if args.paper_time:
+        if merge_mode or args.regex:
+            parser.error('--paper-time only applies to the built-in single-log mode')
+        fieldnames = ['Query', 'Qamboo', 'Orq', '', 'Speed up']
+        rows = [{'Query': r['Task'], 'Qamboo': r.get('Execution Time (s)', 'N/A'),
+                 'Orq': '', '': '', 'Speed up': ''} for r in rows]
 
     if not rows:
         print('Warning: no matching lines found; nothing written.', file=sys.stderr)

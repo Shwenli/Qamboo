@@ -119,6 +119,11 @@ echo "============================================================"
 echo ">>> [Build] Moving to project root: $PROJECT_ROOT"
 cd "$PROJECT_ROOT"
 
+# cargo may be installed via rustup but not in the non-interactive PATH
+if ! command -v cargo >/dev/null 2>&1 && [ -f "$HOME/.cargo/env" ]; then
+    . "$HOME/.cargo/env"
+fi
+
 echo ">>> [Build] Compiling workspace (Release)..."
 RUSTFLAGS="-C target-cpu=native" cargo build --workspace --exclude experiments --release
 

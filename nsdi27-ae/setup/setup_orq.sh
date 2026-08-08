@@ -17,7 +17,12 @@
 #      rest of the script references the absolute $REPO_NAME; the two only
 #      agree when the repo lives directly under $HOME. We want ORQ under
 #      baselines/orq on all nodes, so we redirect that copy.
-#   3. Generate the hostfile (nodeN -> IP) and invoke ORQ's deploy.sh.
+#   3. Update /etc/hosts (nodeN -> IP) via Qamboo's setup_host.sh — NOT via
+#      ORQ's _update_hostfile.sh, which rewrites the whole /etc/hosts and
+#      would clobber entries managed by Qamboo's deploy (and vice versa:
+#      having both scripts write their own mappings would duplicate the
+#      nodeN definitions). Qamboo's script maintains a single marked block
+#      idempotently on every node.
 #
 # Usage:
 #   ./setup_orq.sh <ip-0> <ip-1> <ip-2> [ip-3 ...]
@@ -39,10 +44,8 @@ fi
 # scripts use comma lists).
 IFS=' ,' read -r -a IPS <<< "$*"
 
-# ORQ's _update_hostfile.sh writes each argument verbatim into /etc/hosts as
-# the IP field, so passing hostnames produces invalid "node0 node0" entries
-# and breaks name resolution on every node. Resolve hostnames to IPv4 first
-# (must happen before /etc/hosts is rewritten).
+# Hostnames must be resolved to IPv4 before /etc/hosts is updated below:
+# once the nodeN mappings change, resolving a stale name may fail.
 RESOLVED=()
 for a in "${IPS[@]}"; do
     if [[ "$a" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -102,8 +105,14 @@ if ! grep -qF 'scp -r $REPO_NAME $W:$REPO_NAME' "${DEPLOY_SCRIPT}"; then
     exit 1
 fi
 
-echo "==> Generating hostfile (nodeN -> IP)..."
-./scripts/_update_hostfile.sh -x node -i "${IP_LIST}"
+echo "==> Updating /etc/hosts (nodeN -> IP) via Qamboo's setup_host.sh..."
+# Single source of truth for node name mappings: Qamboo's setup_host.sh
+# maintains a marked block in /etc/hosts idempotently on every node.
+# ORQ's own _update_hostfile.sh is deliberately NOT used — it rewrites the
+# whole file and would clobber everything else.
+# setup_host.sh uses sudo internally for the file operations; do NOT wrap
+# the whole call in sudo, or ssh-keygen/ssh would run as root.
+"${SCRIPT_DIR}/../../scripts/setup/setup_host.sh" -x node -i "${IP_LIST}"
 
 echo "==> Deploying ORQ to the cluster via ORQ's deploy.sh..."
 echo "    ${DEPLOY_SCRIPT} ${INSTALL_DIR} ${NODES[*]}"

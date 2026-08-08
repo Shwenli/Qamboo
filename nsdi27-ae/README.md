@@ -83,7 +83,7 @@ We offer three levels of reproduction, from the cheapest to the most faithful:
 
 ### Setup
 
-**Before running any experiments, complete this setup first.** The complete setup is the following sequence of commands, run from `node0` (details for each step are in the section named in its comment):
+**Before running any experiments, complete this setup first.** All setup and experiment commands in this guide are run on `node0` — scripts distribute binaries and launch the remote parties over SSH from there. The complete setup is the following sequence of commands, run from `node0` (details for each step are in the section named in its comment):
 
 ```bash
 # 1. Clone the repository (details: Qamboo installation)
@@ -194,14 +194,18 @@ The baselines are only needed to reproduce the comparison figures (ORQ: Figs 7�
 # while on the first run). Addresses may be space- or comma-separated.
 $ ./nsdi27-ae/setup/setup_orq.sh <ip-0> <ip-1> <ip-2>
 
-# Secrecy (Fig 9): install into baselines/secrecy on node0 (locally) and on
-# node1/node2 (via SSH), at the same absolute path on every node.
+# Secrecy (Fig 9): clone and build into baselines/secrecy on node0 (locally),
+# then copy the built tree to node1/node2 via scp, at the same absolute path
+# on every node (the remote nodes need no internet access or build toolchain).
 $ ./nsdi27-ae/setup/setup_secrecy.sh
 
 # MP-SPDZ (Fig 10): install build dependencies and Boost 1.75 on node0, clone
 # the pinned commit into baselines/mpspdz, and run `make setup`.
 $ ./nsdi27-ae/setup/setup_mpspdz.sh
 ```
+
+> [!NOTE]
+> During ORQ's third-party build, libsodium's `autogen.sh` prints `Downloading config.guess and config.sub...` and fetches two files from `git.savannah.gnu.org` with **no timeout**. On networks where that host is unreachable, the build appears stuck at this line. If this happens, press **Ctrl+C once** to kill the hanging download — the build then continues on its own, because the download is optional: by then `configure` has already been generated (the `Done.` line above), and the build uses the system-provided `config.guess`/`config.sub` that libtoolize already installed.
 
 All three scripts default to the `node0,node1,node2` naming; see the header comment of each script for options.
 

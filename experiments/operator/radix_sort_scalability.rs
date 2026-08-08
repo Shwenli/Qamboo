@@ -27,9 +27,13 @@ struct Args {
     #[clap(short = 't', long, value_name = "THREADS", default_value = "6")]
     threads: usize,
 
-    /// Test input number, 2^19(n=1), 2^20(n=2), ..., 2^25(n=6)
-    #[clap(short = 'n', long, value_name = "NUMBER", default_value = "20")]
-    number: u64,
+    /// Sweep start: first input size is 2^start rows
+    #[clap(long, value_name = "START", default_value = "20")]
+    start: u64,
+
+    /// Sweep end (inclusive): last input size is 2^end rows
+    #[clap(long, value_name = "END", default_value = "26")]
+    end: u64,
 }
 
 
@@ -68,8 +72,8 @@ fn main() -> Result<()> {
     tracing::info!("Network setup completed");
 
 
-    for i in 0..args.number {
-        let rows = 1 << (21 + i);
+    for shift in args.start..=args.end {
+        let rows = 1usize << shift;
         let input = gen_rand_column_u64_ring(
             rows,
             "test".to_string(), 

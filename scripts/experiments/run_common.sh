@@ -5,7 +5,7 @@
 #   Not meant to be executed directly; sourced by the suite scripts.
 #
 # Provides:
-#   parse_common_opts  — parses -m/-t/-s/-n/-h/--rayon/--log/--no-log
+#   parse_common_opts  — parses -m/-t/-s/-h/--start/--end/--rayon/--log/--no-log
 #   expand_targets     — expands "all", comma lists and "1..8" ranges
 #   contains           — membership test
 #   setup_log          — resolves the stat log path ($1 = result subdir)
@@ -13,7 +13,7 @@
 #   run_all            — iterates TARGETS/BINS, logs "INFO Total" lines
 #
 # Contract: the sourcing script sets TARGETS and BINS (parallel arrays)
-# before calling run_all, and may override defaults (THREADS, SF, NUM).
+# before calling run_all, and may override defaults (THREADS, SF, START, END).
 #
 # Hosts: -h takes a comma-separated list of 3 hosts, one per party
 # (party i runs on the i-th host). A host equal to $(hostname),
@@ -30,7 +30,8 @@ fi
 MODE="local"
 THREADS=""
 SF=""
-NUM=7
+START=20
+END=26
 HOST_LIST="node0,node1,node2"
 RAYON=""
 LOG_OVERRIDE=""
@@ -42,7 +43,8 @@ parse_common_opts() {
             -m)       MODE="$2"; shift 2 ;;
             -t)       THREADS="$2"; shift 2 ;;
             -s)       SF="$2"; shift 2 ;;
-            -n)       NUM="$2"; shift 2 ;;
+            --start)  START="$2"; shift 2 ;;
+            --end)    END="$2"; shift 2 ;;
             -h)       HOST_LIST="$2"; shift 2 ;;
             --rayon)  RAYON="$2"; shift 2 ;;
             --log)    LOG_OVERRIDE="$2"; shift 2 ;;
@@ -109,7 +111,7 @@ is_local_host() {
 }
 
 # Build and run ONE binary with 3 parties.
-# Uses globals: MODE THREADS SF NUM HOST_LIST RAYON PROJECT_ROOT.
+# Uses globals: MODE THREADS SF START END HOST_LIST RAYON PROJECT_ROOT.
 run_one() {
     local bin="$1"
     local bin_path="./target/release/$bin"
@@ -118,7 +120,8 @@ run_one() {
     local extra_args
     case "$bin" in
         multi_keys_join)        extra_args="" ;;
-        radix_sort_scalability) extra_args="-t $THREADS -n $NUM" ;;
+        radix_sort_mpspdz)      extra_args="-t $THREADS" ;;
+        radix_sort_scalability) extra_args="-t $THREADS --start $START --end $END" ;;
         *)                      extra_args="-t $THREADS -s $SF" ;;
     esac
 

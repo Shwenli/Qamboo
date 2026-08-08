@@ -37,7 +37,7 @@ QAMBOO_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_OPERATOR="${QAMBOO_DIR}/scripts/experiments/run_operator.sh"
 
 echo "==== Fig 10 (Qamboo): oblivious RadixSort, 2^16–2^24 rows, 64/32-bit keys ===="
-"${RUN_OPERATOR}" radix_sort -m tcp -h "${HOSTS}"
+"${RUN_OPERATOR}" radix_sort_mpspdz -m tcp -h "${HOSTS}"
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

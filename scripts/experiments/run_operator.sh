@@ -9,13 +9,14 @@
 #
 #   <benches> : "radix_sort,multi_keys_join" or "all"
 #               (multi_keys_join radix_sort radix_sort_scalability
-#                radix_sort_single radix_sort_multi)
+#                radix_sort_mpspdz radix_sort_single radix_sort_multi)
 #
 # Options:
 #   -m MODE    : local | tcp | rdma  (default: local)
 #   -t N       : communication threads (default: 6)
 #   -s X       : shift for radix_sort (default: 20)
-#   -n N       : test number for radix_sort_scalability (default: 7)
+#   --start S  : radix_sort_scalability sweep start; first size 2^S rows (default: 20)
+#   --end E    : radix_sort_scalability sweep end (inclusive); last size 2^E rows (default: 26)
 #   -h HOSTS   : comma-separated host per party (default: node0,node1,node2;
 #                tcp/rdma only; the local host runs in-process, others via SSH)
 #   --rayon N  : RAYON_NUM_THREADS on all parties
@@ -25,7 +26,7 @@
 # Examples:
 #   ./run_operator.sh multi_keys_join
 #   ./run_operator.sh radix_sort -t 6 -s 20 -m tcp -h node0,node1,node2
-#   ./run_operator.sh radix_sort_scalability -t 6 -n 7
+#   ./run_operator.sh radix_sort_scalability -t 6 --start 16 --end 24
 #
 # Note: the MP-SPDZ radix-sort baseline is a standalone script:
 #   ./run_radix_sort_mpspdz_ssh.sh
@@ -47,7 +48,7 @@ parse_common_opts "$@" || exit 1
 THREADS="${THREADS:-6}"
 SF="${SF:-20}"
 
-ALL_BENCHES=("multi_keys_join" "radix_sort" "radix_sort_scalability" "radix_sort_single" "radix_sort_multi")
+ALL_BENCHES=("multi_keys_join" "radix_sort" "radix_sort_scalability" "radix_sort_single" "radix_sort_multi" "radix_sort_mpspdz")
 read -r -a TARGETS <<< "$(expand_targets "$BENCHES" "${ALL_BENCHES[@]}")"
 for t in "${TARGETS[@]}"; do
     contains "$t" "${ALL_BENCHES[@]}" || { echo "Error: invalid operator bench '$t' (valid: ${ALL_BENCHES[*]})" >&2; exit 1; }

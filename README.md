@@ -139,6 +139,9 @@ Each step is also a standalone script, so you can re-run any of them individuall
 
 Qamboo implements all 22 TPC-H queries for secure multi-party analytics.
 
+> [!NOTE]
+> For multi-node deployment, all benchmark commands below are run on `node0` — the runner starts party 0 locally and launches the other parties over SSH.
+
 ### Network Configuration
 
 At runtime, all parties locate each other through TOML configs under `experiments/net/`. Pre-generated configs ship with the repo (`experiments/net/local/` for single-machine runs, `experiments/net/multinode/` for clusters). To regenerate them:
@@ -181,8 +184,8 @@ All four runners share the same options:
 -t         Number of communication threads per party; default: 6 (4 for run_secrecy.sh)
 -s         Scale factor for data generation (for radix_sort this is the shift,
            i.e. log2 of the input size); default: 0.01 (20 for radix_sort)
--n         Number of sizes swept by radix_sort_scalability
-           (2^19 .. 2^(19+N-1) rows); default: 7
+--start    radix_sort_scalability sweep start (first size: 2^start rows); default: 20
+--end      radix_sort_scalability sweep end, inclusive (last size: 2^end rows); default: 26
 -h         Comma-separated list of 3 hosts, one per party; a host matching this
            machine runs in-process, others via SSH (tcp/rdma modes only);
            default: node0,node1,node2

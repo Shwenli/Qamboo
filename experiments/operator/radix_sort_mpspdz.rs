@@ -64,8 +64,8 @@ fn main() -> Result<()> {
     tracing::info!("Network setup completed");
 
 
-    for i in 0..7 {
-        let rows = 1 << (17 + i);
+    for i in 0..9 {
+        let rows = 1 << (16 + i);
         let input = gen_rand_column_u64_ring(
             rows,
             "test".to_string(), 

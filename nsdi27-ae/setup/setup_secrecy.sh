@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# setup_secrecy.sh — Set up Secrecy on node0 (local) and node1/node2 (SSH).
+# setup_secrecy.sh — Set up Secrecy on node0 (local) and node1/node2 (scp).
 #
-# All nodes install Secrecy into the SAME absolute path
-# (nsdi27-ae/baselines/secrecy). This single script plays two roles:
-#   * orchestrator (default): installs on the local node, then re-invokes
-#     itself via stdin (`bash -s`) on node1/node2;
-#   * worker (SECRECY_WORKER=1): just clones and builds Secrecy on the
-#     current node. The install path is passed through SECRECY_INSTALL_DIR
-#     because the script's own location cannot be resolved via stdin.
+# Secrecy is cloned and built on the local node only, then copied to
+# node1/node2 with scp into the SAME absolute path
+# (nsdi27-ae/baselines/secrecy). The remote nodes therefore need no
+# internet access and no build — matching the scp-based distribution
+# used by the main deploy script. Because the binaries are built on
+# node0, all nodes should run the same OS/architecture.
 #
-# Prerequisites on every node: a C++ toolchain, cmake and MPI.
+# Prerequisites on node0: a C++ toolchain, cmake and MPI; on node1/node2:
+# the MPI runtime libraries.
 #
 # Usage:
 #   ./setup_secrecy.sh [NODE_PREFIX]
@@ -28,6 +28,13 @@ set -euo pipefail
 install_secrecy() {
     local install_dir="$1"
 
+    # Skip everything (clone, deps, build) when a previous run already
+    # produced the benchmark binaries.
+    if compgen -G "${install_dir}/build/exp_*" > /dev/null; then
+        echo "==> Secrecy already built at ${install_dir}, skipping setup."
+        return 0
+    fi
+
     # Clone Secrecy
     if [[ ! -d "${install_dir}/.git" ]]; then
         echo "==> Cloning Secrecy into ${install_dir}..."
@@ -36,41 +43,38 @@ install_secrecy() {
     else
         echo "==> Secrecy already cloned at ${install_dir}."
     fi
-    cd "${install_dir}"
+    # Run the cd-dependent steps in a subshell so the function does not
+    # change the caller's working directory (the orchestrator still needs
+    # it for the stdin redirect below).
+    (
+        cd "${install_dir}"
 
-    # Clone the sql-parser dependency
-    if [[ ! -d include/external-lib/sql-parser/.git ]]; then
-        echo "==> Cloning sql-parser..."
-        mkdir -p include/external-lib
-        git clone https://github.com/mfaisal97/sql-parser.git include/external-lib/sql-parser
-    else
-        echo "==> sql-parser already present."
-    fi
+        # Clone the sql-parser dependency
+        if [[ ! -d include/external-lib/sql-parser/.git ]]; then
+            echo "==> Cloning sql-parser..."
+            mkdir -p include/external-lib
+            git clone https://github.com/mfaisal97/sql-parser.git include/external-lib/sql-parser
+        else
+            echo "==> sql-parser already present."
+        fi
 
-    # Build
-    echo "==> Building Secrecy..."
-    mkdir -p build
-    cd build
-    cmake ..
-    make -j "$(( $(nproc) / 2 ))"
+        # Build
+        echo "==> Building Secrecy..."
+        mkdir -p build
+        cd build
+        cmake ..
+        make -j "$(( $(nproc) / 2 ))"
+    )
 
     echo "==> Secrecy installed at ${install_dir}."
 }
-
-# Worker mode (used for the stdin re-invocation on remote nodes): install
-# and exit. SECRECY_INSTALL_DIR is mandatory here because the script's own
-# path cannot be resolved when read from stdin.
-if [[ "${SECRECY_WORKER:-}" == "1" ]]; then
-    install_secrecy "${SECRECY_INSTALL_DIR:?SECRECY_INSTALL_DIR must be set in worker mode}"
-    exit 0
-fi
 
 # ----------------------------- orchestrator -----------------------------
 
 usage() {
     echo "Usage: $0 [NODE_PREFIX]"
     echo ""
-    echo "Setup Secrecy on node0 (local), node1 and node2 (via SSH)."
+    echo "Setup Secrecy on node0 (local), then copy it to node1 and node2 (via scp)."
     echo ""
     echo "Arguments:"
     echo "  NODE_PREFIX    Optional prefix for node hostnames (default: 'node')"
@@ -102,11 +106,18 @@ INSTALL_DIR="${SCRIPT_DIR}/../baselines/secrecy"
 echo "==> Setting up Secrecy on the local node (${INSTALL_DIR})..."
 install_secrecy "${INSTALL_DIR}"
 
-# Remote nodes, at the same absolute path (script re-invokes itself via stdin)
+# Normalize to a canonical absolute path (resolves the '..' above) so the
+# remote side receives the exact same path.
+INSTALL_DIR="$(cd "${INSTALL_DIR}" && pwd)"
+
+# Remote nodes: copy the locally built tree to the same absolute path. The
+# remote nodes need no internet access and no build toolchain for this.
+# The source is given as "${INSTALL_DIR}/." so re-runs overwrite the remote
+# contents in place instead of nesting a new directory inside it.
 for n in 1 2; do
-    echo "==> Setting up Secrecy on ${NODE_PREFIX}${n} (${INSTALL_DIR})..."
-    ssh "${NODE_PREFIX}${n}" \
-        "SECRECY_WORKER=1 SECRECY_INSTALL_DIR='${INSTALL_DIR}' bash -s" < "${BASH_SOURCE[0]}"
+    echo "==> Copying Secrecy to ${NODE_PREFIX}${n} (${INSTALL_DIR})..."
+    ssh "${NODE_PREFIX}${n}" "mkdir -p '${INSTALL_DIR}'"
+    scp -rq "${INSTALL_DIR}/." "${NODE_PREFIX}${n}:${INSTALL_DIR}"
 done
 
 echo

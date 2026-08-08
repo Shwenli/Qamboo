@@ -30,7 +30,7 @@ def generate_config(group_id, party_ips, num_parties=3):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate network config files.")
     parser.add_argument("--num", type=int, nargs="?", default=10, help="Number of groups to generate (default: 10)")
-    parser.add_argument("--ip", nargs="+", default=["10.0.0.1", "10.0.0.2", "10.0.0.3"], help="List of party IPs")
+    parser.add_argument("--ip", nargs="+", default=["node0", "node1", "node2"], help="List of party hosts (names are written verbatim into dns_name)")
     args = parser.parse_args()
 
     # Generate for groups 0 to num_groups-1

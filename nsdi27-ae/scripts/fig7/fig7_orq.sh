@@ -31,6 +31,8 @@ DELAY_NODES="node0,node1,node2"
 
 usage () {
     echo "Usage: $0 <lan|wan> [query-spec]"
+    echo "  query-spec: TPC-H queries to run, e.g. \"6\", \"1,3,4\" or \"1..8\""
+    echo "              (default: \"1..22\", all 22 queries)."
     echo "  Protocol is fixed to 3PC (SH-HM)."
     echo "  We expect node0, node1, ... to be routable"
     echo "  In WAN, we emulate a 20 ms RTT, 6 Gbps connection via"
@@ -81,14 +83,6 @@ ping -qc 1 node1 && \
 ping -qc 1 node2 && \
 echo "==== Connectivity check OK! ====" || exit 1
 
-(
-    echo "==== Test nocopy... ==="
-    cd ../../build
-    ../scripts/run_experiment.sh -s $NETWORK -x node -p $PROTOCOL -c nocopy -T 1 -r 20 test_primitives
-    echo "==== Test OK? Cancel if not. ===="
-    sleep 1
-)
-
 # Load the WAN emulation (6 Gbps, 20 ms RTT) on all nodes via Qamboo's tc
 # script. Removed again by the EXIT trap after the experiments.
 if [[ "$NETWORK" == "wan" ]]; then
@@ -98,6 +92,13 @@ fi
 
 # If not specified, this arg will be empty
 QUERY_SELECT=$2
+
+# ORQ's query-experiments.sh expands queries via `eval echo q{$QUERY_RANGE}`,
+# so a bare number would stay literal (6 -> "q{6}"). Rewrite it as a range;
+# comma lists ("1,3,5") and ranges ("1..22") already expand correctly.
+if [[ "$QUERY_SELECT" =~ ^[0-9]+$ ]]; then
+    QUERY_SELECT="${QUERY_SELECT}..${QUERY_SELECT}"
+fi
 
 # Run queries with 16 threads.
 echo "==== Start TPCH ===="

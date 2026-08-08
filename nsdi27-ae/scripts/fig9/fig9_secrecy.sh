@@ -73,40 +73,42 @@ iface=$_iface
 SUBNET=$(ip -o -f inet addr show ${iface} | awk '{print $4}')
 [[ -n $iface ]] && echo "Common interface: ${iface}; subnet ${SUBNET}"
 
-RUN_CMD="mpirun --mca btl_tcp_if_include $SUBNET --mca oob_tcp_if_include $SUBNET"
+# --allow-run-as-root: the cluster nodes run as root; harmless for non-root.
+RUN_CMD="mpirun --allow-run-as-root --mca btl_tcp_if_include $SUBNET --mca oob_tcp_if_include $SUBNET"
 EXP_PREFIX="$RUN_CMD $EXP_HOSTS"
 
-# Q4 (exp_tpch_q4): Lineintems 128k, oders 32k, batch size 8k
-date
-$EXP_PREFIX ./exp_tpch_q4 32768 131072 8192 | tee "${LOG_DIR}/exp_tpch_q4.txt"
+# Run one benchmark: print a start timestamp, run it (logging to
+# ${LOG_DIR}/<name>.txt), then print a completion line.
+run_exp() {
+    local name="$1"; shift
+    date
+    $EXP_PREFIX "$@" | tee "${LOG_DIR}/${name}.txt"
+    echo "==== ${name} finished ===="
+}
 
 # Q6 (exp_tpch_q6): 8m
-date
-$EXP_PREFIX ./exp_tpch_q6 8388608 | tee "${LOG_DIR}/exp_tpch_q6.txt"
+run_exp exp_tpch_q6 ./exp_tpch_q6 8388608
+
+# Q4 (exp_tpch_q4): Lineintems 128k, oders 32k, batch size 8k
+run_exp exp_tpch_q4 ./exp_tpch_q4 32768 131072 8192
 
 # Q13 (exp_tpch_q13): Orders 256k, customers 32k, 4k batch size
-date
-$EXP_PREFIX ./exp_tpch_q13 32768 262144 4096 | tee "${LOG_DIR}/exp_tpch_q13.txt"
+run_exp exp_tpch_q13 ./exp_tpch_q13 32768 262144 4096
 
 # Comorbidity (exp_q1): first table 2m, second table 256, TODO: check on second input
-date
-$EXP_PREFIX ./exp_q1 2097152 256 | tee "${LOG_DIR}/exp_q1.txt"
+run_exp exp_q1 ./exp_q1 2097152 256
 
 # Rec. cdiff (exp_q2) : first table 2m
-date
-$EXP_PREFIX ./exp_q2 2097152 | tee "${LOG_DIR}/exp_q2.txt"
+run_exp exp_q2 ./exp_q2 2097152
 
 # Aspirin count (exp_q3): input tables 32k , batch size 32k
-date
-$EXP_PREFIX ./exp_q3 32768 32768 16384 | tee "${LOG_DIR}/exp_q3.txt"
+run_exp exp_q3 ./exp_q3 32768 32768 16384
 
 # Credit Score (exp_qcredit): input table 2m, batch size 256k
-date
-$EXP_PREFIX ./exp_qcredit 2097152 262144 | tee "${LOG_DIR}/exp_qcredit.txt"
+run_exp exp_qcredit ./exp_qcredit 2097152 262144
 
 # Password Reuse (exp_qpwd): input table 2m, batch size 256k
-date
-$EXP_PREFIX ./exp_qpwd 2097152 262144 | tee "${LOG_DIR}/exp_qpwd.txt"
+run_exp exp_qpwd ./exp_qpwd 2097152 262144
 
 # Extract the Secrecy logs into a CSV under nsdi27-ae/data/run/ (results of
 # this run; the paper's published numbers live in nsdi27-ae/data/paper/).

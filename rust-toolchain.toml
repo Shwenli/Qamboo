@@ -3,3 +3,4 @@
 # Keep in sync with the toolchain pinned in .github/workflows/docs.yml.
 [toolchain]
 channel = "1.90.0"
+components = ["rust-analyzer"]

@@ -2,10 +2,10 @@ my_id = 0
 bind_addr = "0.0.0.0:19000"
 [[parties]]
 id = 0
-dns_name = "10.0.0.1:19000"
+dns_name = "node0:19000"
 [[parties]]
 id = 1
-dns_name = "10.0.0.2:19001"
+dns_name = "node1:19001"
 [[parties]]
 id = 2
-dns_name = "10.0.0.3:19002"
+dns_name = "node2:19002"

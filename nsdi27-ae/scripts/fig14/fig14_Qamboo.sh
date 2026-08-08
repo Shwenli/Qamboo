@@ -65,7 +65,7 @@ if [[ "$NETWORK" == "wan" ]]; then
 fi
 
 echo "==== Fig 14 (Qamboo): RadixSort scaling, 2^20–2^27 rows, 64/32-bit keys, ${NETWORK} ===="
-"${RUN_OPERATOR}" radix_sort_scalability -m tcp -h "${HOSTS}"
+"${RUN_OPERATOR}" radix_sort_scalability -m tcp -h "${HOSTS}" --start 20 --end 27
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

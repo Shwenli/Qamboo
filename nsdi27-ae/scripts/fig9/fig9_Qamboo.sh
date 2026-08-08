@@ -48,14 +48,15 @@ echo "==== Fig 9 (Qamboo): Secrecy application queries + TPC-H Q4/Q6/Q13, LAN ==
 # paper: comorbidity SF=1; aspirin SF=0.016384; rcdiff SF=0.69905067;
 # credit/pwd SF=0.4194304; TPC-H Q13 SF=0.17476267; Q4 SF=0.02184533;
 # Q6 SF=1.39810133.
+"${RUN_TPCH}"    13          -t "${THREADS}" -s 0.17476267 -m tcp -h "${HOSTS}" --log "${LOG}"
+"${RUN_TPCH}"    4           -t "${THREADS}" -s 0.02184533 -m tcp -h "${HOSTS}" --log "${LOG}"
+"${RUN_TPCH}"    6           -t "${THREADS}" -s 1.39810133 -m tcp -h "${HOSTS}" --log "${LOG}"
 "${RUN_SECRECY}" comorbidity -t "${THREADS}" -s 1          -m tcp -h "${HOSTS}" --log "${LOG}"
 "${RUN_SECRECY}" aspirin     -t "${THREADS}" -s 0.016384   -m tcp -h "${HOSTS}" --log "${LOG}"
 "${RUN_SECRECY}" rcdiff      -t "${THREADS}" -s 0.69905067 -m tcp -h "${HOSTS}" --log "${LOG}"
 "${RUN_SECRECY}" credit      -t "${THREADS}" -s 0.4194304  -m tcp -h "${HOSTS}" --log "${LOG}"
 "${RUN_SECRECY}" pwd         -t "${THREADS}" -s 0.4194304  -m tcp -h "${HOSTS}" --log "${LOG}"
-"${RUN_TPCH}"    13          -t "${THREADS}" -s 0.17476267 -m tcp -h "${HOSTS}" --log "${LOG}"
-"${RUN_TPCH}"    4           -t "${THREADS}" -s 0.02184533 -m tcp -h "${HOSTS}" --log "${LOG}"
-"${RUN_TPCH}"    6           -t "${THREADS}" -s 1.39810133 -m tcp -h "${HOSTS}" --log "${LOG}"
+
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

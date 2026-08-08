@@ -105,7 +105,8 @@ rdma   like tcp, but binaries run under smc_run (SMC-R RDMA)
 -t         Number of communication threads per party; default: 6 (4 for run_secrecy.sh)
 -s         Scale factor / shift (log2 input size for radix_sort);
            default: 0.01 (20 for radix_sort)
--n         Number of sizes swept by radix_sort_scalability; default: 7
+--start    radix_sort_scalability sweep start (first size: 2^start rows); default: 20
+--end      radix_sort_scalability sweep end, inclusive (last size: 2^end rows); default: 26
 -h         Comma-separated list of 3 hosts, one per party; a host matching this
            machine runs in-process, others via SSH (tcp/rdma modes only);
            default: node0,node1,node2
@@ -132,7 +133,7 @@ cd scripts/experiments
 # Operator micro-benchmarks
 ./run_operator.sh multi_keys_join
 ./run_operator.sh radix_sort -t 6 -s 20 -m tcp                  # shift=20, multinode
-./run_operator.sh radix_sort_scalability -t 6 -n 7              # sweep 2^19..2^25 rows
+./run_operator.sh radix_sort_scalability -t 6 --start 16 --end 24   # sweep 2^16..2^24 rows
 
 # Optimization ablations
 ./run_optimization.sh no_secure_cut "2,3,5" -t 6 -s 1 -m tcp -h node0,node1,node2
@@ -171,7 +172,8 @@ BINS          Cargo binary name per target (e.g. q5, comorbidity); required
 MODE          local | tcp | rdma; default: local
 THREADS       Communication threads; runner fills its suite default when unset
 SF            Scale factor / shift; runner fills its suite default when unset
-NUM           Test number for radix_sort_scalability; default: 7
+START         radix_sort_scalability sweep start (2^start rows); default: 20
+END           radix_sort_scalability sweep end (2^end rows, inclusive); default: 26
 HOST_LIST     From -h; party i runs on the i-th host, local hosts in-process;
               default: node0,node1,node2
 RAYON         From --rayon; exported as RAYON_NUM_THREADS on every party

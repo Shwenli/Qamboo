@@ -64,8 +64,16 @@ if [[ "$NETWORK" == "wan" ]]; then
     "${SETUP_DELAY}" -c -H "${HOSTS}" 6GBit 20ms
 fi
 
-echo "==== Fig 14 (Qamboo): RadixSort scaling, 2^20–2^27 rows, 64/32-bit keys, ${NETWORK} ===="
-"${RUN_OPERATOR}" radix_sort_scalability -m tcp -h "${HOSTS}" --start 20 --end 27
+# Default communication threads: 16 in LAN, 32 in WAN (more threads help hide
+# the 20 ms RTT in the WAN setting).
+if [[ "$NETWORK" == "lan" ]]; then
+    THREADS=16
+else
+    THREADS=32
+fi
+
+echo "==== Fig 14 (Qamboo): RadixSort scaling, 2^20–2^27 rows, 64/32-bit keys, ${NETWORK} (${THREADS} comm threads) ===="
+"${RUN_OPERATOR}" radix_sort_scalability -m tcp -h "${HOSTS}" -t "${THREADS}" --start 20 --end 27
 
 # Extract the result log into a CSV under nsdi27-ae/data/run/ (results of this
 # run; the paper's published numbers live in nsdi27-ae/data/paper/).

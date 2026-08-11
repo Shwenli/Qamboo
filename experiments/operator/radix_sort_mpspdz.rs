@@ -83,7 +83,7 @@ fn main() -> Result<()> {
         let duration = start.elapsed();
 
         if party_id == PartyID::ID0 {
-            tracing::info!("Radix Sort with 64-bit keys on {} rows took: {:?}", rows, duration);
+            tracing::info!("Total Radix Sort with 64-bit keys on {} rows execution time: {:?}", rows, duration);
         }
 
         let start = Instant::now();
@@ -91,7 +91,7 @@ fn main() -> Result<()> {
         let duration = start.elapsed();
 
         if party_id == PartyID::ID0 {
-            tracing::info!("Radix Sort with 32-bit keys on {} rows took: {:?}", rows, duration);
+            tracing::info!("Total Radix Sort with 32-bit keys on {} rows execution time: {:?}", rows, duration);
         }
     }
     

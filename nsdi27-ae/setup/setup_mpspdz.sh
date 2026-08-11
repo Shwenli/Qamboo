@@ -76,6 +76,7 @@ else
     ./bootstrap.sh
     ./b2 -j"$(nproc)"
     sudo ./b2 install
+    sudo ldconfig
     cd "${SCRIPT_DIR}"
 fi
 
@@ -90,6 +91,16 @@ git checkout "${REPO_COMMIT}"
 
 echo "==> Running MP-SPDZ setup (make setup)..."
 make setup
+
+# MP-SPDZ compiles against the source-built Boost 1.75 headers in
+# /usr/local/include, but /usr/local/lib is not in the linker's default
+# search path on Ubuntu, so static linking would silently pick up the older
+# apt Boost (1.74) and fail with undefined boost::filesystem references.
+# CONFIG.mine's MY_LDLIBS is expanded before MP-SPDZ's own -L flags, which
+# puts /usr/local/lib first in the search order. Guarded so re-running this
+# script doesn't append the line twice.
+grep -qxF 'MY_LDLIBS = -L/usr/local/lib' CONFIG.mine 2>/dev/null || \
+    echo 'MY_LDLIBS = -L/usr/local/lib' >> CONFIG.mine
 
 echo "==> Installing the sort.mpc benchmark program..."
 cat > Programs/Source/sort.mpc <<'EOF'

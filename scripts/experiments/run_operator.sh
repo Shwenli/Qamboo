@@ -13,7 +13,7 @@
 #
 # Options:
 #   -m MODE    : local | tcp | rdma  (default: local)
-#   -t N       : communication threads (default: 6)
+#   -t N       : communication threads (default: 16)
 #   -s X       : shift for radix_sort (default: 20)
 #   --start S  : radix_sort_scalability sweep start; first size 2^S rows (default: 20)
 #   --end E    : radix_sort_scalability sweep end (inclusive); last size 2^E rows (default: 26)
@@ -45,7 +45,7 @@ fi
 shift
 
 parse_common_opts "$@" || exit 1
-THREADS="${THREADS:-6}"
+THREADS="${THREADS:-16}"
 SF="${SF:-20}"
 
 ALL_BENCHES=("multi_keys_join" "radix_sort" "radix_sort_scalability" "radix_sort_single" "radix_sort_multi" "radix_sort_mpspdz")

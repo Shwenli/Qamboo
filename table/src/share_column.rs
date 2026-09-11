@@ -8,6 +8,7 @@ use std::ops::{Index, IndexMut};
 pub enum ShareType {
     Arithmetic,
     Binary,
+    Bit,
     PlainText,
 }
 

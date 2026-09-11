@@ -2,4 +2,6 @@ target/
 .VSCodeCounter/
 .DS_Store/
 Qamboo_NSDI/
+Qamboo-NSDI27-CAMERA-READY/
 docs/
+BIT_OPS.md

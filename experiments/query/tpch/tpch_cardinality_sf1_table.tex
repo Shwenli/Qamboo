@@ -1,0 +1,35 @@
+% Comparison table from tpch_cardinality_sf1.md (lines 97-120), SF=1
+% Requires: \usepackage{booktabs}
+\begin{table}[t]
+  \centering
+  \caption{Per-query sum of operator output cardinalities (SF=1): Qamboo (optimized) vs.\ unoptimized (oblivious) plans.}
+  \label{tab:tpch-cardinality-sf1}
+  \begin{tabular}{c r r c}
+    \toprule
+    Q & Qamboo (optimized) [M] & Unoptimized (oblivious) [M] & Unopt./Opt. \\
+    \midrule
+    1  & 12.000006 & 12.0      & 1.00$\times$ \\
+    2  & 7.61003   & 9.000005  & 1.18$\times$ \\
+    3  & 27.15     & 39.15     & 1.44$\times$ \\
+    4  & 12.0      & 19.5      & 1.63$\times$ \\
+    5  & 27.010055 & 45.000005 & 1.67$\times$ \\
+    6  & 6.0       & 6.0       & 1.00$\times$ \\
+    7  & 31.66     & 48.0      & 1.52$\times$ \\
+    8  & 30.36003  & 55.700005 & 1.83$\times$ \\
+    9  & 31.81     & 48.2      & 1.52$\times$ \\
+    10 & 27.15     & 27.0      & 0.99$\times$ \\
+    11 & 3.210025  & 4.000025  & 1.25$\times$ \\
+    12 & 18.0      & 18.0      & 1.00$\times$ \\
+    13 & 3.75      & 9.0       & 2.40$\times$ \\
+    14 & 18.0      & 18.0      & 1.00$\times$ \\
+    15 & 42.0      & 42.0      & 1.00$\times$ \\
+    16 & 3.41      & 3.41      & 1.00$\times$ \\
+    17 & 24.4      & 24.2      & 0.99$\times$ \\
+    18 & 16.5      & 31.5      & 1.91$\times$ \\
+    19 & 18.2      & 18.2      & 1.00$\times$ \\
+    20 & 15.430025 & 19.030025 & 1.23$\times$ \\
+    21 & 64.530025 & 67.510025 & 1.05$\times$ \\
+    22 & 0.6       & 0.6       & 1.00$\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

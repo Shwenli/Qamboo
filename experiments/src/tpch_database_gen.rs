@@ -6,7 +6,7 @@ use table::share_table::ShareTable;
 use table::share_column::{ShareColumn, ShareType};
 use table::NetStateArgs;
 use algebra::ring::ring_impl::RingElement;
-use crate::{gen_rand_column_pk_u64_ring, gen_rand_column_u64_ring, gen_valid_column_u64_ring};
+use crate::{gen_rand_column_pk_u64_ring, gen_rand_column_u64_ring, gen_valid_column_u64_ring, gen_valid_binary_64};
 use polars::prelude::*;
 
 
@@ -204,6 +204,145 @@ pub fn gen_lineitem_table<N: Network>(
         Ok((lineitem_table, None))
     }
     //let l_orderkey = gen_rand_column_u64_ring(num_rows, "l_orderkey".to_string(), 1000000000, 1, ShareType::Arithmetic, net, state);
+}
+
+/// Q6_ORQ variant of [gen_lineitem_table]: identical except the `valid` column is
+/// generated as *binary* (XOR) u64 shares, so filters can AND predicates into it
+/// without an a2b conversion.
+pub fn gen_lineitem_q6orq<N: Network>(
+    sf: f32,
+    netstate_args: &mut NetStateArgs<N>,
+) -> eyre::Result<(ShareTable<Rep3RingShare<u64>>, Option<DataFrame>)> {
+
+    let num_rows = (sf * 6000000.0) as usize;
+
+    let (nets, states) = netstate_args.split();
+    let partyid = states[0].id;
+
+    let mut lineitem_table = ShareTable::<Rep3RingShare<u64>>::new();
+    lineitem_table.key_name = Some("no".to_string());
+
+    // For Polars LazyFrame construction on ID0
+    let mut columns: Vec<Column> = Vec::new();
+
+    let (orderkey, plain_orderkey) = gen_rand_column_u64_ring(num_rows, "l_orderkey".to_string(),get_orders_table_size(sf), 1, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_orderkey".to_string(), orderkey);
+    if let Some(data) = plain_orderkey {
+        columns.push(Column::new("l_orderkey".into(), data));
+    }
+
+    let (partkey, plain_partkey) = gen_rand_column_u64_ring(num_rows, "l_partkey".to_string(),get_part_table_size(sf), 1, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_partkey".to_string(), partkey);
+    if let Some(data) = plain_partkey {
+        columns.push(Column::new("l_partkey".into(), data));
+    }
+
+    let (suppkey, plain_suppkey) = gen_rand_column_u64_ring(num_rows, "l_suppkey".to_string(),get_supplier_table_size(sf), 1, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_suppkey".to_string(), suppkey);
+    if let Some(data) = plain_suppkey {
+        columns.push(Column::new("l_suppkey".into(), data));
+    }
+
+    let (quantity, plain_quantity) = gen_rand_column_u64_ring(num_rows, "l_quantity".to_string(), 51, 1, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_quantity".to_string(), quantity);
+    // Keep plain_quantity for extendedprice calculation
+    let plain_quantity_clone = plain_quantity.clone();
+    if let Some(data) = plain_quantity {
+        columns.push(Column::new("l_quantity".into(), data));
+    }
+
+    let (extendedprice, plain_extendedprice) = gen_rand_column_u64_ring(num_rows, "l_extendedprice".to_string(), 111, 90, ShareType::Arithmetic, nets, partyid);
+    let extendedprice = extendedprice * (&lineitem_table["l_quantity"].clone(), netstate_args);
+    lineitem_table.insert_column("l_extendedprice".to_string(), extendedprice);
+
+    if let (Some(mut ep), Some(qt)) = (plain_extendedprice, plain_quantity_clone) {
+        // extendedprice *= quantity
+        for (e, q) in ep.iter_mut().zip(qt.iter()) {
+            *e *= *q;
+        }
+        columns.push(Column::new("l_extendedprice".into(), ep));
+    }
+
+
+    let (discount, plain_discount) = gen_rand_column_u64_ring(num_rows, "l_discount".to_string(), 10, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_discount".to_string(), discount);
+    if let Some(data) = plain_discount {
+        columns.push(Column::new("l_discount".into(), data));
+    }
+
+    let (tax, plain_tax) = gen_rand_column_u64_ring(num_rows, "l_tax".to_string(), 8, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_tax".to_string(), tax);
+    if let Some(data) = plain_tax {
+        columns.push(Column::new("l_tax".into(), data));
+    }
+
+    let (returnflag, plain_returnflag) = gen_rand_column_u64_ring(num_rows, "l_returnflag".to_string(), 3, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_returnflag".to_string(), returnflag);
+    if let Some(data) = plain_returnflag {
+        columns.push(Column::new("l_returnflag".into(), data));
+    }
+
+    let (linestatus, plain_linestatus) = gen_rand_column_u64_ring(num_rows, "l_linestatus".to_string(), 2, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_linestatus".to_string(), linestatus);
+    if let Some(data) = plain_linestatus {
+        columns.push(Column::new("l_linestatus".into(), data));
+    }
+
+    let (shipdate, plain_shipdate) = gen_rand_column_u64_ring(num_rows, "l_shipdate".to_string(), 121, 1, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_shipdate".to_string(), shipdate);
+    let plain_shipdate_clone = plain_shipdate.clone();
+    if let Some(data) = plain_shipdate {
+        columns.push(Column::new("l_shipdate".into(), data));
+    }
+
+    let (commitdate, plain_commitdate) = gen_rand_column_u64_ring(num_rows, "l_commitdate".to_string(), 90, 30, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_commitdate".to_string(), commitdate);
+    if let Some(data) = plain_commitdate {
+        columns.push(Column::new("l_commitdate".into(), data));
+    }
+
+    let (receiptdate_rand, plain_receiptdate_rand) = gen_rand_column_u64_ring(num_rows, "l_receiptdate".to_string(), 30, 1, ShareType::Arithmetic, nets, partyid);
+    let receiptdate_tmp = lineitem_table["l_shipdate"].clone() + receiptdate_rand;
+    let receiptdate = ShareColumn::new(receiptdate_tmp.get_data().to_vec(), ShareType::Arithmetic, "l_receiptdate".to_string());
+    lineitem_table.insert_column("l_receiptdate".to_string(), receiptdate);
+
+    if let (Some(mut rd), Some(sd)) = (plain_receiptdate_rand, plain_shipdate_clone) {
+        // receiptdate = shipdate + rand
+        for (r, s) in rd.iter_mut().zip(sd.iter()) {
+            *r += *s;
+        }
+        columns.push(Column::new("l_receiptdate".into(), rd));
+    }
+
+
+    let (shipinstruct, plain_shipinstruct) = gen_rand_column_u64_ring(num_rows, "l_shipinstruct".to_string(), 4, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_shipinstruct".to_string(), shipinstruct);
+    if let Some(data) = plain_shipinstruct {
+        columns.push(Column::new("l_shipinstruct".into(), data));
+    }
+
+    let (shipmode, plain_shipmode) = gen_rand_column_u64_ring(num_rows, "l_shipmode".to_string(), 7, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_shipmode".to_string(), shipmode);
+    if let Some(data) = plain_shipmode {
+        columns.push(Column::new("l_shipmode".into(), data));
+    }
+
+    let (comment, plain_comment) = gen_rand_column_u64_ring(num_rows, "l_comment".to_string(), 100, 0, ShareType::Arithmetic, nets, partyid);
+    lineitem_table.insert_column("l_comment".to_string(), comment);
+    if let Some(data) = plain_comment {
+        columns.push(Column::new("l_comment".into(), data));
+    }
+
+    // Q6_ORQ: valid column is binary (XOR) shared
+    let valid = gen_valid_binary_64(num_rows, "valid".to_string(), nets, partyid);
+    lineitem_table.insert_column("valid".to_string(), valid);
+
+    if partyid == PartyID::ID0 {
+        let df = DataFrame::new(columns).expect("Failed to create DataFrame");
+        Ok((lineitem_table, Some(df)))
+    } else {
+        Ok((lineitem_table, None))
+    }
 }
 
 

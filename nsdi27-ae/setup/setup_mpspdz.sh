@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# setup_mpspdz.sh — Install MP-SPDZ (data61/MP-SPDZ) as the RadixSort
-# baseline, 3PC replicated-ring only.
+# setup_mpspdz.sh — Install MP-SPDZ (data61/MP-SPDZ) as the RadixSort (Fig 10)
+# and basic-primitive (Fig 17: multiplication, less-than) baseline,
+# 3PC replicated-ring only.
 #
 # What it does:
 #   1. Installs the build dependencies via apt (only needed on node0: the
@@ -11,7 +12,8 @@
 #      which is too old for the pinned MP-SPDZ commit).
 #   3. Clones the pinned MP-SPDZ commit into nsdi27-ae/baselines/mpspdz and
 #      runs `make setup`.
-#   4. Installs the sort.mpc benchmark program into Programs/Source.
+#   4. Installs the sort.mpc / mul.mpc / lt.mpc benchmark programs into
+#      Programs/Source.
 #   5. Generates the HOSTS hostfile used by `compile-run.py -H`.
 #
 # Usage:
@@ -115,6 +117,40 @@ v = sint.Array(n)
 v.sort()
 EOF
 
+echo "==> Installing the mul.mpc benchmark program (Fig 17)..."
+cat > Programs/Source/mul.mpc <<'EOF'
+from Compiler.library import *
+import Compiler
+
+# Usage: mul <n> — element-wise multiplication of two n-element vectors of
+# secret-shared 64-bit integers; the product is written back to memory so it
+# cannot be optimized away.
+n = int(program.args[1])
+
+a = sint.Array(n)
+b = sint.Array(n)
+c = sint.Array(n)
+
+c[:] = a[:] * b[:]
+EOF
+
+echo "==> Installing the lt.mpc benchmark program (Fig 17)..."
+cat > Programs/Source/lt.mpc <<'EOF'
+from Compiler.library import *
+import Compiler
+
+# Usage: lt <n> — element-wise less-than comparison of two n-element vectors
+# of secret-shared 64-bit integers; the mask is written back to memory so it
+# cannot be optimized away.
+n = int(program.args[1])
+
+a = sint.Array(n)
+b = sint.Array(n)
+c = sint.Array(n)
+
+c[:] = a[:] < b[:]
+EOF
+
 echo "==> Generating the HOSTS hostfile (${PARTIES[*]})..."
 printf '%s\n' "${PARTIES[@]}" > HOSTS
 
@@ -125,4 +161,5 @@ echo
 echo "======================================================================"
 echo "SUCCESS: MP-SPDZ installed in ${INSTALL_DIR} (parties: ${PARTIES[*]})"
 echo "Run the Fig 10 baseline with: ${SCRIPT_DIR}/../scripts/fig10/fig10_mpspdz.sh [first] [last]"
+echo "Run the Fig 17 baseline with: ${SCRIPT_DIR}/../scripts/fig17/fig17_mpspdz.sh [first] [last]"
 echo "======================================================================"

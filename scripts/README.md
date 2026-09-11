@@ -20,6 +20,7 @@ scripts/
     ├── run_tpch.sh       # TPC-H Q1–Q22
     ├── run_secrecy.sh    # Secrecy application benchmarks
     ├── run_operator.sh   # Operator micro-benchmarks
+    ├── run_primitive.sh  # Primitive micro-benchmarks
     ├── run_optimization.sh # Ablations + thread-scaling sweeps
     ├── run_radix_sort_mpspdz_ssh.sh # MP-SPDZ baseline
     └── thread_scaling/   # Analysis tooling + radix thread-scaling scripts
@@ -82,6 +83,7 @@ Each benchmark suite has its own runner under `scripts/experiments/`, all built 
 | `run_tpch.sh` | TPC-H Q1–Q22 | `"1..22"`, `"1,3,5"`, `all` |
 | `run_secrecy.sh` | Secrecy apps | `aspirin comorbidity credit pwd rcdiff`, `all` |
 | `run_operator.sh` | Operator micro-benchmarks | `multi_keys_join radix_sort radix_sort_scalability radix_sort_single radix_sort_multi`, `all` |
+| `run_primitive.sh` | Primitive micro-benchmarks | `mul_bench compare_bench`, `all` |
 | `run_optimization.sh` | Ablations + thread scaling | `no_secure_cut`, `no_join_reorder`, `no_semi`, `thread_scaling` |
 
 Each runner builds the binary (`cargo build --release --features tcp`), launches the 3 parties, and appends `INFO Total` lines to the suite's stat log. Targets support comma lists (`"1,3,5"`), ranges (`"1..8"`), and `all`.
@@ -135,6 +137,10 @@ cd scripts/experiments
 ./run_operator.sh radix_sort -t 6 -s 20 -m tcp                  # shift=20, multinode
 ./run_operator.sh radix_sort_scalability -t 6 --start 16 --end 24   # sweep 2^16..2^24 rows
 
+# Primitive micro-benchmarks (each sweeps 2^16..2^25 rows internally)
+./run_primitive.sh mul_bench -t 6                               # multiplication sweep
+./run_primitive.sh all -t 6 -m tcp -h node0,node1,node2         # mul + less-than sweeps
+
 # Optimization ablations
 ./run_optimization.sh no_secure_cut "2,3,5" -t 6 -s 1 -m tcp -h node0,node1,node2
 ./run_optimization.sh no_semi 4 -t 6 -s 0.1
@@ -160,7 +166,7 @@ Also under `scripts/experiments/`:
 
 ### Shared engine (`run_common.sh`)
 
-`run_common.sh` is sourced (not executed) by all four runners. To add a new suite runner: parse the suite's targets, fill `TARGETS`/`BINS`, call `setup_log`, then `run_all`.
+`run_common.sh` is sourced (not executed) by all five runners. To add a new suite runner: parse the suite's targets, fill `TARGETS`/`BINS`, call `setup_log`, then `run_all`.
 
 ```text
 Options parsed by parse_common_opts (same as the runner CLIs above):
@@ -206,6 +212,7 @@ All batch runners pipe `INFO Total` lines from the experiment binaries into stru
 | TPC-H | `experiments/result/tpch_query/local/stat_output.log` | `experiments/result/tpch_query/multinode/stat_output.log` |
 | Secrecy | `experiments/result/secrecy_query/local/stat_output.log` | `experiments/result/secrecy_query/multinode/stat_output.log` |
 | Operator | `experiments/result/operator/local/stat_output.log` | `experiments/result/operator/multinode/stat_output.log` |
+| Primitive | `experiments/result/primitive/local/stat_output.log` | `experiments/result/primitive/multinode/stat_output.log` |
 | Optimization | `experiments/result/query_optimization/<variant>/local/stat_output.log` | `experiments/result/query_optimization/<variant>/multinode/stat_output.log` |
 | Thread scaling | `experiments/result/thread_scaling_local/` | `experiments/result/thread_scaling/` |
 

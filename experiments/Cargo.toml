@@ -98,6 +98,21 @@ path = "query/tpch/q6.rs"
 
 
 [[bin]]
+name = "q6_orq"
+path = "query/tpch/q6_orq.rs"
+
+
+[[bin]]
+name = "q6_orq_bit"
+path = "query/tpch/q6_orq_bit.rs"
+
+
+[[bin]]
+name = "q6_orq_ari_valid"
+path = "query/tpch/q6_orq_ari_valid.rs"
+
+
+[[bin]]
 name = "q7"
 path = "query/tpch/q7.rs"
 
@@ -284,3 +299,14 @@ path = "query/secrecy/pwd.rs"
 [[bin]]
 name = "credit"
 path = "query/secrecy/credit.rs"
+
+
+[[bin]]
+name = "mul_bench"
+path = "primitive/mul_bench.rs"
+
+
+[[bin]]
+name = "compare_bench"
+path = "primitive/compare_bench.rs"
+

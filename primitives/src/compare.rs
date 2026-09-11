@@ -743,6 +743,30 @@ where
 }
 
 
+/// ORQ-style less-than-zero: extracts the sign bit (MSB) of a *binary* (XOR) shared value
+/// and returns it as a shared bit. I.e., returns 1 iff the plaintext, interpreted in two's
+/// complement, is negative. Purely local, no communication: for binary sharings,
+/// MSB(x) = MSB(x1) ^ MSB(x2) ^ MSB(x3) since XOR is bitwise.
+///
+/// The input MUST be a binary sharing. For arithmetic sharings the MSB of the sum is not
+/// the XOR of the per-share MSBs (carries propagate upwards); convert with a2b first.
+pub fn ltz_orq<T: IntRing2k>(x: &Rep3RingShare<T>) -> Rep3RingShare<Bit> {
+    x.get_bit(T::K - 1)
+}
+
+/// Batched variant of [ltz_orq].
+pub fn ltz_orq_many<T: IntRing2k>(x: &[Rep3RingShare<T>]) -> Vec<Rep3RingShare<Bit>> {
+    x.iter().map(ltz_orq).collect()
+}
+
+/// Multithreaded variant of [ltz_orq_many]. The operation is purely local,
+/// so this only parallelizes the map, no network is involved.
+pub fn ltz_orq_many_multithreads<T: IntRing2k>(x: &[Rep3RingShare<T>]) -> Vec<Rep3RingShare<Bit>> {
+    x.par_iter().with_min_len(1024).map(ltz_orq).collect()
+}
+
+
+
 
 /* 
 pub fn eq_many_multithreads<T: IntRing2k, N: Network>(
@@ -1169,3 +1193,68 @@ where
 
 
 
+#[cfg(test)]
+mod ltz_orq_test {
+    use super::*;
+    use rand::Rng;
+
+    // Builds the three party views of a replicated XOR sharing of x:
+    // x = x1 ^ x2 ^ x3, party i holds (x_i, x_{i+1}).
+    fn share_binary(x: u64, rng: &mut impl Rng) -> [Rep3RingShare<u64>; 3] {
+        let x1: u64 = rng.r#gen();
+        let x2: u64 = rng.r#gen();
+        let x3 = x ^ x1 ^ x2;
+        [
+            Rep3RingShare::new(x1, x2),
+            Rep3RingShare::new(x2, x3),
+            Rep3RingShare::new(x3, x1),
+        ]
+    }
+
+    fn open_bit(shares: &[Rep3RingShare<Bit>; 3]) -> bool {
+        // party i holds (s_i, s_{i+1}); collect s1, s2, s3 and XOR
+        shares[0].a.0.convert() ^ shares[0].b.0.convert() ^ shares[1].b.0.convert()
+    }
+
+    #[test]
+    fn ltz_orq_matches_two_complement_sign() {
+        let mut rng = rand::thread_rng();
+        let mut cases = vec![
+            0u64,
+            1,
+            42,
+            (1u64 << 63) - 1,
+            1u64 << 63,
+            (1u64 << 63) + 1,
+            u64::MAX - 1,
+            u64::MAX,
+        ];
+        for _ in 0..100 {
+            cases.push(rng.r#gen());
+        }
+
+        for x in cases {
+            let shares = share_binary(x, &mut rng);
+            let bits = [
+                ltz_orq(&shares[0]),
+                ltz_orq(&shares[1]),
+                ltz_orq(&shares[2]),
+            ];
+            assert_eq!(open_bit(&bits), x >> 63 == 1, "ltz_orq wrong for {x:#x}");
+        }
+    }
+
+    #[test]
+    fn ltz_orq_many_matches_single() {
+        let mut rng = rand::thread_rng();
+        let cases: Vec<u64> = (0..1000).map(|_| rng.r#gen()).collect();
+        let party0: Vec<_> = cases.iter().map(|&x| share_binary(x, &mut rng)[0]).collect();
+
+        let single: Vec<_> = party0.iter().map(ltz_orq).collect();
+        let batch = ltz_orq_many(&party0);
+        let batch_mt = ltz_orq_many_multithreads(&party0);
+
+        assert_eq!(single, batch);
+        assert_eq!(single, batch_mt);
+    }
+}

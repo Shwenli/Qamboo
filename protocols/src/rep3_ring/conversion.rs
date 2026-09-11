@@ -8,6 +8,7 @@ use communication::rep3::net_impl::Rep3NetworkImpl;
 use random::rep3::Rep3State;
 use itertools::izip;
 use net::Network;
+use num_traits::One;
 use rand::{distributions::Standard, prelude::Distribution};
 use std::ops::Neg;
 
@@ -400,4 +401,24 @@ where
         .zip(res_b)
         .map(|(a, b)| Rep3RingShare::new_ring(a, b))
         .collect())
+}
+
+/// The local inverse of [bit_inject]: given a *binary* sharing of a bit
+/// (x = x1 xor x2 xor x3 with x in {0,1}), extracts the LSB of every share so the
+/// result is a binary sharing of the same bit whose share components are exactly 0/1.
+/// Requires no communication: LSB(x1 xor x2 xor x3) = LSB(x1) xor LSB(x2) xor LSB(x3),
+/// and LSB(x) = x since x is a bit.
+///
+/// The caller must guarantee the shared plaintext is 0 or 1 (e.g. the output of a
+/// comparison or an AND of bits); otherwise the result is a sharing of the LSB of x only.
+/// Use this to "clean" shares re-randomized by an interactive AND before feeding them
+/// to [bit_inject], which asserts that share components are single bits.
+pub fn bit_extract<T: IntRing2k>(x: &Rep3RingShare<T>) -> Rep3RingShare<T> {
+    let one = RingElement::one();
+    Rep3RingShare::new_ring(x.a & one, x.b & one)
+}
+
+/// A variant of [bit_extract] that operates on vectors of shared values instead.
+pub fn bit_extract_many<T: IntRing2k>(x: &[Rep3RingShare<T>]) -> Vec<Rep3RingShare<T>> {
+    x.iter().map(bit_extract).collect()
 }

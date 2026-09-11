@@ -7,6 +7,7 @@ use primitives::mul::mul_share_vec;
 use primitives::compare::{self,and_vec_multithreads};
 use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
 use protocols::rep3_ring::Rep3RingShare;
+use protocols::rep3_ring::conversion;
 use crate::share_table::ShareTable;
 use crate::table_operator::Filter;
 use crate::predicate::Predicate;
@@ -194,6 +195,28 @@ where
         let mut result_valid = and_vec_multithreads(&valid_data, composed_bool_values, nets, states)?;
 
         result_valid = b2a_many_multithreads(&result_valid, nets, states)?;
+
+        self["valid"].update_data(result_valid);
+
+        Ok(())
+    }
+
+    fn filter_binary_valid_directed_by_bool<N: Network>(
+        &mut self,
+        composed_bool_values: &[Rep3RingShare<T>],
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<()> {
+
+        let (nets, states) = netstate_args.split();
+
+        let valid_data = self["valid"].get_data();
+
+        let result_valid = and_vec_multithreads(&valid_data, composed_bool_values, nets, states)?;
+
+        // the AND re-randomizes the share components with full-width masks;
+        // extract the LSB locally so the valid column keeps 0/1 components
+        // and stays compatible with bit_inject
+        let result_valid = conversion::bit_extract_many(&result_valid);
 
         self["valid"].update_data(result_valid);
 

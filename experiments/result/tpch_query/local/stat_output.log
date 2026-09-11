@@ -138,3 +138,117 @@
 2026-08-06T12:39:14.151873Z  INFO Total Party0 Q9 Communication Sent 879.5003 MB, Recv 834.7772 MB
 2026-08-06T12:39:14.152449Z  INFO Total Party2 Q9 Communication Sent 1093.9971 MB, Recv 1120.7157 MB
 2026-08-06T12:39:14.152533Z  INFO Total Party1 Q9 Communication Sent 1103.3992 MB, Recv 1121.4038 MB
+2026-09-08T07:57:54.450191Z  INFO Total Party2 Q6 Communication Sent 49.9017 MB, Recv 64.5510 MB
+2026-09-08T07:57:54.450250Z  INFO Total Q6 execution time: 61.033625ms
+2026-09-08T07:57:54.450253Z  INFO Total Party0 Q6 Communication Sent 79.2000 MB, Recv 49.9017 MB
+2026-09-08T07:57:54.450289Z  INFO Total Party1 Q6 Communication Sent 49.9018 MB, Recv 64.5508 MB
+2026-09-08T07:58:15.219507Z  INFO Total Party1 Q6 Communication Sent 63.1783 MB, Recv 78.2851 MB
+2026-09-08T07:58:15.219569Z  INFO Total Party2 Q6 Communication Sent 63.6359 MB, Recv 77.8275 MB
+2026-09-08T07:58:15.219619Z  INFO Total Q6 execution time: 80.455792ms
+2026-09-08T07:58:15.219626Z  INFO Total Party0 Q6 Communication Sent 92.9343 MB, Recv 63.6359 MB
+2026-09-08T07:59:14.217309Z  INFO Total Party1 Q6 Communication Sent 631.7208 MB, Recv 782.7834 MB
+2026-09-08T07:59:14.217368Z  INFO Total Party2 Q6 Communication Sent 636.2983 MB, Recv 778.2059 MB
+2026-09-08T07:59:14.217442Z  INFO Total Q6 execution time: 768.415625ms
+2026-09-08T07:59:14.217455Z  INFO Total Party0 Q6 Communication Sent 929.2685 MB, Recv 636.2983 MB
+2026-09-08T07:59:31.637722Z  INFO Total Party1 Q6 Communication Sent 498.9680 MB, Recv 645.4529 MB
+2026-09-08T07:59:31.638291Z  INFO Total Party2 Q6 Communication Sent 498.9678 MB, Recv 645.4531 MB
+2026-09-08T07:59:31.638319Z  INFO Total Q6 execution time: 540.933167ms
+2026-09-08T07:59:31.638325Z  INFO Total Party0 Q6 Communication Sent 791.9380 MB, Recv 498.9678 MB
+2026-09-08T08:00:09.030603Z  INFO Total Party2 Q6 Communication Sent 6362.9218 MB, Recv 7781.9901 MB
+2026-09-08T08:00:09.032739Z  INFO Total Q6 execution time: 10.293010875s
+2026-09-08T08:00:09.032748Z  INFO Total Party0 Q6 Communication Sent 9292.6108 MB, Recv 6362.9218 MB
+2026-09-08T08:00:09.032798Z  INFO Total Party1 Q6 Communication Sent 6317.1456 MB, Recv 7827.7663 MB
+2026-09-08T08:00:38.766735Z  INFO Total Party2 Q6 Communication Sent 4989.6294 MB, Recv 6454.4741 MB
+2026-09-08T08:00:38.766812Z  INFO Total Party1 Q6 Communication Sent 4989.6296 MB, Recv 6454.4739 MB
+2026-09-08T08:00:38.766811Z  INFO Total Q6 execution time: 6.711798375s
+2026-09-08T08:00:38.766824Z  INFO Total Party0 Q6 Communication Sent 7919.3184 MB, Recv 4989.6294 MB
+2026-09-08T09:05:35.735106Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:05:35.749335Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:05:35.763167Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:05:41.334656Z  INFO Total Q6_ORQ execution time: 4.945196833s
+2026-09-08T09:05:41.334671Z  INFO Total Party0 Q6_ORQ total (preprocessing + query) Communication Sent 7667.5483 MB, Recv 4737.8593 MB
+2026-09-08T09:05:41.334729Z  INFO Total Party1 Q6_ORQ total (preprocessing + query) Communication Sent 4692.0831 MB, Recv 6202.7038 MB
+2026-09-08T09:05:41.334784Z  INFO Total Party2 Q6_ORQ total (preprocessing + query) Communication Sent 4737.8593 MB, Recv 6156.9276 MB
+2026-09-08T09:11:09.683570Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:11:09.689302Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:11:09.691823Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:11:16.371551Z  INFO Total Q6_ORQ execution time: 6.146654917s
+2026-09-08T09:11:16.371568Z  INFO Total Party0 Q6_ORQ total (preprocessing + query) Communication Sent 7827.7656 MB, Recv 4898.0766 MB
+2026-09-08T09:11:16.372170Z  INFO Total Party1 Q6_ORQ total (preprocessing + query) Communication Sent 4852.3004 MB, Recv 6362.9211 MB
+2026-09-08T09:11:16.372198Z  INFO Total Party2 Q6_ORQ total (preprocessing + query) Communication Sent 4898.0766 MB, Recv 6317.1449 MB
+2026-09-08T09:12:33.971372Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:12:33.979326Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:12:33.987659Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:12:37.521850Z  INFO Total Party2 Q6_ORQ total (preprocessing + query) Communication Sent 3524.7842 MB, Recv 4989.6289 MB
+2026-09-08T09:12:37.522155Z  INFO Total Q6_ORQ execution time: 3.350534792s
+2026-09-08T09:12:37.522170Z  INFO Total Party0 Q6_ORQ total (preprocessing + query) Communication Sent 6454.4732 MB, Recv 3524.7842 MB
+2026-09-08T09:12:37.522221Z  INFO Total Party1 Q6_ORQ total (preprocessing + query) Communication Sent 3524.7844 MB, Recv 4989.6287 MB
+2026-09-08T09:34:54.108699Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:34:54.109540Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:34:54.110080Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:39:31.906459Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:39:31.906485Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:39:31.912784Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:46:31.237341Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:46:31.245415Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:46:31.261933Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:46:34.315030Z  INFO Total Party2 Q6_ORQ total (preprocessing + query) Communication Sent 3616.3371 MB, Recv 5081.1817 MB
+2026-09-08T09:46:34.315552Z  INFO Total Q6_ORQ execution time: 2.416493083s
+2026-09-08T09:46:34.315562Z  INFO Total Party0 Q6_ORQ total (preprocessing + query) Communication Sent 6546.0260 MB, Recv 3616.3371 MB
+2026-09-08T09:46:34.315612Z  INFO Total Party1 Q6_ORQ total (preprocessing + query) Communication Sent 3616.3372 MB, Recv 5081.1815 MB
+2026-09-08T09:54:17.197393Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-08T09:54:17.200216Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-08T09:54:17.201304Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-08T09:54:20.381860Z  INFO Total Q6_ORQ execution time: 2.313488667s
+2026-09-08T09:54:20.381877Z  INFO Total Party0 Q6_ORQ total (preprocessing + query) Communication Sent 6546.0260 MB, Recv 3616.3371 MB
+2026-09-08T09:54:20.387542Z  INFO Total Party1 Q6_ORQ total (preprocessing + query) Communication Sent 3616.3372 MB, Recv 5081.1815 MB
+2026-09-08T09:54:20.387604Z  INFO Total Party2 Q6_ORQ total (preprocessing + query) Communication Sent 3616.3371 MB, Recv 5081.1817 MB
+2026-09-09T01:23:39.800699Z  INFO Total Party1 Q6_ORQ preprocessing Communication Sent 3250.1259 MB, Recv 4714.9702 MB
+2026-09-09T01:23:39.803358Z  INFO Total Party0 Q6_ORQ preprocessing Communication Sent 6179.8147 MB, Recv 3250.1257 MB
+2026-09-09T01:23:39.804424Z  INFO Total Party2 Q6_ORQ preprocessing Communication Sent 3250.1257 MB, Recv 4714.9704 MB
+2026-09-09T01:23:42.762517Z  INFO Total Q6_ORQ execution time: 2.214424125s
+2026-09-09T01:23:42.762530Z  INFO Total Party0 Q6_ORQ total (preprocessing + query) Communication Sent 6546.0260 MB, Recv 3616.3371 MB
+2026-09-09T01:23:42.768153Z  INFO Total Party1 Q6_ORQ total (preprocessing + query) Communication Sent 3616.3372 MB, Recv 5081.1815 MB
+2026-09-09T01:23:42.768217Z  INFO Total Party2 Q6_ORQ total (preprocessing + query) Communication Sent 3616.3371 MB, Recv 5081.1817 MB
+2026-09-09T01:25:35.870859Z  INFO Total Party2 Q6_ORQ_BIT preprocessing Communication Sent 3250.1257 MB, Recv 4726.4145 MB
+2026-09-09T01:25:35.874343Z  INFO Total Party0 Q6_ORQ_BIT preprocessing Communication Sent 6202.7030 MB, Recv 3250.1257 MB
+2026-09-09T01:25:35.874424Z  INFO Total Party1 Q6_ORQ_BIT preprocessing Communication Sent 3250.1259 MB, Recv 4726.4144 MB
+2026-09-09T01:25:37.718698Z  INFO Total Q6_ORQ_BIT execution time: 1.357278292s
+2026-09-09T01:25:37.718712Z  INFO Total Party0 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 6368.6427 MB, Recv 3416.0654 MB
+2026-09-09T01:25:37.723763Z  INFO Total Party2 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0654 MB, Recv 4892.3542 MB
+2026-09-09T01:25:37.724035Z  INFO Total Party1 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0656 MB, Recv 4892.3541 MB
+2026-09-09T01:26:00.256479Z  INFO Total Party2 Q6_ORQ_BIT preprocessing Communication Sent 3250.1257 MB, Recv 4726.4145 MB
+2026-09-09T01:26:00.282379Z  INFO Total Party1 Q6_ORQ_BIT preprocessing Communication Sent 3250.1259 MB, Recv 4726.4144 MB
+2026-09-09T01:26:00.288996Z  INFO Total Party0 Q6_ORQ_BIT preprocessing Communication Sent 6202.7030 MB, Recv 3250.1257 MB
+2026-09-09T01:26:02.713515Z  INFO Total Q6_ORQ_BIT execution time: 2.367878292s
+2026-09-09T01:26:02.713528Z  INFO Total Party0 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 6368.6427 MB, Recv 3416.0654 MB
+2026-09-09T01:26:02.716334Z  INFO Total Party1 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0656 MB, Recv 4892.3541 MB
+2026-09-09T01:26:02.716398Z  INFO Total Party2 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0654 MB, Recv 4892.3542 MB
+2026-09-09T01:26:28.799975Z  INFO Total Party2 Q6_ORQ_BIT preprocessing Communication Sent 3250.1257 MB, Recv 4726.4145 MB
+2026-09-09T01:26:28.810172Z  INFO Total Party0 Q6_ORQ_BIT preprocessing Communication Sent 6202.7030 MB, Recv 3250.1257 MB
+2026-09-09T01:26:28.812976Z  INFO Total Party1 Q6_ORQ_BIT preprocessing Communication Sent 3250.1259 MB, Recv 4726.4144 MB
+2026-09-09T01:26:30.834456Z  INFO Total Party2 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0654 MB, Recv 4892.3542 MB
+2026-09-09T01:26:30.834534Z  INFO Total Q6_ORQ_BIT execution time: 1.973393s
+2026-09-09T01:26:30.834541Z  INFO Total Party0 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 6368.6427 MB, Recv 3416.0654 MB
+2026-09-09T01:26:30.834584Z  INFO Total Party1 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0656 MB, Recv 4892.3541 MB
+2026-09-09T01:26:46.321779Z  INFO Total Party0 Q6_ORQ_BIT preprocessing Communication Sent 6202.7030 MB, Recv 3250.1257 MB
+2026-09-09T01:26:46.321847Z  INFO Total Party1 Q6_ORQ_BIT preprocessing Communication Sent 3250.1259 MB, Recv 4726.4144 MB
+2026-09-09T01:26:46.322117Z  INFO Total Party2 Q6_ORQ_BIT preprocessing Communication Sent 3250.1257 MB, Recv 4726.4145 MB
+2026-09-09T01:26:48.579291Z  INFO Total Q6_ORQ_BIT execution time: 2.195633417s
+2026-09-09T01:26:48.579300Z  INFO Total Party0 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 6368.6427 MB, Recv 3416.0654 MB
+2026-09-09T01:26:48.580353Z  INFO Total Party1 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0656 MB, Recv 4892.3541 MB
+2026-09-09T01:26:48.580392Z  INFO Total Party2 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0654 MB, Recv 4892.3542 MB
+2026-09-09T01:28:11.876561Z  INFO Total Party2 Q6_ORQ_BIT preprocessing Communication Sent 3250.1257 MB, Recv 4726.4145 MB
+2026-09-09T01:28:11.888525Z  INFO Total Party1 Q6_ORQ_BIT preprocessing Communication Sent 3250.1259 MB, Recv 4726.4144 MB
+2026-09-09T01:28:11.889786Z  INFO Total Party0 Q6_ORQ_BIT preprocessing Communication Sent 6202.7030 MB, Recv 3250.1257 MB
+2026-09-09T01:28:14.849240Z  INFO Total Party2 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0654 MB, Recv 4892.3542 MB
+2026-09-09T01:28:14.851136Z  INFO Total Q6_ORQ_BIT execution time: 1.617938458s
+2026-09-09T01:28:14.851147Z  INFO Total Party0 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 6368.6427 MB, Recv 3416.0654 MB
+2026-09-09T01:28:14.851254Z  INFO Total Party1 Q6_ORQ_BIT total (preprocessing + query) Communication Sent 3416.0656 MB, Recv 4892.3541 MB
+2026-09-09T09:39:10.242223Z  INFO Total Party0 Q6_ORQ_ARI_VALID preprocessing Communication Sent 6362.9203 MB, Recv 3250.1257 MB
+2026-09-09T09:39:10.302886Z  INFO Total Party1 Q6_ORQ_ARI_VALID preprocessing Communication Sent 3250.1259 MB, Recv 4806.5230 MB
+2026-09-09T09:39:10.306319Z  INFO Total Party2 Q6_ORQ_ARI_VALID preprocessing Communication Sent 3250.1257 MB, Recv 4806.5232 MB
+2026-09-09T09:39:16.113131Z  INFO Total Q6_ORQ_ARI_VALID execution time: 5.143658666s
+2026-09-09T09:39:16.113157Z  INFO Total Party0 Q6_ORQ_ARI_VALID total (preprocessing + query) Communication Sent 8010.8711 MB, Recv 4898.0766 MB
+2026-09-09T09:39:16.113760Z  INFO Total Party1 Q6_ORQ_ARI_VALID total (preprocessing + query) Communication Sent 4852.3004 MB, Recv 6454.4739 MB
+2026-09-09T09:39:16.113788Z  INFO Total Party2 Q6_ORQ_ARI_VALID total (preprocessing + query) Communication Sent 4898.0766 MB, Recv 6408.6976 MB

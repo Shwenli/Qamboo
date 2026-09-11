@@ -1,0 +1,41 @@
+2026-08-16T03:37:26.270813Z  INFO INFO Total multiplication execution time on 100000 elements: 3.683417ms
+2026-08-16T03:38:10.134022Z  INFO INFO Total multiplication execution time on 100000 elements: 4.995791ms
+2026-08-16T03:38:27.767076Z  INFO INFO Total multiplication execution time on 100000 elements: 3.284583ms
+2026-08-16T03:38:39.508353Z  INFO INFO Total multiplication execution time on 100000 elements: 3.240375ms
+2026-08-16T03:38:43.979078Z  INFO INFO Total multiplication execution time on 100000 elements: 6.312292ms
+2026-08-16T03:38:53.161697Z  INFO INFO Total multiplication execution time on 1000000 elements: 43.553875ms
+2026-08-16T03:38:59.076964Z  INFO INFO Total multiplication execution time on 1000000 elements: 35.799542ms
+2026-08-16T03:42:09.665841Z  INFO INFO Total multiplication execution time on 1000000 elements: 80.951625ms
+2026-08-16T03:42:17.848714Z  INFO INFO Total multiplication execution time on 1000000 elements: 34.521834ms
+2026-08-16T03:42:50.804219Z  INFO INFO Total multiplication execution time on 5000000 elements: 634.704959ms
+2026-08-16T03:42:58.297748Z  INFO INFO Total multiplication execution time on 5000000 elements: 210.131334ms
+2026-08-16T03:52:49.914582Z  INFO INFO Total less-than comparison execution time on 100000 elements: 131.358959ms
+2026-08-16T03:56:26.795795Z  INFO INFO Total less-than comparison execution time on 100000 elements: 214.362541ms
+2026-08-16T03:56:42.846402Z  INFO INFO Total less-than comparison execution time on 100000 elements: 162.527708ms
+2026-08-16T03:56:56.199453Z  INFO INFO Total less-than comparison execution time on 1000000 elements: 4.092558291s
+2026-08-16T03:57:13.140224Z  INFO INFO Total less-than comparison execution time on 1000000 elements: 3.965024083s
+2026-08-16T03:58:20.114350Z  INFO INFO Total less-than comparison execution time on 1000000 elements: 2.6006075s
+2026-08-16T04:22:29.671966Z  INFO INFO Total less-than comparison execution time on 100000 elements: 68.517583ms
+2026-08-16T04:22:42.111190Z  INFO INFO Total less-than comparison execution time on 100000 elements: 105.851375ms
+2026-08-16T04:22:48.476815Z  INFO INFO Total less-than comparison execution time on 100000 elements: 63.028333ms
+2026-08-16T04:22:55.031675Z  INFO INFO Total less-than comparison execution time on 1000000 elements: 630.92825ms
+2026-09-04T09:48:03.441170Z  INFO INFO Total bit valid update execution time on 100000 elements: 20.17875ms
+2026-09-04T09:48:03.508940Z  INFO INFO Total u64 valid update execution time on 100000 elements: 67.758ms
+2026-09-04T09:48:30.944162Z  INFO INFO Total bit valid update execution time on 1000000 elements: 190.518333ms
+2026-09-04T09:48:31.675027Z  INFO INFO Total u64 valid update execution time on 1000000 elements: 730.836291ms
+2026-09-04T09:50:55.452928Z  INFO INFO Total bit valid update execution time on 1000000 elements: 8.02025ms
+2026-09-04T09:50:56.550037Z  INFO INFO Total u64 valid update execution time on 1000000 elements: 814.993458ms
+2026-09-04T09:51:26.078238Z  INFO INFO Total bit valid update execution time on 100000 elements: 1.57225ms
+2026-09-04T09:51:26.142321Z  INFO INFO Total u64 valid update execution time on 100000 elements: 44.106291ms
+2026-09-04T09:51:32.859820Z  INFO INFO Total bit valid update execution time on 1000000 elements: 10.506875ms
+2026-09-04T09:51:33.569692Z  INFO INFO Total u64 valid update execution time on 1000000 elements: 520.698625ms
+2026-09-08T07:30:35.598111Z  INFO INFO Total bit valid update execution time on 100000 elements: 1.519ms
+2026-09-08T07:35:56.129271Z  INFO INFO Total bit valid update execution time on 100000 elements: 1.622834ms
+2026-09-08T07:35:56.152301Z  INFO INFO Total u64 valid update execution time on 100000 elements: 5.939667ms
+2026-09-08T07:36:09.205946Z  INFO INFO Total bit valid update execution time on 1000000 elements: 8.290958ms
+2026-09-08T07:36:09.418512Z  INFO INFO Total u64 valid update execution time on 1000000 elements: 46.592917ms
+2026-09-08T07:40:23.817617Z  INFO INFO Total bit valid update execution time on 1000000 elements: 8.432875ms
+2026-09-08T07:40:24.023690Z  INFO INFO Total u64 valid update execution time on 1000000 elements: 38.210125ms
+2026-09-08T07:46:49.789436Z  INFO INFO Total bit valid update execution time on 1000000 elements: 7.154625ms
+2026-09-08T07:51:13.413881Z  INFO INFO Total bit valid update execution time on 1000000 elements: 8.857667ms
+2026-09-08T07:51:13.861033Z  INFO INFO Total u64 valid update execution time on 1000000 elements: 283.253458ms

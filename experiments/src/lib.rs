@@ -13,8 +13,8 @@ use protocols::rep3_ring::{self, Rep3RingShare};
 use net::Network;
 use table::share_column::{ShareColumn, ShareType};
 use table::NetStateArgs;
-use algebra::ring::ring_impl::RingElement;
-use primitives::transform::a2b_many_multithreads;
+use algebra::ring::{bit::Bit, ring_impl::RingElement};
+use primitives::transform::{a2b_many_multithreads, from_bit_to_t_drop};
 use rand::{thread_rng,Rng};
 
 /// Generate a column of 1, 2, ..., num_rows as u64 values for primary key column. 
@@ -86,6 +86,71 @@ pub fn gen_valid_column_u64_ring<N: Network>(
         
     }
 }
+
+pub fn gen_valid_column_bit<N: Network>(
+    num_rows: usize,
+    name: String,
+    nets: &[&N],
+    partyid: PartyID,
+) -> ShareColumn<Rep3RingShare<Bit>>
+{
+    match partyid {
+        PartyID::ID0 => {
+            let data_ring = vec![RingElement(Bit::new(true)); num_rows];
+
+            let mut rng = thread_rng();
+            let data_ring_share = rep3_ring::share_ring_elements_binary(&data_ring, &mut rng);
+
+            let _ = send_many_multinet(nets, PartyID::ID1, &data_ring_share[1]);
+            let _ = send_many_multinet(nets, PartyID::ID2, &data_ring_share[2]);
+
+            ShareColumn::new(
+                data_ring_share[0].clone(),
+                ShareType::Binary,
+                name,
+            )
+        }
+        PartyID::ID1 => {
+            let data_ring_share: Vec<Rep3RingShare<Bit>> =
+                recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| {
+                    panic!("gen_valid_column_bit: Recv failed: {:?}", e)
+                });
+            ShareColumn::new(data_ring_share, ShareType::Binary, name)
+        }
+        PartyID::ID2 => {
+            let data_ring_share: Vec<Rep3RingShare<Bit>> =
+                recv_many_multinet(nets, PartyID::ID0).unwrap_or_else(|e| {
+                    panic!("gen_valid_column_bit: Recv failed: {:?}", e)
+                });
+            ShareColumn::new(data_ring_share, ShareType::Binary, name)
+        }
+    }
+}
+
+
+
+
+/// Generate a valid column (all 1s) shared as *binary* (XOR) u64 shares.
+/// The values are first shared as Bit shares and then widened to u64, so every
+/// share component stays in {0,1} (compatible with bit_inject and bit-level ANDs).
+/// Useful when the valid column stays in the binary domain (e.g. ANDed with
+/// boolean predicates) so the filter does not need an a2b conversion.
+pub fn gen_valid_binary_64<N: Network>(
+    num_rows: usize,
+    name: String,
+    nets: &[&N],
+    partyid: PartyID,
+) -> ShareColumn<Rep3RingShare<u64>>
+{
+    let valid_bit = gen_valid_column_bit(num_rows, name, nets, partyid);
+
+    let data = from_bit_to_t_drop::<u64>(valid_bit.get_data().to_vec())
+        .unwrap_or_else(|e| panic!("gen_valid_binary_64: from_bit_to_t_drop failed: {:?}", e));
+
+    ShareColumn::new(data, ShareType::Binary, valid_bit.get_name().to_string())
+}
+
+
 
 pub fn gen_rand_column_u64_ring<N: Network>(
     num_rows: usize,

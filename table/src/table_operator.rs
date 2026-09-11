@@ -90,6 +90,15 @@ pub trait Filter<T,U>{
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<()>;
 
+
+    fn filter_binary_valid_directed_by_bool<N: Network>(
+        &mut self,
+        composed_bool_values: &[T],
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<()>;
+
+
+
 }
 
 

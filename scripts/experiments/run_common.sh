@@ -5,7 +5,7 @@
 #   Not meant to be executed directly; sourced by the suite scripts.
 #
 # Provides:
-#   parse_common_opts  — parses -m/-t/-s/-h/--start/--end/--rayon/--log/--no-log
+#   parse_common_opts  — parses -m/-t/-s/-n/-h/--start/--end/--rayon/--log/--no-log
 #   expand_targets     — expands "all", comma lists and "1..8" ranges
 #   contains           — membership test
 #   setup_log          — resolves the stat log path ($1 = result subdir)
@@ -13,7 +13,7 @@
 #   run_all            — iterates TARGETS/BINS, logs "INFO Total" lines
 #
 # Contract: the sourcing script sets TARGETS and BINS (parallel arrays)
-# before calling run_all, and may override defaults (THREADS, SF, START, END).
+# before calling run_all, and may override defaults (THREADS, SF, ROWS, START, END).
 #
 # Hosts: -h takes a comma-separated list of 3 hosts, one per party
 # (party i runs on the i-th host). A host equal to $(hostname),
@@ -30,6 +30,7 @@ fi
 MODE="local"
 THREADS=""
 SF=""
+ROWS=""
 START=20
 END=26
 HOST_LIST="node0,node1,node2"
@@ -43,6 +44,7 @@ parse_common_opts() {
             -m)       MODE="$2"; shift 2 ;;
             -t)       THREADS="$2"; shift 2 ;;
             -s)       SF="$2"; shift 2 ;;
+            -n)       ROWS="$2"; shift 2 ;;
             --start)  START="$2"; shift 2 ;;
             --end)    END="$2"; shift 2 ;;
             -h)       HOST_LIST="$2"; shift 2 ;;
@@ -120,6 +122,7 @@ run_one() {
     local extra_args
     case "$bin" in
         multi_keys_join)        extra_args="" ;;
+        mul_bench|compare_bench) extra_args="-t $THREADS" ;;
         radix_sort_mpspdz)      extra_args="-t $THREADS" ;;
         radix_sort_scalability) extra_args="-t $THREADS --start $START --end $END" ;;
         *)                      extra_args="-t $THREADS -s $SF" ;;
@@ -182,7 +185,7 @@ run_all() {
     echo "============================================================"
     echo "Qamboo Experiment Runner: $label"
     echo "Mode: $MODE | Targets: ${TARGETS[*]}"
-    echo "Threads: $THREADS | SF/Shift: $SF${RAYON:+ | Rayon: $RAYON}"
+    echo "Threads: $THREADS | SF/Shift: $SF${ROWS:+ | Rows: $ROWS}${RAYON:+ | Rayon: $RAYON}"
     if [ "$MODE" != "local" ]; then echo "Hosts: $HOST_LIST"; fi
     $NO_LOG || echo "Log: $LOG_FILE"
     echo "============================================================"

@@ -7,7 +7,7 @@
 # Usage:
 #   ./run_tpch.sh <queries> [options]
 #
-#   <queries>  : "1..22", "1,3,5" or "all"
+#   <queries>  : "1..22", "1,3,5", "all", or suffixed variants like "6_orq", "6_orq_bit", "6_orq_ari_valid"
 #
 # Options:
 #   -m MODE    : local | tcp | rdma  (default: local)
@@ -21,6 +21,7 @@
 #
 # Examples:
 #   ./run_tpch.sh "1..8" -t 6 -s 0.1
+#   ./run_tpch.sh "6_orq" -s 1
 #   ./run_tpch.sh "1..22" -t 32 -s 1 -m tcp -h node0,node1,node2
 #   ./run_tpch.sh "1..22" -t 32 -s 1 -m rdma
 # ==============================================================================
@@ -43,7 +44,13 @@ SF="${SF:-0.01}"
 
 read -r -a TARGETS <<< "$(expand_targets "$QUERIES" $(seq 1 22))"
 for t in "${TARGETS[@]}"; do
-    contains "$t" $(seq 1 22) || { echo "Error: invalid TPC-H query '$t' (valid: 1..22)" >&2; exit 1; }
+    contains "$t" $(seq 1 22) && continue
+    # allow suffixed variants like "6_orq", "6_orq_bit", "6_orq_ari_valid": the numeric prefix must be a valid query
+    if [[ "$t" =~ ^([0-9]+)_orq(_bit|_ari_valid)?$ ]] && contains "${BASH_REMATCH[1]}" $(seq 1 22); then
+        continue
+    fi
+    echo "Error: invalid TPC-H query '$t' (valid: 1..22, optionally suffixed with _orq, _orq_bit or _orq_ari_valid)" >&2
+    exit 1
 done
 
 BINS=()

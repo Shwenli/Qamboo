@@ -2,6 +2,8 @@ pub mod column_basic_compute;
 pub mod column_operator_impl;
 
 use net::Network;
+use algebra::ring::bit::Bit;
+use protocols::rep3_ring::Rep3RingShare;
 use crate::{NetStateArgs, share_column::ShareColumn};
 
 
@@ -193,6 +195,13 @@ pub trait ColumnBooleanOperator<T,U>{
         pub_element: &U,
         netstate_args: &mut NetStateArgs<N>,
     ) -> eyre::Result<ShareColumn<T>>;
+
+    /// ORQ-style less-than-zero: local sign-bit (MSB) extraction on a *binary* shared column.
+    /// Returns a Bit column of 1s where the plaintext, interpreted in two's complement,
+    /// is negative. Requires no communication.
+    /// Typically applied to a materialized difference column c = a - b to obtain a < b for free.
+    fn ltz_bit(&self) -> eyre::Result<ShareColumn<Rep3RingShare<Bit>>>;
+    fn ltz(&self) -> eyre::Result<ShareColumn<T>>;
 
     /// Compare two columns and return a binary T share result
     fn in_public_binary<N: Network>(

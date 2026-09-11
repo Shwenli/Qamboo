@@ -2,7 +2,7 @@
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use protocols::rep3_ring::Rep3RingShare;
-use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement};
+use algebra::ring::{int_ring::IntRing2k, ring_impl::RingElement, bit::Bit};
 use net::Network;
 use operator::distinct::distinct_after_groupby_multithreads;
 use primitives::compare::*;
@@ -627,6 +627,38 @@ Standard: Distribution<T>,{
         Ok(result_column)
     }
 
+    fn ltz_bit(&self) -> eyre::Result<ShareColumn<Rep3RingShare<Bit>>> {
+
+        assert!(matches!(self.get_sharetype(), ShareType::Binary), "ltz requires a binary shared column");
+
+        let data = self.get_data();
+
+        // purely local sign-bit extraction, no communication
+        let result_bit = ltz_orq_many_multithreads(data);
+
+        //let result = transform::from_bit_to_t(&result_bit)?;
+
+        let result_column = ShareColumn::new(result_bit, ShareType::Bit, self.get_name().to_string());
+
+        Ok(result_column)
+    }
+
+    fn ltz(&self) -> eyre::Result<ShareColumn<Rep3RingShare<T>>> {
+
+        assert!(matches!(self.get_sharetype(), ShareType::Binary), "ltz requires a binary shared column");
+
+        let data = self.get_data();
+
+        // purely local sign-bit extraction, no communication
+        let result_bit = ltz_orq_many_multithreads(data);
+
+        let result = transform::from_bit_to_t(&result_bit)?;
+
+        let result_column = ShareColumn::new(result, ShareType::Binary, self.get_name().to_string());
+
+        Ok(result_column)
+    }
+
     fn in_public_binary<N: net::Network>(
         &self,
         pub_elements: &Vec<T>,
@@ -693,4 +725,27 @@ Standard: Distribution<T>,{
         Ok(result_column)
     }
 
+}
+
+/// Bitwise AND on Bit-shared predicate columns. Unlike [ColumnBooleanOperator::and],
+/// this operates on `Rep3RingShare<Bit>` directly, so each AND communicates a single
+/// bit instead of a full ring element.
+impl ShareColumn<Rep3RingShare<Bit>> {
+
+    pub fn and_bit<N: Network>(
+        &self,
+        other_column: &ShareColumn<Rep3RingShare<Bit>>,
+        netstate_args: &mut NetStateArgs<N>,
+    ) -> eyre::Result<ShareColumn<Rep3RingShare<Bit>>> {
+
+        assert_eq!(self.len(), other_column.len(), "Columns must have the same length");
+
+        let (nets, states) = netstate_args.split();
+
+        let result = and_vec_bit_multithreads(self.get_data(), other_column.get_data(), nets, states)?;
+
+        let result_column = ShareColumn::new(result, ShareType::Binary, self.get_name().to_string());
+
+        Ok(result_column)
+    }
 }
